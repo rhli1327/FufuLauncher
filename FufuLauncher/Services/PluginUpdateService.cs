@@ -5,6 +5,7 @@ Licensed under the MIT License.
 using System.IO.Compression;
 using System.Text;
 using FufuLauncher.Constants;
+using FufuLauncher.Helpers;
 using FufuLauncher.Contracts.Services;
 
 namespace FufuLauncher.Services

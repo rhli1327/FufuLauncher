@@ -6,6 +6,7 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Security.Cryptography;
 using System.Text;
+using FufuLauncher.Models.MiHoYo.Fingerprint;
 
 namespace FufuLauncher.Services;
 
