@@ -15,13 +15,19 @@ public sealed record AccountCookieFile(
     [property: System.Text.Json.Serialization.JsonPropertyName("fingerprint")]
     DeviceFpRequest? Fingerprint = null);
 
+public sealed record ProtectedAccountCookieEnvelope(
+    [property: System.Text.Json.Serialization.JsonPropertyName("format")]
+    string Format,
+    [property: System.Text.Json.Serialization.JsonPropertyName("protected_data")]
+    string ProtectedData);
+
 public partial class AccountManager
 {
     private string DataDir => Helpers.AppPaths.DataDir;
     private string CookiesDir => Path.Combine(DataDir, "cookies");
     private string AccountsFilePath => Path.Combine(DataDir, "accounts.json");
     private readonly SemaphoreSlim _lock = new(1, 1);
-    private const int CookieFileVersion = 1;
+    private const int CookieFileVersion = 2;
 
     private AccountList _accountList;
     private string? _activeAccountId;
@@ -94,7 +100,7 @@ public partial class AccountManager
         bool metadataChanged = false;
         foreach (var account in normalizedAccounts)
         {
-            if (account.CookieVersion <= 0)
+            if (account.CookieVersion < CookieFileVersion)
             {
                 bool migrated = await MigrateLegacyCookieFileAsync(account);
                 if (migrated)

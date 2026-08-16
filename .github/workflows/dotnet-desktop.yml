@@ -38,35 +38,42 @@ jobs:
     - name: Checkout FufuLauncher.UnlockerIsland
       uses: actions/checkout@v4
       with:
-        repository: FufuLauncher/FufuLauncher.UnlockerIsland
+        repository: rhli1327/FufuLauncher.UnlockerIsland
+        ref: ba653e07cce0637d25f96eeb353c35d14638ff00
         path: FufuLauncher.UnlockerIsland_Repo
 
-    - name: Build Launcher and Launcher_2
+    - name: Build pinned launcher and plugin sources
       run: |
         msbuild FufuLauncher.UnlockerIsland_Repo\Launcher\Launcher.vcxproj /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=v143
         msbuild FufuLauncher.UnlockerIsland_Repo\Launcher_2\Launcher_2.vcxproj /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=v143
+        msbuild FufuLauncher.UnlockerIsland_Repo\FufuLauncher.UnlockerIsland\FufuLauncher.UnlockerIsland.vcxproj /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=v143
 
-    - name: Replace Launcher and Launcher_2
+    - name: Replace launcher and plugin binaries
       shell: pwsh
       run: |
         $baseOutputDir = "FufuLauncher\bin\x64\Release\net8.0-windows10.0.26100.0"
+        $pluginOutputDir = "$baseOutputDir\Plugins\FuFuPlugin"
 
         $launcherDll = Get-ChildItem -Path "FufuLauncher.UnlockerIsland_Repo" -Filter "Launcher.dll" -Recurse | Where-Object { $_.FullName -match "x64" -and $_.FullName -match "Release" } | Select-Object -First 1
         $launcher2Exe = Get-ChildItem -Path "FufuLauncher.UnlockerIsland_Repo" -Filter "Launcher_2.exe" -Recurse | Where-Object { $_.FullName -match "x64" -and $_.FullName -match "Release" } | Select-Object -First 1
+        $pluginDll = Get-ChildItem -Path "FufuLauncher.UnlockerIsland_Repo" -Filter "FufuLauncher.UnlockerIsland.dll" -Recurse | Where-Object { $_.FullName -match "x64" -and $_.FullName -match "Release" } | Select-Object -First 1
 
-        if ($launcherDll -and $launcher2Exe) {
+        if ($launcherDll -and $launcher2Exe -and $pluginDll) {
+            New-Item -ItemType Directory -Force -Path $pluginOutputDir | Out-Null
             Copy-Item -Path $launcherDll.FullName -Destination "$baseOutputDir\Launcher.dll" -Force
             Copy-Item -Path $launcher2Exe.FullName -Destination "$baseOutputDir\Launcher_2.exe" -Force
-            Write-Host "成功替换Launcher.dll和Launcher_2.exe"
+            Copy-Item -Path $pluginDll.FullName -Destination "$pluginOutputDir\FufuLauncher.UnlockerIsland.dll" -Force
+            Write-Host "Replaced launcher and plugin binaries from pinned source commits"
         } else {
-            Write-Error "未能定位到Launcher.dll或Launcher_2.exe编译产物"
+            Write-Error "Unable to locate a launcher or plugin build output"
             exit 1
         }
 
     - name: Checkout FufuLauncher.CaptureApp
       uses: actions/checkout@v4
       with:
-        repository: FufuLauncher/FufuLauncher.CaptureApp
+        repository: rhli1327/FufuLauncher.CaptureApp
+        ref: 8e9975ee036261b9aa22f8df13dc917e3e6f7528
         path: FufuLauncher.CaptureApp_Repo
 
     - name: Publish CaptureApp (Native AOT)
@@ -136,7 +143,16 @@ jobs:
         name: pe-files-unsigned
         path: pe-files-to-sign\**
 
+    - name: Detect optional SignPath credentials
+      shell: pwsh
+      env:
+        SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
+      run: |
+        $enabled = -not [string]::IsNullOrWhiteSpace($env:SIGNPATH_API_TOKEN)
+        "SIGNING_ENABLED=$($enabled.ToString().ToLowerInvariant())" | Out-File -FilePath $env:GITHUB_ENV -Append
+
     - name: Sign PE files with SignPath
+      if: env.SIGNING_ENABLED == 'true'
       uses: signpath/github-action-submit-signing-request@v2
       with:
         api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
@@ -149,6 +165,7 @@ jobs:
         output-artifact-directory: 'signed-pe-files'
 
     - name: Replace build output with signed PE files
+      if: env.SIGNING_ENABLED == 'true'
       shell: pwsh
       run: |
         $outputDir = "FufuLauncher\bin\x64\Release\net8.0-windows10.0.26100.0"
@@ -159,19 +176,21 @@ jobs:
             Write-Host "Replaced: $relativePath"
         }
 
-    - name: Regenerate hash.txt for signed files
+    - name: Regenerate integrity manifest
       shell: pwsh
       run: |
         $outputDir = "FufuLauncher\bin\x64\Release\net8.0-windows10.0.26100.0"
         $hashFile = Join-Path $outputDir "Assets\Launcher\hash.txt"
         $captureApp = Join-Path $outputDir "CaptureApp.exe"
         $launcher = Join-Path $outputDir "Launcher.dll"
+        $plugin = Join-Path $outputDir "Plugins\FuFuPlugin\FufuLauncher.UnlockerIsland.dll"
         $existingLines = Get-Content $hashFile
         $line1 = $existingLines[0]
         $line2 = (Get-FileHash $captureApp -Algorithm SHA512).Hash.ToLower()
         $line3 = (Get-FileHash $launcher -Algorithm SHA512).Hash.ToLower()
-        Set-Content -Path $hashFile -Value @($line1, $line2, $line3)
-        Write-Host "Updated hash.txt with signed file hashes"
+        $line4 = (Get-FileHash $plugin -Algorithm SHA512).Hash.ToLower()
+        Set-Content -Path $hashFile -Value @($line1, $line2, $line3, $line4)
+        Write-Host "Updated hash.txt with final launcher and plugin hashes"
 
     - name: Package Portable ZIP (Green Version)
       shell: pwsh
@@ -211,6 +230,7 @@ jobs:
         path: FufuLauncher.Installer\installer\*.exe
 
     - name: Sign Installer with SignPath
+      if: env.SIGNING_ENABLED == 'true'
       uses: signpath/github-action-submit-signing-request@v2
       with:
         api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
@@ -223,6 +243,7 @@ jobs:
         output-artifact-directory: 'signed-output'
 
     - name: Upload Signed Installer
+      if: env.SIGNING_ENABLED == 'true'
       uses: actions/upload-artifact@v4
       with:
         name: ${{ env.EXE_NAME }}-signed

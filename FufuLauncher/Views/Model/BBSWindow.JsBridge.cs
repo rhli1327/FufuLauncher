@@ -66,6 +66,12 @@ public sealed partial class BBSWindow
     {
         try
         {
+            if (!IsTrustedBbsUri(args.Source))
+            {
+                System.Diagnostics.Debug.WriteLine($"[BBSWindow] Blocked bridge message from untrusted origin: {args.Source}");
+                return;
+            }
+
             string message = args.TryGetWebMessageAsString();
             if (string.IsNullOrEmpty(message)) return;
             var param = JsonSerializer.Deserialize<JsParam>(message, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
@@ -101,7 +107,14 @@ public sealed partial class BBSWindow
             {
                 url = Uri.UnescapeDataString(url.Replace("mihoyobbs://webview?link=", ""));
             }
-            BBSWebView.CoreWebView2.Navigate(url);
+            if (IsTrustedBbsUri(url))
+            {
+                BBSWebView.CoreWebView2.Navigate(url);
+            }
+            else if (Uri.TryCreate(url, UriKind.Absolute, out var externalUri) && externalUri.Scheme == Uri.UriSchemeHttps)
+            {
+                _ = Windows.System.Launcher.LaunchUriAsync(externalUri);
+            }
         }
         return null;
     }
@@ -118,7 +131,8 @@ public sealed partial class BBSWindow
     private async Task ExecuteCallback(string callback, JsResult result)
     {
         string payload = JsonSerializer.Serialize(result, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
-        string script = $"javascript:mhyWebBridge(\"{callback}\", {payload})";
+        string callbackJson = JsonSerializer.Serialize(callback);
+        string script = $"mhyWebBridge({callbackJson}, {payload})";
         await BBSWebView.CoreWebView2.ExecuteScriptAsync(script);
     }
 

@@ -39,7 +39,7 @@ public partial class LuaPluginInstaller
 
         var pluginsDirFull = Path.GetFullPath(_pluginsDir);
 
-        if (!fullPath.StartsWith(pluginsDirFull, StringComparison.OrdinalIgnoreCase))
+        if (!DownloadSecurity.IsPathInside(pluginsDirFull, fullPath))
         {
             Debug.WriteLine($"[LuaInstaller] SECURITY: Path outside plugins dir blocked in {operation}: {fullPath}");
             throw new SecurityViolationException(

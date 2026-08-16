@@ -33,8 +33,7 @@ namespace FufuLauncher.Services
 
                 logBuilder.AppendLine("[插件更新] 自动更新已启用，开始获取最新普通版插件...");
 
-                string proxyUrl = ApiEndpoints.PluginProxyUrl;
-                string rawUrl = ApiEndpoints.PluginRawUrl;
+                string downloadUrl = ApiEndpoints.PluginRawUrl;
                 
                 string tempPath = Path.Combine(Path.GetTempPath(), "FuFuPlugin_AutoUpdate.zip");
                 string extractPath = Path.Combine(Path.GetTempPath(), "FuFuPlugin_AutoUpdate_Extract_" + Guid.NewGuid());
@@ -51,18 +50,9 @@ namespace FufuLauncher.Services
 
                 using (var client = new HttpClient { Timeout = TimeSpan.FromMinutes(2) })
                 {
-                    HttpResponseMessage response;
-                    try
-                    {
-                        response = await client.GetAsync(proxyUrl, HttpCompletionOption.ResponseHeadersRead);
-                        response.EnsureSuccessStatusCode();
-                    }
-                    catch
-                    {
-                        logBuilder.AppendLine("[插件更新] 主线路请求失败，正在尝试备用线路...");
-                        response = await client.GetAsync(rawUrl, HttpCompletionOption.ResponseHeadersRead);
-                        response.EnsureSuccessStatusCode();
-                    }
+                    var secureUri = DownloadSecurity.RequireHttpsUri(downloadUrl, "插件更新");
+                    HttpResponseMessage response = await client.GetAsync(secureUri, HttpCompletionOption.ResponseHeadersRead);
+                    response.EnsureSuccessStatusCode();
 
                     using (response)
                     using (var stream = await response.Content.ReadAsStreamAsync())
@@ -72,9 +62,11 @@ namespace FufuLauncher.Services
                     }
                 }
 
+                PluginVerifier.VerifyFileHash(tempPath, ApiEndpoints.PluginSha256, "FuFuPlugin bundle");
+
                 if (Directory.Exists(extractPath)) Directory.Delete(extractPath, true);
                 Directory.CreateDirectory(extractPath);
-                ZipFile.ExtractToDirectory(tempPath, extractPath);
+                DownloadSecurity.ExtractZipSafely(tempPath, extractPath);
 
                 var subDirs = Directory.GetDirectories(extractPath);
                 string sourceDir = (subDirs.Length == 1 && Directory.GetFiles(extractPath).Length == 0) ? subDirs[0] : extractPath;

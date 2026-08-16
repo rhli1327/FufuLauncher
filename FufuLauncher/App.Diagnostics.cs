@@ -23,8 +23,6 @@ public partial class App
     {
         if (ex == null) return;
 
-        SentrySdk.FlushAsync(TimeSpan.FromSeconds(2)).Wait();
-
         var message = string.Format("Crash_Message".GetLocalized(), source, ex.Message, ex.StackTrace);
 
         MessageBox(IntPtr.Zero, message, "Crash_Title".GetLocalized(), MB_OK | MB_ICONERROR);
@@ -77,11 +75,6 @@ public partial class App
 
         try
         {
-            SentrySdk.CaptureException(ex, scope =>
-            {
-                scope.SetTag("source", source);
-            });
-
             var logPath = Path.Combine(AppPaths.RootDir, "CrashLog.txt");
             Directory.CreateDirectory(Path.GetDirectoryName(logPath)!);
 

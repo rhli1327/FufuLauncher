@@ -30,8 +30,10 @@ namespace FufuLauncher.Constants
         public const string MihoyoBbsCheckinRewardsUrl = MihoyoBbsWebApi + "/event/luna/home";
         public const string MihoyoBbsIsSignUrl = MihoyoBbsWebApi + "/event/luna/info";
         public const string MihoyoBbsSignUrl = MihoyoBbsWebApi + "/event/luna/sign";
-        public const string PluginProxyUrl = "http://kr2-proxy.gitwarp.top:9980/https://github.com/CodeCubist/FufuLauncher--Plugins/blob/main/FuFuPlugin.zip";
-        public const string PluginRawUrl = "https://github.com/CodeCubist/FufuLauncher--Plugins/blob/main/FuFuPlugin.zip?raw=true";
+        // Reviewed plugin bundle. Update the commit and hash together after auditing a new release.
+        public const string PluginRawUrl = "https://raw.githubusercontent.com/rhli1327/FufuLauncher--Plugins/b0e5fed81fb546d0334a91e2c78c980ee0b7861b/FuFuPlugin.zip";
+        public const string PluginSha256 = "4079aecd05e62926637480367a9c732e33f05443571c9033d7417b83ff8bef0a";
+        public const string PluginDllSha256 = "d4260c7507c55982563ed68a1a3bc068f72e578a05afa83381aa52dce1cacd0f";
         public const string AnnouncementUrl = "https://philia093.cyou/announcement.json";
         public const string AnnouncementFallbackUrl = "https://fu1.fun/announcement.json";
         public const string UpdateJsonUrl = "https://philia093.cyou/Update.json";

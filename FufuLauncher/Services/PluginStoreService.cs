@@ -378,6 +378,10 @@ public class PluginStoreService
     public async Task<string> DownloadLuaScriptAsync(string luaUrl, string? expectedHash = null,
         string? dlToken = null, string? accessToken = null)
     {
+        DownloadSecurity.RequireHttpsUri(luaUrl, "Lua 脚本下载");
+        if (string.IsNullOrWhiteSpace(expectedHash))
+            throw new HashMismatchException("Plugin store did not provide a Lua SHA-256 hash.");
+
         var url = AppendTokens(luaUrl, dlToken, accessToken);
 
         try
@@ -415,6 +419,10 @@ public class PluginStoreService
         string? dlToken = null, string? accessToken = null,
         CancellationToken cancellationToken = default)
     {
+        DownloadSecurity.RequireHttpsUri(fileUrl, "插件文件下载");
+        if (string.IsNullOrWhiteSpace(expectedHash))
+            throw new HashMismatchException("Plugin store did not provide a file SHA-256 hash.");
+
         var url = AppendTokens(fileUrl, dlToken, accessToken);
         
         if (await _mirrorDownloadService.TryDownloadViaMirrorAsync(

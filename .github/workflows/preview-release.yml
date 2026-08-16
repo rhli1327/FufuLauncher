@@ -38,35 +38,42 @@ jobs:
     - name: Checkout FufuLauncher.UnlockerIsland
       uses: actions/checkout@v4
       with:
-        repository: FufuLauncher/FufuLauncher.UnlockerIsland
+        repository: rhli1327/FufuLauncher.UnlockerIsland
+        ref: ba653e07cce0637d25f96eeb353c35d14638ff00
         path: FufuLauncher.UnlockerIsland_Repo
 
-    - name: Build Launcher and Launcher_2
+    - name: Build pinned launcher and plugin sources
       run: |
         msbuild FufuLauncher.UnlockerIsland_Repo\Launcher\Launcher.vcxproj /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=v143
         msbuild FufuLauncher.UnlockerIsland_Repo\Launcher_2\Launcher_2.vcxproj /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=v143
+        msbuild FufuLauncher.UnlockerIsland_Repo\FufuLauncher.UnlockerIsland\FufuLauncher.UnlockerIsland.vcxproj /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=v143
 
-    - name: Replace Launcher and Launcher_2
+    - name: Replace launcher and plugin binaries
       shell: pwsh
       run: |
         $baseOutputDir = "FufuLauncher\bin\x64\Release\net8.0-windows10.0.26100.0"
+        $pluginOutputDir = "$baseOutputDir\Plugins\FuFuPlugin"
 
         $launcherDll = Get-ChildItem -Path "FufuLauncher.UnlockerIsland_Repo" -Filter "Launcher.dll" -Recurse | Where-Object { $_.FullName -match "x64" -and $_.FullName -match "Release" } | Select-Object -First 1
         $launcher2Exe = Get-ChildItem -Path "FufuLauncher.UnlockerIsland_Repo" -Filter "Launcher_2.exe" -Recurse | Where-Object { $_.FullName -match "x64" -and $_.FullName -match "Release" } | Select-Object -First 1
+        $pluginDll = Get-ChildItem -Path "FufuLauncher.UnlockerIsland_Repo" -Filter "FufuLauncher.UnlockerIsland.dll" -Recurse | Where-Object { $_.FullName -match "x64" -and $_.FullName -match "Release" } | Select-Object -First 1
 
-        if ($launcherDll -and $launcher2Exe) {
+        if ($launcherDll -and $launcher2Exe -and $pluginDll) {
+            New-Item -ItemType Directory -Force -Path $pluginOutputDir | Out-Null
             Copy-Item -Path $launcherDll.FullName -Destination "$baseOutputDir\Launcher.dll" -Force
             Copy-Item -Path $launcher2Exe.FullName -Destination "$baseOutputDir\Launcher_2.exe" -Force
-            Write-Host "成功替换Launcher.dll和Launcher_2.exe"
+            Copy-Item -Path $pluginDll.FullName -Destination "$pluginOutputDir\FufuLauncher.UnlockerIsland.dll" -Force
+            Write-Host "Replaced launcher and plugin binaries from pinned source commits"
         } else {
-            Write-Error "未能定位到Launcher.dll或Launcher_2.exe编译产物"
+            Write-Error "Unable to locate a launcher or plugin build output"
             exit 1
         }
 
     - name: Checkout FufuLauncher.CaptureApp
       uses: actions/checkout@v4
       with:
-        repository: FufuLauncher/FufuLauncher.CaptureApp
+        repository: rhli1327/FufuLauncher.CaptureApp
+        ref: 8e9975ee036261b9aa22f8df13dc917e3e6f7528
         path: FufuLauncher.CaptureApp_Repo
 
     - name: Setup NuGet
@@ -127,14 +134,16 @@ jobs:
         $hashFile = Join-Path $outputDir "Assets\Launcher\hash.txt"
         $captureApp = Join-Path $outputDir "CaptureApp.exe"
         $launcher = Join-Path $outputDir "Launcher.dll"
+        $plugin = Join-Path $outputDir "Plugins\FuFuPlugin\FufuLauncher.UnlockerIsland.dll"
         
         if (Test-Path $hashFile) {
             $existingLines = Get-Content $hashFile
             $line1 = $existingLines[0]
             $line2 = if (Test-Path $captureApp) { (Get-FileHash $captureApp -Algorithm SHA512).Hash.ToLower() } else { $existingLines[1] }
             $line3 = if (Test-Path $launcher) { (Get-FileHash $launcher -Algorithm SHA512).Hash.ToLower() } else { $existingLines[2] }
-            Set-Content -Path $hashFile -Value @($line1, $line2, $line3)
-            Write-Host "Updated hash.txt with UPX compressed file hashes"
+            $line4 = (Get-FileHash $plugin -Algorithm SHA512).Hash.ToLower()
+            Set-Content -Path $hashFile -Value @($line1, $line2, $line3, $line4)
+            Write-Host "Updated hash.txt with launcher and plugin hashes"
         } else {
             Write-Host "hash.txt not found, skipping hash update."
         }

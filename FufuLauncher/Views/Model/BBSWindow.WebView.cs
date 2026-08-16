@@ -69,6 +69,7 @@ public sealed partial class BBSWindow
 
             BBSWebView.CoreWebView2.WebResourceRequested += CoreWebView2_WebResourceRequested;
             BBSWebView.CoreWebView2.WebMessageReceived += CoreWebView2_WebMessageReceived;
+            BBSWebView.CoreWebView2.NavigationStarting += CoreWebView2_NavigationStarting;
             BBSWebView.CoreWebView2.DOMContentLoaded += CoreWebView2_DOMContentLoaded;
             BBSWebView.CoreWebView2.SourceChanged += CoreWebView2_SourceChanged;
 
@@ -105,6 +106,34 @@ public sealed partial class BBSWindow
     {
         if (UrlTextBox != null) UrlTextBox.Text = sender.Source;
     }
+
+    private async void CoreWebView2_NavigationStarting(CoreWebView2 sender, CoreWebView2NavigationStartingEventArgs args)
+    {
+        if (IsTrustedBbsUri(args.Uri))
+            return;
+
+        args.Cancel = true;
+        if (Uri.TryCreate(args.Uri, UriKind.Absolute, out var uri) && uri.Scheme == Uri.UriSchemeHttps)
+        {
+            try { await Windows.System.Launcher.LaunchUriAsync(uri); }
+            catch { }
+        }
+    }
+
+    private static bool IsTrustedBbsUri(string? value)
+    {
+        if (!Uri.TryCreate(value, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps)
+            return false;
+
+        return IsHostOrSubdomain(uri.Host, "mihoyo.com") ||
+               IsHostOrSubdomain(uri.Host, "miyoushe.com") ||
+               IsHostOrSubdomain(uri.Host, "hoyolab.com") ||
+               IsHostOrSubdomain(uri.Host, "hoyoverse.com");
+    }
+
+    private static bool IsHostOrSubdomain(string host, string allowedDomain) =>
+        host.Equals(allowedDomain, StringComparison.OrdinalIgnoreCase) ||
+        host.EndsWith("." + allowedDomain, StringComparison.OrdinalIgnoreCase);
 
     #endregion
 }

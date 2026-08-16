@@ -63,7 +63,9 @@ namespace FufuLauncher.ViewModels
             {
                 return ResourceExtensions.CurrentCulture switch
                 {
-                    "zh-CN" => AgreementTextSc,
+                    "zh-CN" => AgreementTextSc.Replace(
+                        "为了持续改善软件稳定性，我们集成了Sentry服务用于自动收集软件崩溃时的匿名错误日志（如系统版本、堆栈跟踪）。除上述必要的匿名错误收集外，我们不主动收集、分析或分享您的任何个人信息和游戏数据，不上传至任何服务器。",
+                        "本修改版不集成远程崩溃收集服务。错误诊断信息仅写入本地日志；除非您主动提供，否则不会上传给维护者或第三方。"),
                     "zh-TW" => AgreementTextTc,
                     _ => AgreementTextEn
                 };

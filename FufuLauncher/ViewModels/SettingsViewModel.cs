@@ -169,7 +169,7 @@ public partial class SettingsViewModel : ObservableRecipient
     [ObservableProperty] private string _screenshotSavePath;
     [ObservableProperty] private bool _hasScreenshotSavePath;
 
-    [ObservableProperty] private bool _isUseThirdPartyCDNEnabled = true;
+    [ObservableProperty] private bool _isUseThirdPartyCDNEnabled;
 
     [ObservableProperty] private bool _isPreviewUpdateAnnouncementEnabled = true;
 

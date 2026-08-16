@@ -5,6 +5,7 @@ Licensed under the MIT License.
 using System.Text.Json;
 using FufuLauncher.Contracts.Services;
 using FufuLauncher.Helpers;
+using FufuLauncher.Services;
 using FufuLauncher.ViewModels;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -127,13 +128,16 @@ public sealed partial class BlankPage
                 presetArg = $" --preset \"{selectedPreset.Id}\"";
             }
 
-            string customParamsArg = "";
-            if (!string.IsNullOrWhiteSpace(customLaunchParams))
+            var pluginPath = Path.Combine(
+                AppContext.BaseDirectory, "Plugins", "FuFuPlugin", "FufuLauncher.UnlockerIsland.dll");
+            if (!LauncherService.IsAllowedPluginDllPath(pluginPath))
             {
-                customParamsArg = $" {customLaunchParams}";
+                await ShowError("主插件缺失或完整性校验失败，无法创建注入快捷方式。");
+                return;
             }
 
-            var argsOnly = $"--elevated-inject \"{finalExePath}\"{presetArg}{customParamsArg}";
+            var escapedCustomParams = (customLaunchParams ?? string.Empty).Replace("\"", "\\\"");
+            var argsOnly = $"--elevated-inject \"{finalExePath}\" \"{pluginPath}\" 0 \"{escapedCustomParams}\"{presetArg}";
             var fullCommandLine = $"\"{appPath}\" {argsOnly}";
 
             if (choiceResult == ContentDialogResult.Primary)

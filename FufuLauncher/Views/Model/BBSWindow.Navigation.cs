@@ -35,7 +35,16 @@ public sealed partial class BBSWindow
     {
         var url = UrlTextBox.Text;
         if (!string.IsNullOrEmpty(url) && !url.StartsWith("http")) url = "https://" + url;
-        if (!string.IsNullOrEmpty(url)) BBSWebView.CoreWebView2.Navigate(url);
+        if (string.IsNullOrEmpty(url)) return;
+
+        if (IsTrustedBbsUri(url))
+        {
+            BBSWebView.CoreWebView2.Navigate(url);
+        }
+        else if (Uri.TryCreate(url, UriKind.Absolute, out var externalUri) && externalUri.Scheme == Uri.UriSchemeHttps)
+        {
+            _ = Windows.System.Launcher.LaunchUriAsync(externalUri);
+        }
     }
 
     private void ClientTypeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)

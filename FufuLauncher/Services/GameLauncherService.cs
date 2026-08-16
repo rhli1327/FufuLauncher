@@ -406,44 +406,26 @@ namespace FufuLauncher.Services
 
                     logBuilder.AppendLine($"[启动流程] 配置掩码: {configMask}");
 
-                    string targetDllPath = null;
+                    string? targetDllPath = null;
                     var defaultDllPath = _launcherService.GetDefaultDllPath();
 
-                    if (!string.IsNullOrEmpty(defaultDllPath) && File.Exists(defaultDllPath))
+                    if (LauncherService.IsAllowedPluginDllPath(defaultDllPath))
                     {
                         targetDllPath = defaultDllPath;
-                        logBuilder.AppendLine($"[启动流程] 发现默认DLL: {targetDllPath}");
+                        logBuilder.AppendLine($"[启动流程] 默认主插件已通过路径和 SHA-256 校验: {targetDllPath}");
                     }
                     else
                     {
-                        try
+                        var knownPluginPath = Path.Combine(
+                            AppContext.BaseDirectory, "Plugins", "FuFuPlugin", "FufuLauncher.UnlockerIsland.dll");
+                        if (LauncherService.IsAllowedPluginDllPath(knownPluginPath))
                         {
-                            var pluginsDir = Path.Combine(AppContext.BaseDirectory, "Plugins");
-                            if (Directory.Exists(pluginsDir))
-                            {
-                                logBuilder.AppendLine($"[启动流程] 在扫描插件目录: {pluginsDir}");
-
-                                var pluginDll = Directory.GetFiles(pluginsDir, "*.dll", SearchOption.AllDirectories)
-                                    .FirstOrDefault(f => !f.EndsWith(".disabled", StringComparison.OrdinalIgnoreCase));
-
-                                if (!string.IsNullOrEmpty(pluginDll))
-                                {
-                                    targetDllPath = pluginDll;
-                                    logBuilder.AppendLine($"[启动流程] 扫描到可用插件DLL，将使用: {targetDllPath}");
-                                }
-                                else
-                                {
-                                    logBuilder.AppendLine($"[启动流程] 插件目录中未发现有效DLL");
-                                }
-                            }
-                            else
-                            {
-                                logBuilder.AppendLine($"[启动流程] 插件目录不存在");
-                            }
+                            targetDllPath = knownPluginPath;
+                            logBuilder.AppendLine($"[启动流程] 固定主插件已通过 SHA-256 校验: {targetDllPath}");
                         }
-                        catch (Exception ex)
+                        else
                         {
-                            logBuilder.AppendLine($"[启动流程] 扫描插件目录时发生异常: {ex.Message}");
+                            logBuilder.AppendLine("[启动流程] 主插件缺失或校验失败；拒绝扫描并注入其他 DLL");
                         }
                     }
                     

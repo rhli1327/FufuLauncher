@@ -24,29 +24,10 @@ public partial class AccountManager
 
         try
         {
-            var json = await File.ReadAllTextAsync(path);
-            using var doc = JsonDocument.Parse(json);
-            var root = doc.RootElement;
-            if (root.ValueKind != JsonValueKind.Object)
-                return false;
+            var file = await ReadAccountCookieFileAsync(path);
+            if (file == null) return false;
 
-            if (TryGetPropertyIgnoreCase(root, "cookies", out var cookiesProp)
-                && cookiesProp.ValueKind == JsonValueKind.Object)
-                return false;
-
-            Dictionary<string, string> cookies;
-            if (TryGetPropertyIgnoreCase(root, "values", out var valuesProp)
-                && valuesProp.ValueKind == JsonValueKind.Object)
-            {
-                cookies = ReadStringDictionary(valuesProp);
-            }
-            else
-            {
-                cookies = JsonSerializer.Deserialize<Dictionary<string, string>>(json)
-                          ?? new Dictionary<string, string>();
-            }
-
-            await WriteCookieFileAsync(path, cookies);
+            await WriteAccountCookieFileAsync(path, file);
             System.Diagnostics.Debug.WriteLine(
                 $"[AccountManager] 已迁移遗留 Cookie 文件: {account.CookieFilePath}");
             return true;

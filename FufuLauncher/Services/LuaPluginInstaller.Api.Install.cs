@@ -105,7 +105,7 @@ public partial class LuaPluginInstaller
 
                 try
                 {
-                    ZipFile.ExtractToDirectory(zipPath, pluginDir, true);
+                    DownloadSecurity.ExtractZipSafely(zipPath, pluginDir, true);
                     LogMessage("解压完成");
                 }
                 catch (Exception ex)
@@ -163,7 +163,7 @@ public partial class LuaPluginInstaller
 
             try
             {
-                ZipFile.ExtractToDirectory(safeZipPath, safeDestDir, true);
+                DownloadSecurity.ExtractZipSafely(safeZipPath, safeDestDir, true);
                 LogMessage("解压完成");
             }
             catch (Exception ex)

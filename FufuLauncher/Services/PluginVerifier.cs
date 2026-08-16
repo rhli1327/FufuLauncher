@@ -40,8 +40,7 @@ public static class PluginVerifier
     {
         if (string.IsNullOrWhiteSpace(expectedHash))
         {
-            Debug.WriteLine($"[PluginVerifier] No expected hash provided for {description}, skipping verification");
-            return;
+            throw new HashMismatchException($"Missing SHA-256 for {description}.");
         }
 
         string actualHash;
@@ -75,8 +74,7 @@ public static class PluginVerifier
     {
         if (string.IsNullOrWhiteSpace(expectedHash))
         {
-            Debug.WriteLine("[PluginVerifier] No expected Lua hash provided, skipping verification");
-            return;
+            throw new HashMismatchException("Missing SHA-256 for Lua script.");
         }
 
         var actualHash = ComputeSha256(luaScript);
@@ -148,18 +146,9 @@ public static class PluginVerifier
         foreach (System.Text.RegularExpressions.Match match in httpMatches)
         {
             var url = match.Value;
-            if (url.StartsWith("http://localhost") ||
-                url.StartsWith("https://localhost") ||
-                url.Contains("fu1.fun") ||
-                url.Contains("philia093.cyou") ||
-                url.Contains("github.com/codecubist"))
-            {
-                continue;
-            }
-            
             if (url.StartsWith("http://") && !url.StartsWith("http://localhost"))
             {
-                Debug.WriteLine($"[PluginVerifier] WARNING: Non-HTTPS URL detected: {url}");
+                return SecurityValidationResult.Fail($"Non-HTTPS URL is not allowed: {url}");
             }
         }
         

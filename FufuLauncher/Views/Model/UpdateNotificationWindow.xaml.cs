@@ -93,7 +93,7 @@ public sealed partial class UpdateNotificationWindow : WindowEx
                 return;
             }
 
-            bool useThirdPartyCdn = true;
+            bool useThirdPartyCdn = false;
             try
             {
                 var localSettingsService = App.GetService<ILocalSettingsService>();

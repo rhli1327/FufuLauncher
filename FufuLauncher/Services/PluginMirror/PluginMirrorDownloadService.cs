@@ -27,7 +27,7 @@ public class PluginMirrorDownloadService
     public async Task<bool> IsEnabledAsync()
     {
         var json = await _localSettingsService.ReadSettingAsync(SettingKey);
-        return json == null || Convert.ToBoolean(json);
+        return json != null && Convert.ToBoolean(json);
     }
     
     public async Task<bool> TryDownloadViaMirrorAsync(PluginStoreService storeService,

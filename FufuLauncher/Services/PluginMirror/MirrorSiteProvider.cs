@@ -51,8 +51,7 @@ public class MirrorSiteProvider
     {
         var handler = new HttpClientHandler
         {
-            AllowAutoRedirect = autoRedirect,
-            ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true
+            AllowAutoRedirect = autoRedirect
         };
         var client = new HttpClient(handler)
         {

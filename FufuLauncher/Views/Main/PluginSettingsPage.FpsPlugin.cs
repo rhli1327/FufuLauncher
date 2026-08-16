@@ -137,7 +137,7 @@ private async Task EnforceFpsPluginDisableAsync()
             if (Directory.Exists(extractPath)) Directory.Delete(extractPath, true);
             Directory.CreateDirectory(extractPath);
             
-            await Task.Run(() => ZipFile.ExtractToDirectory(zipFilePath, extractPath));
+            await Task.Run(() => Helpers.DownloadSecurity.ExtractZipSafely(zipFilePath, extractPath));
             
             var subDirs = Directory.GetDirectories(extractPath);
             string sourceDirToMove = (subDirs.Length == 1 && Directory.GetFiles(extractPath).Length == 0) ? subDirs[0] : extractPath;

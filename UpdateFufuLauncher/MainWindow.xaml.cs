@@ -48,11 +48,9 @@ namespace Updater
         }
         
         private const string AppVersion = "1.6.0.3";
+        private const string HardenedReleaseRepository = "rhli1327/FufuLauncher";
 
-        private static readonly HttpClient _httpClient = new(new HttpClientHandler
-        {
-            ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true
-        }) 
+        private static readonly HttpClient _httpClient = new(new HttpClientHandler())
         { 
             Timeout = TimeSpan.FromSeconds(15) 
         };
@@ -69,7 +67,7 @@ namespace Updater
         private long _lastReceivedBytes = 0;
         private int _stuckTicks = 0;
         private bool _isDownloading = false;
-        private bool _useThirdPartyCDN = true;
+        private bool _useThirdPartyCDN = false;
         private bool _isPreviewMode = false;
         private bool _isRollbackMode = false;
         private string _installedVersion = AppVersion;
@@ -271,7 +269,7 @@ namespace Updater
                     return;
                 }
 
-                await FetchLatestOfficialReleaseAsync();
+                await FetchLatestHardenedReleaseAsync();
                 await PrepareDownloadAsync("请选择下载线路", "直连GitHub下载...");
             }
             catch (Exception ex)
@@ -290,12 +288,22 @@ namespace Updater
             SubtitleText.Text = "检查完毕";
         }
 
-        private async Task FetchLatestOfficialReleaseAsync()
+        private async Task FetchLatestHardenedReleaseAsync()
         {
-            SubtitleText.Text = "获取GitHub最新Release...";
-            string githubApiUrl = "https://api.github.com/repos/FufuLauncher/FufuLauncher/releases/latest";
+            SubtitleText.Text = "获取修改版 GitHub Release...";
+            string githubApiUrl = $"https://api.github.com/repos/{HardenedReleaseRepository}/releases/latest";
             var ghResponse = await _httpClient.GetStringAsync(githubApiUrl);
             JObject ghJson = JObject.Parse(ghResponse);
+
+            var tagName = ghJson["tag_name"]?.ToString()?.Trim().TrimStart('v', 'V') ?? string.Empty;
+            if (!TryParseVersion(tagName, out var hardenedVersion) ||
+                !TryParseVersion(_officialVersion, out var officialVersion) ||
+                hardenedVersion < officialVersion)
+            {
+                throw new InvalidOperationException(
+                    $"官方版本 {_officialVersion} 已发布，但修改版仓库尚未发布对应或更高版本。请先同步并审核上游改动。");
+            }
+
             JToken targetAsset = ghJson["assets"]?.FirstOrDefault(a => a["name"]?.ToString().EndsWith(".exe", StringComparison.OrdinalIgnoreCase) == true);
 
             if (targetAsset == null)
@@ -360,7 +368,7 @@ namespace Updater
                 return;
             }
 
-            await FetchLatestOfficialReleaseAsync();
+            await FetchLatestHardenedReleaseAsync();
             await PrepareDownloadAsync("请选择下载线路（回退正式版）", "直连GitHub下载正式版...");
         }
 
@@ -409,7 +417,7 @@ namespace Updater
             }
 
             SubtitleText.Text = "获取GitHub标签列表...";
-            string tagsUrl = "https://api.github.com/repos/FufuLauncher/FufuLauncher/tags?per_page=100";
+            string tagsUrl = $"https://api.github.com/repos/{HardenedReleaseRepository}/tags?per_page=100";
             var tagsResponse = await _httpClient.GetStringAsync(tagsUrl);
             JArray tags = JArray.Parse(tagsResponse);
 
@@ -426,7 +434,7 @@ namespace Updater
 
             SubtitleText.Text = "获取预览版Release信息...";
             string tagName = matchedTag["name"]!.ToString();
-            string releaseUrl = $"https://api.github.com/repos/FufuLauncher/FufuLauncher/releases/tags/{Uri.EscapeDataString(tagName)}";
+            string releaseUrl = $"https://api.github.com/repos/{HardenedReleaseRepository}/releases/tags/{Uri.EscapeDataString(tagName)}";
             var releaseResponse = await _httpClient.GetStringAsync(releaseUrl);
             JObject releaseJson = JObject.Parse(releaseResponse);
 
@@ -614,10 +622,7 @@ namespace Updater
                 ParallelDownload = true,
                 MaxTryAgainOnFailure = 9999,
                 ClearPackageOnCompletionWithFailure = false,
-                CustomHttpClientFactory = () => new HttpClient(new HttpClientHandler
-                {
-                    ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true
-                }) 
+                CustomHttpClientFactory = () => new HttpClient(new HttpClientHandler())
                 { 
                     Timeout = TimeSpan.FromSeconds(30) 
                 }

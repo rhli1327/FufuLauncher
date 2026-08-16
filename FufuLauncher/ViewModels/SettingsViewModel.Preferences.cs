@@ -198,7 +198,7 @@ public partial class SettingsViewModel
         HasScreenshotSavePath = !string.IsNullOrEmpty(ScreenshotSavePath);
 
         var useThirdPartyCDNJson = await _localSettingsService.ReadSettingAsync("IsUseThirdPartyCDNEnabled");
-        IsUseThirdPartyCDNEnabled = useThirdPartyCDNJson == null || Convert.ToBoolean(useThirdPartyCDNJson);
+        IsUseThirdPartyCDNEnabled = useThirdPartyCDNJson != null && Convert.ToBoolean(useThirdPartyCDNJson);
 
         var previewAnnouncementJson = await _localSettingsService.ReadSettingAsync("IsPreviewUpdateAnnouncementEnabled");
         IsPreviewUpdateAnnouncementEnabled = previewAnnouncementJson == null || Convert.ToBoolean(previewAnnouncementJson);
@@ -214,7 +214,7 @@ public partial class SettingsViewModel
         }
 
         var pluginMirrorJson = await _localSettingsService.ReadSettingAsync(PluginMirrorDownloadService.SettingKey);
-        IsPluginMirrorAccelerationEnabled = pluginMirrorJson == null || Convert.ToBoolean(pluginMirrorJson);
+        IsPluginMirrorAccelerationEnabled = pluginMirrorJson != null && Convert.ToBoolean(pluginMirrorJson);
 
         var customExeJson = await _localSettingsService.ReadSettingAsync(GameExeManager.CustomExeNameKey);
         CustomGameExeName = customExeJson?.ToString() ?? string.Empty;

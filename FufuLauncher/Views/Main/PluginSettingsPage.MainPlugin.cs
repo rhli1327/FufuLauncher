@@ -106,23 +106,20 @@ public sealed partial class PluginSettingsPage
 
     private async void OnDownloadPluginClick(object sender, RoutedEventArgs e)
     {
-        string urlLatest = "http://kr2-proxy.gitwarp.top:9980/https://github.com/CodeCubist/FufuLauncher--Plugins/blob/main/FuFuPlugin.zip";
+        string urlLatest = Constants.ApiEndpoints.PluginRawUrl;
         await DownloadAndInstallPluginAsync(urlLatest);
     }
 
 
-    private async Task DownloadAndInstallPluginAsync(string proxyUrl)
+    private async Task DownloadAndInstallPluginAsync(string downloadUrl)
     {
-        var fileName = proxyUrl.Split('/').Last();
+        var secureUri = Helpers.DownloadSecurity.RequireHttpsUri(downloadUrl, "插件下载");
+        var fileName = secureUri.Segments.Last();
         if (fileName.Contains("?")) fileName = fileName.Split('?')[0];
         if (string.IsNullOrEmpty(fileName) || !fileName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)) 
             fileName = "FuFuPlugin.zip";
         
-        var rawGithubUrl = proxyUrl.Replace("http://kr2-proxy.gitwarp.top:9980/", "");
-        if (rawGithubUrl.Contains("github.com") && rawGithubUrl.Contains("/blob/") && !rawGithubUrl.Contains("?raw=true"))
-        {
-            rawGithubUrl += "?raw=true";
-        }
+        var rawGithubUrl = secureUri.ToString();
         
         var tempPath = Path.Combine(Path.GetTempPath(), fileName);
         var extractPath = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(fileName) + "_Extract_" + Guid.NewGuid());
@@ -156,7 +153,7 @@ public sealed partial class PluginSettingsPage
                 
                 try 
                 {
-                    response = await client.GetAsync(proxyUrl, HttpCompletionOption.ResponseHeadersRead);
+                    response = await client.GetAsync(secureUri, HttpCompletionOption.ResponseHeadersRead);
                     if (!response.IsSuccessStatusCode) throw new Exception("主线路失败");
                 }
                 catch
@@ -191,6 +188,8 @@ public sealed partial class PluginSettingsPage
                     }
                 }
             }
+
+            Services.PluginVerifier.VerifyFileHash(tempPath, Constants.ApiEndpoints.PluginSha256, "FuFuPlugin bundle");
             
             statusText.Text = "Plugin_Download_Extracting".GetLocalized();
             progressBar.IsIndeterminate = true;
@@ -198,7 +197,7 @@ public sealed partial class PluginSettingsPage
             if (Directory.Exists(extractPath)) Directory.Delete(extractPath, true);
             Directory.CreateDirectory(extractPath);
 
-            await Task.Run(() => ZipFile.ExtractToDirectory(tempPath, extractPath));
+            await Task.Run(() => Helpers.DownloadSecurity.ExtractZipSafely(tempPath, extractPath));
             
             var targetFolderName = "FuFuPlugin"; 
             var finalDestDir = Path.Combine(pluginsDir, targetFolderName);

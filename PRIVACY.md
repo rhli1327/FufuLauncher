@@ -20,23 +20,16 @@
 - **游戏与使用数据：** 包括您的游戏本地设置、抽卡记录导出数据、游戏时长统计、应用内个性化配置（如主题、快捷键等）。
 - **本地文件与路径：** 游戏安装目录、截图文件夹及其他相关的本地系统路径信息。
 
-### 1.2 自动收集的错误日志 (Sentry)
+### 1.2 本地错误日志
 
-为了持续改善软件的稳定性、快速定位并修复程序缺陷（Bug），本软件集成了 **Sentry** 作为崩溃和错误收集服务。
-
-- **收集触发条件：** 仅当本软件发生未处理的异常、崩溃或严重错误时触发。
-- **收集的数据范围：**
-  - 设备的非个人身份信息（如操作系统版本、设备型号、系统架构等）。
-  - 软件运行状态（如软件版本号、运行时环境）。
-  - 崩溃发生时的堆栈跟踪（Stack Trace）及上下文代码信息。
-- **使用目的：** 收集的日志信息仅用于技术团队进行故障排查和代码优化，**绝对不包含**您的账号凭证、游戏内敏感数据或其他可识别您个人身份的信息。
+本修改版不集成远程崩溃收集服务。发生错误时，诊断信息仅写入设备本地的日志文件，由您自行决定是否提供给维护者。
 
 ***
 
 ## 2. 数据上传的特别声明（核心承诺）
 
 我们在此向所有用户做出庄重且明确的承诺：
-**除上述通过 Sentry 收集必要的、匿名的崩溃诊断日志外，FufuLauncher 没有任何其他主动将用户数据上传、发送或同步至我们的服务器或任何第三方服务器的行为。**
+**FufuLauncher 修改版不会主动将本地崩溃日志、账号凭证或游戏数据上传、发送或同步至维护者或第三方服务器。**
 您的隐私数据、游戏进度和账号安全完全由您的本地设备环境保障。
 
 ***
@@ -45,7 +38,7 @@
 
 由于我们并未在云端收集和存储您的任何个人业务数据，因此我们**不存在**向任何第三方出售、交易或共享您个人信息的情况。
 
-- **第三方服务商：** 仅有提供错误追踪服务的 Sentry 会接收到匿名的崩溃日志数据，且其数据处理严格遵循 Sentry 的隐私合规标准。
+- **第三方服务商：** 本修改版未接入远程错误追踪服务。您主动使用的米哈游、GitHub 等在线功能仍会直接连接其对应服务。
 - **法律要求：** 即使在面临法定机构的数据调取要求时，由于本软件的本地化特性，我们也无法提供您的任何本地存储数据。
 
 ***
@@ -112,23 +105,16 @@ The following data generated during your use of the Software is **only processed
 - **Game and Usage Data:** Including your local game settings, gacha record export data, playtime statistics, and in-app personalized configurations (such as themes, shortcuts, etc.).
 - **Local Files and Paths:** Game installation directories, screenshot folders, and other related local system path information.
 
-### 1.2 Automatically Collected Error Logs (Sentry)
+### 1.2 Local Error Logs
 
-To continuously improve the stability of the Software and quickly locate and fix program defects (Bugs), the Software integrates **Sentry** as a crash and error collection service.
-
-- **Collection Triggers:** Triggered only when the Software encounters unhandled exceptions, crashes, or critical errors.
-- **Scope of Collected Data:**
-  - Non-personally identifiable device information (e.g., operating system version, device model, system architecture, etc.).
-  - Software runtime status (e.g., software version number, runtime environment).
-  - Stack traces and contextual code information when a crash occurs.
-- **Purpose of Use:** The collected log information is solely used by the technical team for troubleshooting and code optimization, and **absolutely does not contain** your account credentials, sensitive in-game data, or other information that could personally identify you.
+This modified build does not integrate a remote crash-reporting service. Diagnostic information is written only to a local log file, and you decide whether to share it with a maintainer.
 
 ***
 
 ## 2. Special Declaration on Data Upload (Core Commitment)
 
 We make a solemn and clear commitment to all users here:
-**Except for the necessary, anonymous crash diagnostic logs collected through Sentry as mentioned above, FufuLauncher does not engage in any other active uploading, sending, or syncing of user data to our servers or any third-party servers.**
+**The modified FufuLauncher build does not actively upload, send, or synchronize local crash logs, account credentials, or game data to the maintainer or any third party.**
 Your privacy data, game progress, and account security are fully guaranteed by your local device environment.
 
 ***
@@ -137,7 +123,7 @@ Your privacy data, game progress, and account security are fully guaranteed by y
 
 Since we do not collect or store any of your personal business data in the cloud, we **do not** sell, trade, or share your personal information with any third parties.
 
-- **Third-Party Service Providers:** Only Sentry, which provides error tracking services, will receive anonymous crash log data, and its data processing strictly complies with Sentry's privacy compliance standards.
+- **Third-Party Service Providers:** This modified build does not use a remote error-tracking service. Online features that you choose to use still connect directly to their corresponding services, such as miHoYo and GitHub.
 - **Legal Requirements:** Even when facing data retrieval requests from legal authorities, due to the localized nature of the Software, we are unable to provide any of your locally stored data.
 
 ***
@@ -179,4 +165,3 @@ With the iteration of project features, updates to laws and regulations, or impr
 If you have any questions, comments, or suggestions regarding this privacy policy or our data processing practices, or if you need to report a security vulnerability, please contact us through the following channels:
 
 - **Project Open Source Homepage:** Welcome to submit your feedback and questions via the GitHub Issues of this project, and the open-source community maintainers will answer them.
-

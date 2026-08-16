@@ -9,7 +9,6 @@ using Microsoft.UI.Xaml;
 using Microsoft.Windows.AppLifecycle;
 using System.Text.Json;
 using FufuLauncher.Helpers;
-using Sentry;
 
 namespace FufuLauncher
 {
@@ -26,23 +25,6 @@ namespace FufuLauncher
                 Environment.Exit(Services.Backpack.GameLaunchService.RunElevatedInjection(args[1]));
                 return;
             }
-
-            SentrySdk.Init(options => 
-            { 
-                options.Dsn = "https://9c8e89f029c240e3dba227979a26759a@o4511497397272576.ingest.de.sentry.io/4511497409265745"; 
-                options.Debug = false; 
-                options.AutoSessionTracking = true; 
-                options.TracesSampleRate = 1.0; 
-                options.ProfilesSampleRate = 1.0; 
-                
-                var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
-                options.Release = $"FufuLauncher@{version}";
-                options.Environment = "Production";
-
-                options.AddIntegration(new ProfilingIntegration( 
-                    TimeSpan.FromMilliseconds(500) 
-                )); 
-            });
 
             if (args.Length > 0 && string.Equals(args[0], "--elevated-inject", StringComparison.OrdinalIgnoreCase))
             {
@@ -93,7 +75,7 @@ private static void RunElevatedInjection(string[] args)
     var exitCode = 1;
     try
     {
-        if (args.Length < 2)
+        if (args.Length < 3)
         {
             return;
         }
@@ -107,8 +89,12 @@ private static void RunElevatedInjection(string[] args)
             ApplyPreset(presetId);
         }
 
-        var tempLauncher = new LauncherService(); 
-        var dllPath = tempLauncher.GetDefaultDllPath();
+        var dllPath = args[2];
+        if (!LauncherService.IsAllowedPluginDllPath(dllPath))
+        {
+            MessageBox(IntPtr.Zero, "主插件路径或 SHA-256 校验失败，已拒绝注入。", "安全校验失败", 0x10);
+            return;
+        }
         
         var commandLineArgs = args.Length > 4 ? args[4] : string.Empty; 
 

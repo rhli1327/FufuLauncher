@@ -71,15 +71,12 @@ public class SystemDiagnosticsService
             {
                 try
                 {
-                    using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(3) };
-                    regionCode = await client.GetStringAsync("http://ip-api.com/line/?fields=countryCode");
-                    regionCode = regionCode.Trim();
-                    info.NetworkRegion = regionCode == "CN" ? "Diagnostics_Domestic".GetLocalized() : "Diagnostics_Overseas".GetLocalized();
+                    regionCode = System.Globalization.RegionInfo.CurrentRegion.TwoLetterISORegionName;
+                    info.NetworkRegion = regionCode == "CN" ? "Diagnostics_DomesticSystem".GetLocalized() : "Diagnostics_OverseasSystem".GetLocalized();
                 }
                 catch
                 {
-                    regionCode = System.Globalization.RegionInfo.CurrentRegion.TwoLetterISORegionName;
-                    info.NetworkRegion = regionCode == "CN" ? "Diagnostics_DomesticSystem".GetLocalized() : "Diagnostics_OverseasSystem".GetLocalized();
+                    info.NetworkRegion = regionCode;
                 }
             }
             else

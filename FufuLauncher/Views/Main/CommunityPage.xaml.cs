@@ -16,6 +16,7 @@ namespace FufuLauncher.Views;
 public sealed partial class CommunityPage : Page
 {
     private const string CommunityNoticeKey = "HasShownCommunityNotice";
+    private const string TrustedCommunityHost = "bbs.xcnahida.cn";
 
     public CommunityViewModel ViewModel { get; }
 
@@ -127,6 +128,12 @@ public sealed partial class CommunityPage : Page
     {
         try
         {
+            if (!IsTrustedCommunityUri(e.Source))
+            {
+                System.Diagnostics.Debug.WriteLine($"Blocked community bridge message from: {e.Source}");
+                return;
+            }
+
             string message = e.TryGetWebMessageAsString();
             if (string.IsNullOrEmpty(message)) return;
 
@@ -220,6 +227,11 @@ public sealed partial class CommunityPage : Page
     {
         LoadingBar.Visibility = Visibility.Visible;
     }
+
+    private static bool IsTrustedCommunityUri(string? value) =>
+        Uri.TryCreate(value, UriKind.Absolute, out var uri) &&
+        uri.Scheme == Uri.UriSchemeHttps &&
+        uri.Host.Equals(TrustedCommunityHost, StringComparison.OrdinalIgnoreCase);
 
     private void CommunityWebView_NavigationCompleted(WebView2 sender, CoreWebView2NavigationCompletedEventArgs args)
     {

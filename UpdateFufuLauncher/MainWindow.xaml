@@ -228,7 +228,7 @@
                 <ColumnDefinition Width="16"/>
                 <ColumnDefinition Width="2*"/>
             </Grid.ColumnDefinitions>
-            <Button Content="直连官方源" Click="DirectDownload_Click" HorizontalAlignment="Stretch" Style="{StaticResource SecondaryActionBtnStyle}"/>
+            <Button Content="直连修改版 GitHub" Click="DirectDownload_Click" HorizontalAlignment="Stretch" Style="{StaticResource SecondaryActionBtnStyle}"/>
             <Button Grid.Column="2" Content="使用选定节点下载" Click="MirrorDownload_Click" HorizontalAlignment="Stretch" Style="{StaticResource PrimaryActionBtnStyle}"/>
         </Grid>
 

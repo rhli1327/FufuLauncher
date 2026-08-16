@@ -5,6 +5,8 @@ Licensed under the MIT License.
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Diagnostics;
+using System.Security.Cryptography;
+using FufuLauncher.Constants;
 using FufuLauncher.Helpers;
 
 namespace FufuLauncher.Services
@@ -49,6 +51,13 @@ namespace FufuLauncher.Services
                     return;
                 }
 
+                if (!VerifyLauncherHashIfPresent(absoluteDllPath))
+                {
+                    Debug.WriteLine($"拒绝加载哈希不匹配的核心文件: {absoluteDllPath}");
+                    IsLauncherDllLoaded = false;
+                    return;
+                }
+
                 IntPtr handle = LoadLibrary(absoluteDllPath);
                 if (handle == IntPtr.Zero)
                 {
@@ -64,6 +73,63 @@ namespace FufuLauncher.Services
             {
                 Debug.WriteLine($"初始化 LauncherService 时发生异常: {ex.Message}");
                 IsLauncherDllLoaded = false;
+            }
+        }
+
+        private static bool VerifyLauncherHashIfPresent(string launcherPath)
+        {
+            try
+            {
+                var hashPath = Path.Combine(AppContext.BaseDirectory, "Assets", "Launcher", "hash.txt");
+                if (!File.Exists(hashPath)) return false;
+
+                var lines = File.ReadAllLines(hashPath);
+                if (lines.Length < 3 || string.IsNullOrWhiteSpace(lines[2]))
+                {
+                    Debug.WriteLine("Launcher.dll 哈希尚未写入清单；开发构建暂不执行核心 DLL 校验。");
+                    return true;
+                }
+
+                using var stream = File.OpenRead(launcherPath);
+                var actual = Convert.ToHexString(SHA512.HashData(stream)).ToLowerInvariant();
+                return actual.Equals(lines[2].Trim(), StringComparison.OrdinalIgnoreCase);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Launcher.dll 哈希校验失败: {ex.Message}");
+                return false;
+            }
+        }
+
+        public static bool IsAllowedPluginDllPath(string? dllPath, bool verifyHash = true)
+        {
+            if (string.IsNullOrWhiteSpace(dllPath)) return false;
+
+            try
+            {
+                var expectedPath = Path.GetFullPath(Path.Combine(
+                    AppContext.BaseDirectory, "Plugins", "FuFuPlugin", "FufuLauncher.UnlockerIsland.dll"));
+                var candidatePath = Path.GetFullPath(dllPath);
+                if (!candidatePath.Equals(expectedPath, StringComparison.OrdinalIgnoreCase) || !File.Exists(candidatePath))
+                    return false;
+
+                if (!verifyHash) return true;
+
+                var hashPath = Path.Combine(AppContext.BaseDirectory, "Assets", "Launcher", "hash.txt");
+                var hashLines = File.Exists(hashPath) ? File.ReadAllLines(hashPath) : [];
+                using var stream = File.OpenRead(candidatePath);
+                if (hashLines.Length >= 4 && !string.IsNullOrWhiteSpace(hashLines[3]))
+                {
+                    var actualSha512 = Convert.ToHexString(SHA512.HashData(stream)).ToLowerInvariant();
+                    return actualSha512.Equals(hashLines[3].Trim(), StringComparison.OrdinalIgnoreCase);
+                }
+
+                var actualSha256 = Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant();
+                return actualSha256.Equals(ApiEndpoints.PluginDllSha256, StringComparison.OrdinalIgnoreCase);
+            }
+            catch
+            {
+                return false;
             }
         }
 

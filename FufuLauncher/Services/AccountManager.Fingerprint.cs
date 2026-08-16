@@ -19,16 +19,7 @@ public partial class AccountManager
             if (!File.Exists(path))
                 return null;
 
-            var json = await File.ReadAllTextAsync(path);
-            using var doc = JsonDocument.Parse(json);
-            var root = doc.RootElement;
-            if (root.ValueKind == JsonValueKind.Object
-                && TryGetPropertyIgnoreCase(root, "fingerprint", out var fpProp)
-                && fpProp.ValueKind == JsonValueKind.Object)
-            {
-                return fpProp.Deserialize<DeviceFpRequest>();
-            }
-            return null;
+            return (await ReadAccountCookieFileAsync(path))?.Fingerprint;
         }
         catch (Exception ex)
         {
@@ -62,16 +53,7 @@ public partial class AccountManager
 
         try
         {
-            var json = File.ReadAllText(path);
-            using var doc = JsonDocument.Parse(json);
-            var root = doc.RootElement;
-            if (root.ValueKind == JsonValueKind.Object
-                && TryGetPropertyIgnoreCase(root, "fingerprint", out var fpProp)
-                && fpProp.ValueKind == JsonValueKind.Object)
-            {
-                return fpProp.Deserialize<DeviceFpRequest>();
-            }
-            return null;
+            return ReadAccountCookieFile(path)?.Fingerprint;
         }
         catch (Exception ex)
         {
@@ -107,8 +89,7 @@ public partial class AccountManager
             }
 
             var file = new AccountCookieFile(cookies, fp);
-            var json = JsonSerializer.Serialize(file, new JsonSerializerOptions { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
-            await File.WriteAllTextAsync(path, json);
+            await WriteAccountCookieFileAsync(path, file);
         }
         finally { _lock.Release(); }
     }

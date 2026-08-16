@@ -3,6 +3,8 @@ Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
 using System.IO.Compression;
+using FufuLauncher.Constants;
+using FufuLauncher.Helpers;
 using Windows.System;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -50,25 +52,12 @@ public sealed partial class PluginPage
 
     private async void OnGetPluginsClick(object sender, RoutedEventArgs e)
     {
-        string urlLatest = "http://kr2-proxy.gitwarp.top:9980/https://github.com/CodeCubist/FufuLauncher--Plugins/blob/main/FuFuPlugin.zip";
-        string urlOld = "http://kr2-proxy.gitwarp.top:9980/https://github.com/CodeCubist/FufuLauncher--Plugins/blob/main/FuFuPlugin-old.zip";
-        string urlHotSwitch = "http://kr2-proxy.gitwarp.top:9980/https://github.com/CodeCubist/FufuLauncher--Plugins/blob/main/input_hot_switch.zip";
+        string urlLatest = ApiEndpoints.PluginRawUrl;
         
         var stackPanel = new StackPanel { Spacing = 10 };
         
         var rbLatest = new RadioButton { Content = "下载/更新插件(国际服通用)", IsChecked = true, GroupName = "PluginSelect", Tag = urlLatest };
         
-        var rbCustom = new RadioButton { Content = "自定义插件链接", GroupName = "PluginSelect", Tag = "Custom" };
-        var txtCustomUrl = new TextBox 
-        { 
-            PlaceholderText = "请输入下载直链", 
-            Visibility = Visibility.Collapsed,
-            Margin = new Thickness(28, 0, 0, 0)
-        };
-        
-        rbCustom.Checked += (_, _) => txtCustomUrl.Visibility = Visibility.Visible;
-        rbCustom.Unchecked += (_, _) => txtCustomUrl.Visibility = Visibility.Collapsed;
-
         var warningText = new TextBlock 
         { 
             Text = "注意：最新体验版插件已内置手柄热切换和已适配国际服，且功能全面和性能可观", 
@@ -81,12 +70,9 @@ public sealed partial class PluginPage
         stackPanel.Children.Add(new TextBlock { Text = "请选择要下载并安装的插件包：", Margin = new Thickness(0, 0, 0, 5) });
         stackPanel.Children.Add(rbLatest);
         stackPanel.Children.Add(warningText);
-        stackPanel.Children.Add(rbCustom);
-        stackPanel.Children.Add(txtCustomUrl);
-        
         stackPanel.Children.Add(new TextBlock 
         { 
-            Text = "默认使用代理加速，若失败将自动切换至GitHub直连", 
+            Text = "使用已固定提交和 SHA-256 的 GitHub HTTPS 插件包",
             FontSize = 12, 
             Opacity = 0.7,
             Margin = new Thickness(0, 10, 0, 0)
@@ -105,43 +91,19 @@ public sealed partial class PluginPage
         var result = await dialog.ShowAsync();
         if (result == ContentDialogResult.Primary)
         {
-            var selectedUrl = urlLatest;
-
-            if (rbCustom.IsChecked == true)
-            {
-                selectedUrl = txtCustomUrl.Text.Trim();
-                
-                if (string.IsNullOrEmpty(selectedUrl))
-                {
-                    var errDialog = new ContentDialog
-                    {
-                        Title = "输入错误",
-                        Content = "请输入有效的插件下载链接。",
-                        CloseButtonText = "确定",
-                        XamlRoot = XamlRoot
-                    };
-                    await errDialog.ShowAsync();
-                    return;
-                }
-            }
-
-            await DownloadAndInstallPluginAsync(selectedUrl);
+            await DownloadAndInstallPluginAsync(urlLatest);
         }
     }
     
-    private async Task DownloadAndInstallPluginAsync(string proxyUrl)
+    private async Task DownloadAndInstallPluginAsync(string downloadUrl)
     {
-        var fileName = proxyUrl.Split('/').Last();
+        var secureUri = DownloadSecurity.RequireHttpsUri(downloadUrl, "插件下载");
+        var fileName = secureUri.Segments.Last();
         if (fileName.Contains("?")) fileName = fileName.Split('?')[0];
         if (string.IsNullOrEmpty(fileName) || !fileName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)) 
             fileName = "CustomPlugin.zip";
         
-        var rawGithubUrl = proxyUrl.Replace("http://kr2-proxy.gitwarp.top:9980/", "");
-        
-        if (rawGithubUrl.Contains("github.com") && rawGithubUrl.Contains("/blob/") && !rawGithubUrl.Contains("?raw=true"))
-        {
-            rawGithubUrl += "?raw=true";
-        }
+        var rawGithubUrl = secureUri.ToString();
         
         var tempPath = Path.Combine(Path.GetTempPath(), fileName);
         var extractPath = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(fileName) + "_Extract_" + Guid.NewGuid());
@@ -179,26 +141,9 @@ public sealed partial class PluginPage
 
             using (var client = new HttpClient { Timeout = TimeSpan.FromMinutes(5) })
             {
-                HttpResponseMessage response;
-                bool usedFallback = false;
-                
-                try 
-                {
-                    response = await client.GetAsync(proxyUrl, HttpCompletionOption.ResponseHeadersRead);
-                    if (!response.IsSuccessStatusCode) throw new Exception("First attempt failed");
-                }
-                catch
-                {
-                    statusText.Text = "连接失败，正在尝试备用线路...";
-                    usedFallback = true;
-                    await Task.Delay(1000); 
-                    response = await client.GetAsync(rawGithubUrl, HttpCompletionOption.ResponseHeadersRead);
-                    
-                    if (!response.IsSuccessStatusCode)
-                    {
-                        throw new Exception($"下载失败 (HTTP {response.StatusCode})");
-                    }
-                }
+                HttpResponseMessage response = await client.GetAsync(secureUri, HttpCompletionOption.ResponseHeadersRead);
+                if (!response.IsSuccessStatusCode)
+                    throw new Exception($"下载失败 (HTTP {response.StatusCode})");
                 
                 using (response)
                 {
@@ -223,14 +168,16 @@ public sealed partial class PluginPage
                                     var percent = Math.Round((double)totalRead / totalBytes * 100, 0);
                                     
                                     progressBar.Value = percent;
-                                    var source = usedFallback ? "备用线路" : "主线路";
-                                    statusText.Text = $"{source}下载中... {percent}%";
+                                    statusText.Text = $"GitHub HTTPS 下载中... {percent}%";
                                 }
                             }
                         }
                     }
                 }
             }
+
+            if (string.Equals(secureUri.ToString(), ApiEndpoints.PluginRawUrl, StringComparison.OrdinalIgnoreCase))
+                Services.PluginVerifier.VerifyFileHash(tempPath, ApiEndpoints.PluginSha256, "FuFuPlugin bundle");
             
             statusText.Text = "正在解压...";
             progressBar.IsIndeterminate = true;
@@ -239,7 +186,7 @@ public sealed partial class PluginPage
             if (Directory.Exists(extractPath)) Directory.Delete(extractPath, true);
             Directory.CreateDirectory(extractPath);
 
-            await Task.Run(() => ZipFile.ExtractToDirectory(tempPath, extractPath));
+            await Task.Run(() => DownloadSecurity.ExtractZipSafely(tempPath, extractPath));
             
             try { File.Delete(tempPath); }
             catch
