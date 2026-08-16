@@ -25,13 +25,6 @@ jobs:
     - name: Setup MSBuild.exe
       uses: microsoft/setup-msbuild@v2
 
-    - name: Install Visual C++ Build Tools 14 (MSVC v143)
-      uses: microsoft/setup-msbuild@v2
-      with:
-        vs-version: 17.8
-        msbuild-architecture: x64
-        install-vc-build-tools: true
-
     - name: Build FufuLauncher
       run: dotnet build FufuLauncher\FufuLauncher.csproj -c ${{ matrix.configuration }} /p:Platform="x64"
 
