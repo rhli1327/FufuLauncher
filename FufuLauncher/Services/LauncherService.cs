@@ -121,7 +121,10 @@ namespace FufuLauncher.Services
                 if (hashLines.Length >= 4 && !string.IsNullOrWhiteSpace(hashLines[3]))
                 {
                     var actualSha512 = Convert.ToHexString(SHA512.HashData(stream)).ToLowerInvariant();
-                    return actualSha512.Equals(hashLines[3].Trim(), StringComparison.OrdinalIgnoreCase);
+                    if (actualSha512.Equals(hashLines[3].Trim(), StringComparison.OrdinalIgnoreCase))
+                        return true;
+
+                    stream.Position = 0;
                 }
 
                 var actualSha256 = Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant();
