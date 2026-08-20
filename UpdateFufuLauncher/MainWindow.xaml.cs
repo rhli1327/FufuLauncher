@@ -47,7 +47,7 @@ namespace Updater
             public int AnimationId;
         }
         
-        private const string AppVersion = "1.6.0.4";
+        private const string AppVersion = "1.6.0.5";
         private const string HardenedReleaseRepository = "rhli1327/FufuLauncher";
 
         private static readonly HttpClient _httpClient = new(new HttpClientHandler())

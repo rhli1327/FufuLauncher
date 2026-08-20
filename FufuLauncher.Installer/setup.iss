@@ -1,6 +1,6 @@
 #define AppName       "FufuLauncher Hardened"
-#define AppVersion    "1.6.0.4"
-#define AppVersionNum "1.6.0.4"
+#define AppVersion    "1.6.0.5"
+#define AppVersionNum "1.6.0.5"
 #define AppPublisher  "rhli1327"
 #define AppExe        "FufuLauncher.exe"
 #define AppId         "{{D4A6B1E8-6C72-4B1B-9A25-8E5D36AF71C4}"
