@@ -71,6 +71,10 @@ public partial class App
                 _ = Task.Run(CheckForAnnouncementAsync);
 
                 _ = Task.Run(RunStartupUpdateCheckAsync);
+
+                _ = Task.Run(CheckStoragePathsAsync);
+
+                ProcessStartupLaunchArguments();
             }
 
             Debug.WriteLine("App启动完成");

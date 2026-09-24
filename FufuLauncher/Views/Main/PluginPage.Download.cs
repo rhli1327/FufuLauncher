@@ -56,7 +56,7 @@ public sealed partial class PluginPage
         
         var stackPanel = new StackPanel { Spacing = 10 };
         
-        var rbLatest = new RadioButton { Content = "下载/更新插件(国际服通用)", IsChecked = true, GroupName = "PluginSelect", Tag = urlLatest };
+        var rbLatest = new RadioButton { Content = "下载/更新插件", IsChecked = true, GroupName = "PluginSelect", Tag = urlLatest };
         
         var warningText = new TextBlock 
         { 

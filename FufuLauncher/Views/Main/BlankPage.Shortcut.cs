@@ -58,13 +58,6 @@ public sealed partial class BlankPage
 
             var presetsDir = Path.Combine(AppContext.BaseDirectory, "Plugins", "Presets");
             var presets = new List<PresetModel>();
-            string activeId = null;
-
-            var stateFile = Path.Combine(presetsDir, "active_state.json");
-            if (File.Exists(stateFile))
-            {
-                try { activeId = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(stateFile))?["ActiveId"]; } catch { }
-            }
 
             if (Directory.Exists(presetsDir))
             {
@@ -88,11 +81,6 @@ public sealed partial class BlankPage
                 Width = 300,
                 Margin = new Thickness(0, 10, 0, 0)
             };
-
-            if (activeId != null)
-            {
-                presetComboBox.SelectedItem = presets.FirstOrDefault(p => p.Id == activeId);
-            }
 
             var customParamsObj = await localSettings.ReadSettingAsync("CustomLaunchParameters");
             var customLaunchParams = customParamsObj as string;
@@ -125,7 +113,7 @@ public sealed partial class BlankPage
             string presetArg = "";
             if (presetComboBox.SelectedItem is PresetModel selectedPreset)
             {
-                presetArg = $" --preset \"{selectedPreset.Id}\"";
+                presetArg = $" --preset {GameLauncherService.QuoteArgument(selectedPreset.Id, forceQuotes: true)}";
             }
 
             var pluginPath = Path.Combine(
@@ -136,9 +124,9 @@ public sealed partial class BlankPage
                 return;
             }
 
-            var escapedCustomParams = (customLaunchParams ?? string.Empty).Replace("\"", "\\\"");
-            var argsOnly = $"--elevated-inject \"{finalExePath}\" \"{pluginPath}\" 0 \"{escapedCustomParams}\"{presetArg}";
-            var fullCommandLine = $"\"{appPath}\" {argsOnly}";
+            var customParamsArg = string.IsNullOrWhiteSpace(customLaunchParams) ? "" : " " + customLaunchParams;
+            var argsOnly = $"--elevated-inject {GameLauncherService.QuoteArgument(finalExePath)}{presetArg} --{customParamsArg}";
+            var fullCommandLine = $"{GameLauncherService.QuoteArgument(appPath ?? string.Empty)} {argsOnly}";
 
             if (choiceResult == ContentDialogResult.Primary)
             {

@@ -45,8 +45,8 @@ jobs:
     - name: Checkout FufuLauncher.UnlockerIsland
       uses: actions/checkout@v4
       with:
-        repository: rhli1327/FufuLauncher.UnlockerIsland
-        ref: ba653e07cce0637d25f96eeb353c35d14638ff00
+        repository: FufuLauncher/FufuLauncher.UnlockerIsland
+        ref: 8b817311ad526eb87ece5f511b8a25c579215e88
         path: FufuLauncher.UnlockerIsland_Repo
 
     - name: Build pinned launcher and plugin sources

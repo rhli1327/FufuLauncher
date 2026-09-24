@@ -263,6 +263,7 @@
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
@@ -301,7 +302,7 @@
                                 </Grid>
                             </Button>
 
-                            <Button Grid.Row="1" Grid.Column="0" Style="{StaticResource ToolCardButtonStyle}" Click="OnOpenDailyNoteClick">
+                            <Button Grid.Row="0" Grid.Column="2" Style="{StaticResource ToolCardButtonStyle}" Click="OnOpenDailyNoteClick">
                                 <Grid ColumnSpacing="14">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="48" />
@@ -317,7 +318,7 @@
                                 </Grid>
                             </Button>
 
-                            <Button Grid.Row="1" Grid.Column="1" Style="{StaticResource ToolCardButtonStyle}" Click="BBSButton_Click">
+                            <Button Grid.Row="1" Grid.Column="0" Style="{StaticResource ToolCardButtonStyle}" Click="BBSButton_Click">
                                 <Grid ColumnSpacing="14">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="48" />

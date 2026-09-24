@@ -30,9 +30,9 @@
 
         <PublishReadyToRun>true</PublishReadyToRun>
 
-        <Version>1.6.0.5</Version>
-        <AssemblyVersion>1.6.0.5</AssemblyVersion>
-        <FileVersion>1.6.0.5</FileVersion>
+        <Version>1.7.0.0</Version>
+        <AssemblyVersion>1.7.0.0</AssemblyVersion>
+        <FileVersion>1.7.0.0</FileVersion>
         <Copyright>Copyright © FufuLauncher Development Team</Copyright>
     </PropertyGroup>
 
@@ -76,6 +76,10 @@
         <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
         <PackageReference Include="System.Management" Version="8.0.0" />
         <PackageReference Include="WinUIEx" Version="2.9.1" />
+        <PackageReference Include="Yae.Lib" Version="5.4.5">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
         <PackageReference Include="YamlDotNet" Version="18.1.0" />
         <PackageReference Include="ZstdSharp.Port" Version="0.8.8" />
     </ItemGroup>
@@ -98,6 +102,7 @@
         <Content Include="Strings\id-ID\Resources.resw" />
         <Content Include="Strings\pt-BR\Resources.resw" />
         <Content Include="Strings\es-MX\Resources.resw" />
+        <Content Include="Strings\hi-IN\Resources.resw" />
         <Content Remove="Plugins\Avatar\**" />
     </ItemGroup>
 
@@ -121,9 +126,6 @@
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
         <Content Include="Assets\Flags\**\*">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </Content>
-        <Content Include="Assets\Backpack\**\*">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
         <Content Include="Assets\mirrors.json">
@@ -166,5 +168,12 @@
 
         <RemoveDir Directories="@(RuntimeDirsToDelete)" />
         <Message Text="已清理runtimes文件夹" Importance="high" />
+    </Target>
+
+    <Target Name="CopyYaeAchievementLib" AfterTargets="Build;Publish" Condition="Exists('$(OutDir)runtimes\win-x64\native\YaeAchievementLib.dll')">
+        <Copy SourceFiles="$(OutDir)runtimes\win-x64\native\YaeAchievementLib.dll"
+              DestinationFiles="$(OutDir)YaeAchievementLib.dll"
+              SkipUnchangedFiles="true" />
+        <Message Text="已复制 YaeAchievementLib.dll 到输出根目录" Importance="high" />
     </Target>
 </Project>
