@@ -6,13 +6,14 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <UseWPF>true</UseWPF>
-        <Version>1.7.0.1</Version>
-        <AssemblyVersion>1.7.0.1</AssemblyVersion>
-        <FileVersion>1.7.0.1</FileVersion>
+        <Version>1.7.0.0</Version>
+        <AssemblyVersion>1.7.0.0</AssemblyVersion>
+        <FileVersion>1.7.0.0</FileVersion>
         <Copyright>Copyright © FufuLauncher Development Team</Copyright>
     </PropertyGroup>
 
     <ItemGroup>
+        <Compile Include="..\Shared\ReleaseUpdateClient.cs" Link="ReleaseUpdateClient.cs" />
         <PackageReference Include="Downloader" Version="5.9.0" />
         <PackageReference Include="ModernWpfUI" Version="0.9.7-preview.2" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.5-beta1" />

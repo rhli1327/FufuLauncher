@@ -157,6 +157,19 @@ jobs:
         Set-Content -Path $hashFile -Value @($line1, $line2, $line3, $line4)
         Write-Host "Updated hash.txt with final launcher and plugin hashes"
 
+    - name: Generate release build identity
+      shell: pwsh
+      run: ./scripts/Write-ReleaseBuild.ps1 -OutputDirectory "${{ env.OUTPUT_DIR }}" -BuildId "${{ github.run_id }}-${{ github.run_attempt }}" -SourceCommit "${{ github.sha }}" -Channel stable
+
+    - name: Verify build-based update checks
+      run: dotnet run --project tests/ReleaseUpdateRegression/ReleaseUpdateRegression.csproj -c Release
+
+    - name: Upload release build identity
+      uses: actions/upload-artifact@v4
+      with:
+        name: Release-Build
+        path: ${{ env.OUTPUT_DIR }}/release-build.json
+
     - name: Verify elevated launch plugin resolution and integrity
       run: dotnet run --project tests/LauncherRegression/LauncherRegression.csproj -c Release -- --packaged "${{ env.OUTPUT_DIR }}"
 

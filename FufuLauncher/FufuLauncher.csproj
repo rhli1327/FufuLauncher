@@ -30,14 +30,15 @@
 
         <PublishReadyToRun>true</PublishReadyToRun>
 
-        <Version>1.7.0.1</Version>
-        <AssemblyVersion>1.7.0.1</AssemblyVersion>
-        <FileVersion>1.7.0.1</FileVersion>
+        <Version>1.7.0.0</Version>
+        <AssemblyVersion>1.7.0.0</AssemblyVersion>
+        <FileVersion>1.7.0.0</FileVersion>
         <Copyright>Copyright © FufuLauncher Development Team</Copyright>
     </PropertyGroup>
 
     <ItemGroup>
         <FrameworkReference Include="Microsoft.WindowsDesktop.App.WindowsForms" />
+        <Compile Include="..\Shared\ReleaseUpdateClient.cs" Link="Updates\ReleaseUpdateClient.cs" />
     </ItemGroup>
 
     <ItemGroup>

@@ -12,7 +12,7 @@ using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Threading;
 using Downloader;
-using Newtonsoft.Json.Linq;
+using FufuLauncher.Updates;
 
 namespace Updater
 {
@@ -47,8 +47,7 @@ namespace Updater
             public int AnimationId;
         }
         
-        private const string AppVersion = "1.7.0.1";
-        private const string HardenedReleaseRepository = "rhli1327/FufuLauncher";
+        private const string AppVersion = "1.7.0.0";
 
         private static readonly HttpClient _httpClient = new(new HttpClientHandler())
         { 
@@ -72,7 +71,6 @@ namespace Updater
         private bool _isRollbackMode = false;
         private string _installedVersion = AppVersion;
         private bool _isInstalledPreviewBuild = false;
-        private string _officialVersion = string.Empty;
 
         private const string TestFileOfficialUrl = "https://raw.githubusercontent.com/moodlehq/moodle-exttests/master/test.html";
         private const string ExpectedTestFileMD5 = "47250a973d1b88d9445f94db4ef2c97a";
@@ -107,24 +105,8 @@ namespace Updater
                 }
             }
 
-            _isInstalledPreviewBuild = _installedVersion.IndexOf("Pre-release", StringComparison.OrdinalIgnoreCase) >= 0;
-        }
-
-        private static string StripPreReleaseSuffix(string version)
-        {
-            if (string.IsNullOrWhiteSpace(version)) return string.Empty;
-
-            var trimmed = version.Trim();
-            if (trimmed.EndsWith("Pre-release", StringComparison.OrdinalIgnoreCase))
-            {
-                trimmed = trimmed.Substring(0, trimmed.Length - "Pre-release".Length).Trim();
-            }
-            return trimmed;
-        }
-
-        private static bool TryParseVersion(string input, out Version version)
-        {
-            return Version.TryParse(StripPreReleaseSuffix(input), out version);
+            _isInstalledPreviewBuild = ReleaseUpdateClient.ReadInstalledBuild(AppContext.BaseDirectory)?.Channel == "preview" ||
+                _installedVersion.IndexOf("Pre-release", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private void StuckTimer_Tick(object sender, EventArgs e)
@@ -212,69 +194,33 @@ namespace Updater
         {
             try
             {
-                string localJsonPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Update.json");
-                SubtitleText.Text = "请求API更新配置...";
-                string apiUrl = "https://philia093.cyou/Update.json";
-                string fallbackUrl = "https://fu1.fun/Update.json";
-                string updateContent;
-                try
-                {
-                    updateContent = await _httpClient.GetStringAsync(apiUrl);
-                }
-                catch (HttpRequestException)
-                {
-                    try
-                    {
-                        updateContent = await _httpClient.GetStringAsync(fallbackUrl);
-                    }
-                    catch (HttpRequestException)
-                    {
-                        if (!File.Exists(localJsonPath))
-                        {
-                            throw;
-                        }
-
-                        SubtitleText.Text = "API请求失败，读取本地更新配置...";
-                        updateContent = await File.ReadAllTextAsync(localJsonPath);
-                    }
-                }
-                
-                JObject updateJson = JObject.Parse(updateContent);
-                _officialVersion = updateJson.GetValue("version", StringComparison.OrdinalIgnoreCase)?.ToString() ?? string.Empty;
-
                 if (_isRollbackMode)
                 {
                     await CheckRollbackAsync();
                     return;
                 }
 
-                if (_isPreviewMode)
+                SubtitleText.Text = "正在检查更新...";
+                var release = await new ReleaseUpdateClient(_httpClient).GetLatestAsync(_isPreviewMode);
+                if (release == null)
                 {
-                    await CheckPreviewUpdateAsync(updateJson);
+                    ShowNoUpdate(_isPreviewMode ? "暂未发布预览版更新" : "暂未发布正式版更新", _isInstalledPreviewBuild);
                     return;
                 }
 
-                if (!TryParseVersion(_installedVersion, out Version currentVersion))
+                var installed = ReleaseUpdateClient.ReadInstalledBuild(AppContext.BaseDirectory);
+                if (!ReleaseUpdateClient.HasUpdate(installed, release.Build))
                 {
-                    MessageBox.Show("版本号无法识别，请前往官网下载\n此处不提供更新", "版本异常", MessageBoxButton.OK, MessageBoxImage.Error);
-                    Environment.Exit(0);
+                    ShowNoUpdate("当前已是最新，无需更新", _isInstalledPreviewBuild);
                     return;
                 }
 
-                // Hardened hotfixes can be newer than the upstream version feed.
-                Version remoteVersion = await FetchLatestHardenedReleaseAsync();
-                if (currentVersion >= remoteVersion)
-                {
-                    // 预览版用户可无理由回退正式版
-                    ShowNoUpdate("当前已是最新版本，无需更新", _isInstalledPreviewBuild);
-                    return;
-                }
-
+                SelectRelease(release);
                 await PrepareDownloadAsync("请选择下载线路", "直连GitHub下载...");
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"更新初始化失败，请检查网络，或者去下面下载\nhttps://wwaoi.lanzn.com/b00wnb99ef\n密码:6hnh\n错误详情: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"更新初始化失败，请检查网络，或前往加固版发布页下载\nhttps://github.com/{ReleaseUpdateClient.Repository}/releases\n错误详情: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
                 Environment.Exit(1);
             }
         }
@@ -288,40 +234,11 @@ namespace Updater
             SubtitleText.Text = "检查完毕";
         }
 
-        private async Task<Version> FetchLatestHardenedReleaseAsync()
+        private void SelectRelease(PublishedBuild release)
         {
-            SubtitleText.Text = "获取修改版 GitHub Release...";
-            string githubApiUrl = $"https://api.github.com/repos/{HardenedReleaseRepository}/releases/latest";
-            var ghResponse = await _httpClient.GetStringAsync(githubApiUrl);
-            JObject ghJson = JObject.Parse(ghResponse);
-
-            var tagName = ghJson["tag_name"]?.ToString()?.Trim().TrimStart('v', 'V') ?? string.Empty;
-            if (!TryParseVersion(tagName, out var hardenedVersion) ||
-                !TryParseVersion(_officialVersion, out var officialVersion) ||
-                hardenedVersion < officialVersion)
-            {
-                throw new InvalidOperationException(
-                    $"官方版本 {_officialVersion} 已发布，但修改版仓库尚未发布对应或更高版本。请先同步并审核上游改动。");
-            }
-
-            JToken targetAsset = ghJson["assets"]?.FirstOrDefault(a => a["name"]?.ToString().EndsWith(".exe", StringComparison.OrdinalIgnoreCase) == true);
-
-            if (targetAsset == null)
-            {
-                throw new Exception("最新的Release中不存在文件");
-            }
-
-            _targetExeUrl = targetAsset["browser_download_url"].ToString();
-            _fileName = targetAsset["name"].ToString();
-
-            // 从 GitHub API 的 asset 元数据中提取 SHA-256 哈希（格式: "sha256:xxxxx"）
-            string digest = targetAsset["digest"]?.ToString();
-            if (!string.IsNullOrEmpty(digest) && digest.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase))
-            {
-                _expectedSha256 = digest.Substring("sha256:".Length);
-            }
-
-            return hardenedVersion;
+            _targetExeUrl = release.InstallerUrl;
+            _fileName = release.InstallerName;
+            _expectedSha256 = release.InstallerSha256;
         }
 
         private async Task PrepareDownloadAsync(string selectionSubtitle, string directSubtitle)
@@ -358,19 +275,23 @@ namespace Updater
         private async Task CheckRollbackAsync()
         {
             SubtitleText.Text = "准备回退正式版...";
+            var release = await new ReleaseUpdateClient(_httpClient).GetLatestAsync();
+            if (release == null)
+            {
+                ShowNoUpdate("暂未发布正式版");
+                return;
+            }
 
-            string versionLabel = string.IsNullOrEmpty(_officialVersion) ? string.Empty : $" v{_officialVersion}";
             var confirm = MessageBox.Show(
-                $"确定要回退到正式版{versionLabel}吗？\n\n回退将下载并安装最新正式版，覆盖当前预览版。",
+                $"确定要回退到正式版 v{release.VersionLabel}吗？\n\n回退将下载并安装最新正式版，覆盖当前预览版。",
                 "回退正式版", MessageBoxButton.YesNo, MessageBoxImage.Question);
-
             if (confirm != MessageBoxResult.Yes)
             {
                 Environment.Exit(0);
                 return;
             }
 
-            await FetchLatestHardenedReleaseAsync();
+            SelectRelease(release);
             await PrepareDownloadAsync("请选择下载线路（回退正式版）", "直连GitHub下载正式版...");
         }
 
@@ -385,79 +306,6 @@ namespace Updater
                 MessageBox.Show($"回退正式版失败，请检查网络\n错误详情: {ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
                 Environment.Exit(1);
             }
-        }
-
-        private async Task CheckPreviewUpdateAsync(JObject updateJson)
-        {
-            string previewVersionStr = updateJson.GetValue("PreReleaseVersion", StringComparison.OrdinalIgnoreCase)?.ToString()?.Trim() ?? string.Empty;
-
-            if (string.IsNullOrEmpty(previewVersionStr))
-            {
-                ShowNoUpdate("服务端暂未发布预览版更新", _isInstalledPreviewBuild);
-                return;
-            }
-
-            if (!TryParseVersion(previewVersionStr, out Version previewVersion))
-            {
-                MessageBox.Show("预览版版本号无法识别，请前往官网下载\n此处不提供更新", "版本异常", MessageBoxButton.OK, MessageBoxImage.Error);
-                Environment.Exit(0);
-                return;
-            }
-
-            string officialVersionStr = updateJson.GetValue("version", StringComparison.OrdinalIgnoreCase)?.ToString();
-            if (!TryParseVersion(officialVersionStr, out Version officialVersion))
-            {
-                MessageBox.Show("正式版版本号无法识别，请前往官网下载\n此处不提供更新", "版本异常", MessageBoxButton.OK, MessageBoxImage.Error);
-                Environment.Exit(0);
-                return;
-            }
-
-            if (previewVersion <= officialVersion)
-            {
-                ShowNoUpdate("预览版版本号未高于最新正式版，不允许更新预览版", _isInstalledPreviewBuild);
-                return;
-            }
-
-            SubtitleText.Text = "获取GitHub标签列表...";
-            string tagsUrl = $"https://api.github.com/repos/{HardenedReleaseRepository}/tags?per_page=100";
-            var tagsResponse = await _httpClient.GetStringAsync(tagsUrl);
-            JArray tags = JArray.Parse(tagsResponse);
-
-            // 服务器字段可能已带 Pre-release 后缀，先去掉再拼 tag，避免双重后缀
-            string previewTagName = $"{StripPreReleaseSuffix(previewVersionStr)}Pre-release";
-            JToken matchedTag = tags.FirstOrDefault(t => string.Equals(t["name"]?.ToString(), previewTagName, StringComparison.OrdinalIgnoreCase));
-
-            if (matchedTag == null)
-            {
-                MessageBox.Show($"未在GitHub找到预览版发布包（标签: {previewTagName}）\n\n更新流程已终止，请稍后再试", "未找到预览版", MessageBoxButton.OK, MessageBoxImage.Information);
-                Environment.Exit(0);
-                return;
-            }
-
-            SubtitleText.Text = "获取预览版Release信息...";
-            string tagName = matchedTag["name"]!.ToString();
-            string releaseUrl = $"https://api.github.com/repos/{HardenedReleaseRepository}/releases/tags/{Uri.EscapeDataString(tagName)}";
-            var releaseResponse = await _httpClient.GetStringAsync(releaseUrl);
-            JObject releaseJson = JObject.Parse(releaseResponse);
-
-            JToken targetAsset = releaseJson["assets"]?.FirstOrDefault(a => a["name"]?.ToString().EndsWith(".exe", StringComparison.OrdinalIgnoreCase) == true);
-
-            if (targetAsset == null)
-            {
-                throw new Exception("预览版Release中不存在文件");
-            }
-
-            _targetExeUrl = targetAsset["browser_download_url"]!.ToString();
-            _fileName = targetAsset["name"]!.ToString();
-
-            // 从 GitHub API 的 asset 元数据中提取 SHA-256 哈希（格式: "sha256:xxxxx"）
-            string digest = targetAsset["digest"]?.ToString();
-            if (!string.IsNullOrEmpty(digest) && digest.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase))
-            {
-                _expectedSha256 = digest.Substring("sha256:".Length);
-            }
-
-            await PrepareDownloadAsync("请选择下载线路（预览版）", "直连GitHub下载预览版...");
         }
 
         private async Task TestMirrorsAsync()

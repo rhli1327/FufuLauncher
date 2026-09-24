@@ -5,6 +5,7 @@ Licensed under the MIT License.
 using System.Diagnostics;
 using FufuLauncher.Contracts.Services;
 using FufuLauncher.Helpers;
+using FufuLauncher.Updates;
 
 namespace FufuLauncher.Services
 {
@@ -16,8 +17,7 @@ namespace FufuLauncher.Services
 
         public Task<bool> DetectAsync(string serverVersion)
         {
-            IsDevBuild = !AppVersionHelper.IsPreviewBuild &&
-                         AppVersionHelper.IsNewerVersion(AppVersionHelper.NumericVersion, serverVersion);
+            IsDevBuild = ReleaseUpdateClient.ReadInstalledBuild(AppContext.BaseDirectory) is null;
             HasChecked = true;
 
             Debug.WriteLine($"[DevBuildDetection] IsDevBuild={IsDevBuild}, " +
