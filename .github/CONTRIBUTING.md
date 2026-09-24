@@ -1,5 +1,7 @@
 # Contributing to FufuLauncher
 
+For the hardened fork, follow [加固版同步与发布](../HARDENED-RELEASE.md), including its independent, strictly increasing release version policy.
+
 Thank you for your interest in contributing to FufuLauncher! We welcome all kinds of contributions, including bug reports, feature requests, documentation improvements, translations, and code changes. Please take a moment to read these guidelines before you start.
 
 ## Code of Conduct
