@@ -120,8 +120,7 @@ namespace FufuLauncher.Services
 
             try
             {
-                var expectedPath = Path.GetFullPath(Path.Combine(
-                    AppContext.BaseDirectory, "Plugins", "FuFuPlugin", "FufuLauncher.UnlockerIsland.dll"));
+                var expectedPath = GetBundledPluginDllPath();
                 var candidatePath = Path.GetFullPath(dllPath);
                 if (!candidatePath.Equals(expectedPath, StringComparison.OrdinalIgnoreCase) || !File.Exists(candidatePath))
                     return false;
@@ -164,11 +163,6 @@ namespace FufuLauncher.Services
             [MarshalAs(UnmanagedType.LPWStr)] string commandLineArgs,
             [MarshalAs(UnmanagedType.LPWStr)] StringBuilder errorMessage,
             int errorMessageSize);
-
-        [DllImport(DllName, CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
-        private static extern int GetDefaultDllPath(
-            [MarshalAs(UnmanagedType.LPWStr)] StringBuilder dllPath,
-            int dllPathSize);
 
         [DllImport(DllName, CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
         private static extern void UpdateConfig(
@@ -230,13 +224,13 @@ namespace FufuLauncher.Services
 
         public string GetDefaultDllPath()
         {
-            if (!IsLauncherDllLoaded) return string.Empty;
-
-            var pathBuffer = new StringBuilder(1024);
-            return GetDefaultDllPath(pathBuffer, pathBuffer.Capacity) == 0
-                ? pathBuffer.ToString()
-                : string.Empty;
+            // Upstream's native export returns an empty path. Both the UI and elevated
+            // process must resolve the same bundled plugin that the allowlist verifies.
+            return GetBundledPluginDllPath();
         }
+
+        private static string GetBundledPluginDllPath() => Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory, "Plugins", "FuFuPlugin", "FufuLauncher.UnlockerIsland.dll"));
 
         public void UpdateConfig(string gamePath, bool hideQuestBanner, bool disableDamageText, bool useTouchScreen,
                                 bool disableEventCameraMove, bool removeTeamProgress, bool redirectCombineEntry,

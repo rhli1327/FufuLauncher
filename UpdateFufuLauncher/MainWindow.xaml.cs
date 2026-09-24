@@ -47,7 +47,7 @@ namespace Updater
             public int AnimationId;
         }
         
-        private const string AppVersion = "1.7.0.0";
+        private const string AppVersion = "1.7.0.1";
         private const string HardenedReleaseRepository = "rhli1327/FufuLauncher";
 
         private static readonly HttpClient _httpClient = new(new HttpClientHandler())
@@ -254,14 +254,15 @@ namespace Updater
                     return;
                 }
 
-                if (!TryParseVersion(_installedVersion, out Version currentVersion) ||
-                    !TryParseVersion(_officialVersion, out Version remoteVersion))
+                if (!TryParseVersion(_installedVersion, out Version currentVersion))
                 {
                     MessageBox.Show("版本号无法识别，请前往官网下载\n此处不提供更新", "版本异常", MessageBoxButton.OK, MessageBoxImage.Error);
                     Environment.Exit(0);
                     return;
                 }
 
+                // Hardened hotfixes can be newer than the upstream version feed.
+                Version remoteVersion = await FetchLatestHardenedReleaseAsync();
                 if (currentVersion >= remoteVersion)
                 {
                     // 预览版用户可无理由回退正式版
@@ -269,7 +270,6 @@ namespace Updater
                     return;
                 }
 
-                await FetchLatestHardenedReleaseAsync();
                 await PrepareDownloadAsync("请选择下载线路", "直连GitHub下载...");
             }
             catch (Exception ex)
@@ -288,7 +288,7 @@ namespace Updater
             SubtitleText.Text = "检查完毕";
         }
 
-        private async Task FetchLatestHardenedReleaseAsync()
+        private async Task<Version> FetchLatestHardenedReleaseAsync()
         {
             SubtitleText.Text = "获取修改版 GitHub Release...";
             string githubApiUrl = $"https://api.github.com/repos/{HardenedReleaseRepository}/releases/latest";
@@ -320,6 +320,8 @@ namespace Updater
             {
                 _expectedSha256 = digest.Substring("sha256:".Length);
             }
+
+            return hardenedVersion;
         }
 
         private async Task PrepareDownloadAsync(string selectionSubtitle, string directSubtitle)
