@@ -31,9 +31,9 @@ namespace FufuLauncher.Constants
         public const string MihoyoBbsIsSignUrl = MihoyoBbsWebApi + "/event/luna/info";
         public const string MihoyoBbsSignUrl = MihoyoBbsWebApi + "/event/luna/sign";
         // Reviewed plugin bundle published with this hardened launcher release.
-        public const string PluginRawUrl = "https://github.com/rhli1327/FufuLauncher/releases/download/v1.6.0.5/FuFuPlugin.zip";
-        public const string PluginSha256 = "3965161d71e9773c8a5c503b374c8a3cc37b3c05963f1e4c78c3b1ba731e3ebb";
-        public const string PluginDllSha256 = "e8e21887e8e33ff23ba148fac6576183b25c67855701b89a5fbf6f40dd022668";
+        public const string PluginRawUrl = "https://github.com/rhli1327/FufuLauncher/releases/download/v1.7.0.0/FuFuPlugin.zip";
+        public const string PluginSha256 = "ef3d594d869f6ca5fe2dd3aee276666834c55ee8eb9f7b3fa08e2c73d13926a0";
+        public const string PluginDllSha256 = "bba9217ed4fb87cb366e78a8400cc688e5028b3406a2ce407e1087d32060a7eb";
         public const string AnnouncementUrl = "https://philia093.cyou/announcement.json";
         public const string AnnouncementFallbackUrl = "https://fu1.fun/announcement.json";
         public const string UpdateJsonUrl = "https://philia093.cyou/Update.json";
