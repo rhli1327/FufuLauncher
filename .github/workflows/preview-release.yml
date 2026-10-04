@@ -32,7 +32,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         repository: FufuLauncher/FufuLauncher.UnlockerIsland
-        ref: 8b817311ad526eb87ece5f511b8a25c579215e88
+        ref: 9c8215fca63d57a12476f5c5c06d457ea1f8761b
         path: FufuLauncher.UnlockerIsland_Repo
 
     - name: Build pinned launcher and plugin sources

@@ -1,64 +1,24 @@
-﻿/*
+/*
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
 using System.Text.Json;
+using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Web.WebView2.Core;
-using FufuLauncher.ViewModels;
 using FufuLauncher.Contracts.Services;
 using FufuLauncher.Helpers;
 using FufuLauncher.Services;
 
 namespace FufuLauncher.Views;
 
-public sealed partial class CommunityPage : Page
+public sealed partial class CommunityWindow : Window
 {
     private const string CommunityNoticeKey = "HasShownCommunityNotice";
     private const string TrustedCommunityHost = "bbs.xcnahida.cn";
 
-    public CommunityViewModel ViewModel { get; }
-
-    public CommunityPage()
-    {
-        ViewModel = App.GetService<CommunityViewModel>();
-        InitializeComponent();
-    }
-
-    private async void CommunityWebView_Loaded(object sender, RoutedEventArgs e)
-    {
-        try
-        {
-            await CheckAndShowFirstTimeNoticeAsync();
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"首次提示异常: {ex.Message}");
-        }
-
-        await CommunityWebView.EnsureCoreWebView2Async();
-
-        if (CommunityWebView.CoreWebView2 == null)
-        {
-            System.Diagnostics.Debug.WriteLine("CoreWebView2 初始化失败");
-            return;
-        }
-        
-        CommunityWebView.CoreWebView2.Settings.AreDevToolsEnabled = false;
-        
-        try
-        {
-            CommunityWebView.CoreWebView2.ContextMenuRequested += CoreWebView2_ContextMenuRequested;
-        }
-        catch (InvalidCastException ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"ContextMenuRequested 事件不支持 (WebView2 版本过旧): {ex.Message}");
-        }
-        
-        CommunityWebView.CoreWebView2.WebMessageReceived += CoreWebView2_WebMessageReceived;
-        
-        string initScript = @"
+    private const string UserDataBridgeScript = @"
             window.fufuApp = {
                 requestUserData: function() {
                     return new Promise((resolve, reject) => {
@@ -85,7 +45,54 @@ public sealed partial class CommunityPage : Page
                 }
             };
         ";
-        await CommunityWebView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(initScript);
+
+    public CommunityWindow()
+    {
+        InitializeComponent();
+
+        ExtendsContentIntoTitleBar = true;
+        AppWindow.TitleBar.ButtonBackgroundColor = Colors.Transparent;
+        AppWindow.TitleBar.ButtonInactiveBackgroundColor = Colors.Transparent;
+        SetTitleBar(AppTitleBar);
+
+        WindowManagerHelper.ResizeWithDpi(AppWindow, this, 1200, 800);
+        WindowManagerHelper.CenterWindowOnScreen(AppWindow, 1200, 800);
+    }
+
+    private async void CommunityWebView_Loaded(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            await CheckAndShowFirstTimeNoticeAsync();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"首次提示异常: {ex.Message}");
+        }
+
+        await CommunityWebView.EnsureCoreWebView2Async();
+
+        if (CommunityWebView.CoreWebView2 == null)
+        {
+            System.Diagnostics.Debug.WriteLine("CoreWebView2 初始化失败");
+            return;
+        }
+
+        CommunityWebView.CoreWebView2.Settings.AreDevToolsEnabled = false;
+
+        try
+        {
+            CommunityWebView.CoreWebView2.ContextMenuRequested += CoreWebView2_ContextMenuRequested;
+        }
+        catch (InvalidCastException ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"ContextMenuRequested 事件不支持 (WebView2 版本过旧): {ex.Message}");
+        }
+
+        CommunityWebView.CoreWebView2.WebMessageReceived += CoreWebView2_WebMessageReceived;
+
+        await CommunityWebView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(UserDataBridgeScript);
+        UpdateNavigationState();
     }
 
     private async Task CheckAndShowFirstTimeNoticeAsync()
@@ -94,7 +101,7 @@ public sealed partial class CommunityPage : Page
         {
             var localSettingsService = App.GetService<ILocalSettingsService>();
             var hasShownObj = await localSettingsService.ReadSettingAsync(CommunityNoticeKey);
-            
+
             bool hasShown = hasShownObj != null && Convert.ToBoolean(hasShownObj);
 
             if (!hasShown)
@@ -114,7 +121,7 @@ public sealed partial class CommunityPage : Page
                 };
 
                 await dialog.ShowAsync();
-                
+
                 await localSettingsService.SaveSettingAsync(CommunityNoticeKey, true);
             }
         }
@@ -141,15 +148,18 @@ public sealed partial class CommunityPage : Page
             if (request.TryGetProperty("type", out var typeElement) && typeElement.GetString() == "requestUserData")
             {
                 string callbackId = request.GetProperty("callbackId").GetString() ?? string.Empty;
-                
+
                 var userData = await RetrieveUserDataAsync();
-                
-                string dialogContent = $"当前网页请求访问您的以下数据：\n\n" +
-                                       $"MID: {(string.IsNullOrEmpty(userData.Mid) ? "CommunityPage_Unknown".GetLocalized() : userData.Mid)}\n" +
-                                       $"UID: {(string.IsNullOrEmpty(userData.Uid) ? "CommunityPage_Unknown".GetLocalized() : userData.Uid)}\n" +
-                                       $"账户昵称: {(string.IsNullOrEmpty(userData.Nickname) ? "CommunityPage_Unknown".GetLocalized() : userData.Nickname)}\n\n" +
-                                       $"CommunityPage_ConsentPrompt".GetLocalized();
-                
+
+                string unknownText = "CommunityPage_Unknown".GetLocalized();
+                string dialogContent = "CommunityPage_DataRequest".GetLocalized() + "\n\n" +
+                                       $"MID: {(string.IsNullOrEmpty(userData.Mid) ? unknownText : userData.Mid)}\n" +
+                                       $"UID: {(string.IsNullOrEmpty(userData.Uid) ? unknownText : userData.Uid)}\n" +
+                                       $"账户昵称: {(string.IsNullOrEmpty(userData.Nickname) ? unknownText : userData.Nickname)}\n\n" +
+                                       "CommunityPage_ConsentPrompt".GetLocalized();
+
+                if (Content?.XamlRoot == null) return;
+
                 var dialog = new ContentDialog
                 {
                     Title = "CommunityPage_AuthTitle".GetLocalized(),
@@ -236,13 +246,21 @@ public sealed partial class CommunityPage : Page
     private void CommunityWebView_NavigationCompleted(WebView2 sender, CoreWebView2NavigationCompletedEventArgs args)
     {
         LoadingBar.Visibility = Visibility.Collapsed;
+        UpdateNavigationState();
+    }
+
+    private void UpdateNavigationState()
+    {
+        var coreWebView = CommunityWebView.CoreWebView2;
+        BackButton.IsEnabled = coreWebView != null && coreWebView.CanGoBack;
+        ForwardButton.IsEnabled = coreWebView != null && coreWebView.CanGoForward;
     }
 
     private void CoreWebView2_ContextMenuRequested(CoreWebView2 sender, CoreWebView2ContextMenuRequestedEventArgs args)
     {
         var menuList = args.MenuItems;
         var itemsToKeep = new List<CoreWebView2ContextMenuItem>();
-        
+
         foreach (var item in menuList)
         {
             if (item.Name == "copy" || item.Name == "paste" || item.Name == "cut" || item.Name == "selectAll")
