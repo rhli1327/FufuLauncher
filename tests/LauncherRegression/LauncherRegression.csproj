@@ -7,6 +7,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../../FufuLauncher/Services/LauncherService.cs" Link="LauncherService.cs" />
+    <Compile Include="../../FufuLauncher/Services/PluginVerifier.cs" Link="PluginVerifier.cs" />
     <Compile Include="../../FufuLauncher/Constants/ApiEndpoints.cs" Link="ApiEndpoints.cs" />
   </ItemGroup>
 </Project>

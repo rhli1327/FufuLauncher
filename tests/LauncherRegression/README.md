@@ -22,3 +22,14 @@ Both release workflows run this mode after compression and manifest generation.
 It also requires that the native core loads successfully. Fixtures are copied to
 the test output directory; the application output remains unchanged. These checks
 do not start the game or perform injection.
+
+Before publishing a new downloadable plugin bundle, validate the exact release
+ZIP against the production download verifier and launcher allowlist:
+
+```sh
+dotnet run --project tests/LauncherRegression/LauncherRegression.csproj -c Release -- --downloaded "<FuFuPlugin.zip>"
+```
+
+This also verifies that the downloaded DLL is accepted when the installed
+SHA-512 manifest describes a different build, while tampered DLLs remain rejected.
+The supplied release ZIP is preserved; all mutations use test-output copies.
