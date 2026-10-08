@@ -2,7 +2,9 @@
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
+
 using FufuLauncher.Contracts.Services;
+using FufuLauncher.Helpers;
 using FufuLauncher.Services;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -17,8 +19,8 @@ public sealed partial class PluginPage
     private async void Page_Loaded(object sender, RoutedEventArgs e)
     {
         EntranceStoryboard.Begin();
-    
-        if (ViewModel.Plugins.Count == 0) 
+
+        if (ViewModel.Plugins.Count == 0)
         {
             ViewModel.LoadPlugins();
         }
@@ -26,8 +28,9 @@ public sealed partial class PluginPage
         try
         {
             var localSettingsService = App.GetService<ILocalSettingsService>();
-            var hasShownRaw = await localSettingsService.ReadSettingAsync(LocalSettingsService.HasShownSecurityWarningKey);
-        
+            var hasShownRaw =
+                await localSettingsService.ReadSettingAsync(LocalSettingsService.HasShownSecurityWarningKey);
+
             bool hasShown = hasShownRaw is bool b && b;
 
             if (!hasShown)
@@ -41,30 +44,30 @@ public sealed partial class PluginPage
             System.Diagnostics.Debug.WriteLine($"读取或保存安全警告配置失败: {ex.Message}");
         }
     }
-    
+
     private async Task ShowSecurityWarningDialog()
     {
         if (XamlRoot == null) return;
-    
+
         var textBlock = new TextBlock
         {
-            Text = "安全软件会阻塞该程序的正常注入运行，如无法使用或者插件消失，请关闭你电脑的安全中心！",
+            Text = "PluginPage_SecurityWarningContent".GetLocalized(),
             Foreground = new SolidColorBrush(Microsoft.UI.Colors.Red),
             FontWeight = Microsoft.UI.Text.FontWeights.Bold,
             TextWrapping = TextWrapping.Wrap,
             FontSize = 16,
             Margin = new Thickness(0, 10, 0, 0)
         };
-    
+
         var dialog = new ContentDialog
         {
-            Title = "警告",
+            Title = "AdminWarningTitle".GetLocalized(),
             Content = textBlock,
-            CloseButtonText = "我知道了",
+            CloseButtonText = "GotItBtn".GetLocalized(),
             DefaultButton = ContentDialogButton.Close,
             XamlRoot = XamlRoot
         };
-    
+
         await dialog.ShowAsync();
     }
 

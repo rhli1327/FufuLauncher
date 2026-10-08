@@ -19,6 +19,7 @@ public class PluginStoreService
 {
     private readonly HttpClient _httpClient;
     private readonly PluginMirrorDownloadService _mirrorDownloadService;
+
     private static readonly string ClientVersion =
         Assembly.GetEntryAssembly()?.GetName().Version?.ToString() ?? "1.0.0.0";
 
@@ -122,9 +123,11 @@ public class PluginStoreService
             {
                 if (gateResponse.Data?.VerifyUrl != null)
                 {
-                    Debug.WriteLine($"[PluginStoreService] Captcha gate detected for plugin {pluginId}: {gateResponse.Data.VerifyUrl}");
+                    Debug.WriteLine(
+                        $"[PluginStoreService] Captcha gate detected for plugin {pluginId}: {gateResponse.Data.VerifyUrl}");
                     throw new CaptchaRequiredException(gateResponse.Data.VerifyUrl, pluginId);
                 }
+
                 throw new InvalidOperationException(gateResponse.Message ?? "PluginStoreAccessDenied".GetLocalized());
             }
 
@@ -134,12 +137,24 @@ public class PluginStoreService
                     gateResponse.Message ?? "PluginStorePrivateAccessRequired".GetLocalized());
             }
             
-            throw new InvalidOperationException(gateResponse.Message ?? $"Server error (retcode={gateResponse.Retcode})");
+            throw new InvalidOperationException(
+                gateResponse.Message ?? $"Server error (retcode={gateResponse.Retcode})");
         }
-        catch (JsonException) {}
-        catch (CaptchaRequiredException) { throw; }
-        catch (PrivatePluginAccessException) { throw; }
-        catch (InvalidOperationException) { throw; }
+        catch (JsonException)
+        {
+        }
+        catch (CaptchaRequiredException)
+        {
+            throw;
+        }
+        catch (PrivatePluginAccessException)
+        {
+            throw;
+        }
+        catch (InvalidOperationException)
+        {
+            throw;
+        }
     }
 
     public async Task<PluginListData> GetPluginListAsync(
@@ -178,6 +193,7 @@ public class PluginStoreService
                 foreach (var p in data.Plugins)
                     NormalizePluginUrls(p);
             }
+
             return data;
         }
         catch (HttpRequestException ex) when (ex.InnerException is System.Net.Sockets.SocketException)
@@ -193,7 +209,8 @@ public class PluginStoreService
         catch (Exception ex)
         {
             Debug.WriteLine($"[PluginStoreService] Error fetching plugin list: {ex.Message}");
-            throw new InvalidOperationException(string.Format("PluginStoreLoadListFailed".GetLocalized(), ex.Message), ex);
+            throw new InvalidOperationException(string.Format("PluginStoreLoadListFailed".GetLocalized(), ex.Message),
+                ex);
         }
     }
 
@@ -332,11 +349,15 @@ public class PluginStoreService
 
             throw new InvalidOperationException(result?.Message ?? "PluginStoreCaptchaFailed".GetLocalized());
         }
-        catch (CaptchaRequiredException) { throw; }
+        catch (CaptchaRequiredException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             Debug.WriteLine($"[PluginStoreService] Error getting download token: {ex.Message}");
-            throw new InvalidOperationException(string.Format("PluginStoreCaptchaFailed".GetLocalized(), ex.Message), ex);
+            throw new InvalidOperationException(string.Format("PluginStoreCaptchaFailed".GetLocalized(), ex.Message),
+                ex);
         }
     }
     
@@ -371,7 +392,8 @@ public class PluginStoreService
         catch (Exception ex) when (ex is not InvalidOperationException)
         {
             Debug.WriteLine($"[PluginStoreService] Error getting private access: {ex.Message}");
-            throw new InvalidOperationException(string.Format("PluginStorePrivateAccessDenied".GetLocalized(), ex.Message), ex);
+            throw new InvalidOperationException(
+                string.Format("PluginStorePrivateAccessDenied".GetLocalized(), ex.Message), ex);
         }
     }
     
@@ -400,9 +422,18 @@ public class PluginStoreService
 
             return body;
         }
-        catch (CaptchaRequiredException) { throw; }
-        catch (PrivatePluginAccessException) { throw; }
-        catch (HashMismatchException) { throw; }
+        catch (CaptchaRequiredException)
+        {
+            throw;
+        }
+        catch (PrivatePluginAccessException)
+        {
+            throw;
+        }
+        catch (HashMismatchException)
+        {
+            throw;
+        }
         catch (HttpRequestException ex) when (ex.InnerException is System.Net.Sockets.SocketException)
         {
             throw new InvalidOperationException("PluginStoreDownloadLuaFailed".GetLocalized(), ex);
@@ -410,7 +441,8 @@ public class PluginStoreService
         catch (Exception ex)
         {
             Debug.WriteLine($"[PluginStoreService] Error downloading Lua script: {ex.Message}");
-            throw new InvalidOperationException(string.Format("PluginStoreDownloadLuaError".GetLocalized(), ex.Message), ex);
+            throw new InvalidOperationException(string.Format("PluginStoreDownloadLuaError".GetLocalized(), ex.Message),
+                ex);
         }
     }
     
@@ -443,7 +475,8 @@ public class PluginStoreService
         {
             Debug.WriteLine($"[PluginStoreService] Downloading file: {url} -> {destinationPath}");
 
-            using var response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            using var response =
+                await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
             
             var contentType = response.Content.Headers.ContentType?.MediaType ?? "";
             if (contentType.Contains("json"))
@@ -453,8 +486,10 @@ public class PluginStoreService
                 {
                     CheckBodyForErrorGate(body, ExtractPluginIdFromUrl(url));
                 }
+
                 throw new InvalidOperationException(
-                    string.Format("PluginStoreHttpError".GetLocalized(), (int)response.StatusCode, body.Length > 200 ? body[..200] : body));
+                    string.Format("PluginStoreHttpError".GetLocalized(), (int)response.StatusCode,
+                        body.Length > 200 ? body[..200] : body));
             }
 
             var totalBytes = response.Content.Headers.ContentLength ?? -1;
@@ -517,26 +552,50 @@ public class PluginStoreService
                 Debug.WriteLine($"[PluginStoreService] Verifying downloaded file hash...");
                 if (!string.Equals(actualHash, expectedHash, StringComparison.OrdinalIgnoreCase))
                 {
-                    Debug.WriteLine($"[PluginStoreService] HASH MISMATCH: expected={expectedHash[..16]}... actual={actualHash[..16]}...");
+                    Debug.WriteLine(
+                        $"[PluginStoreService] HASH MISMATCH: expected={expectedHash[..16]}... actual={actualHash[..16]}...");
 
                     await fileStream.DisposeAsync();
 
-                    try { File.Delete(destinationPath); }
-                    catch (Exception ex) { Debug.WriteLine($"[PluginStoreService] Failed to delete bad file: {ex.Message}"); }
+                    try
+                    {
+                        File.Delete(destinationPath);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"[PluginStoreService] Failed to delete bad file: {ex.Message}");
+                    }
 
                     throw new HashMismatchException("PluginStoreHashMismatch".GetLocalized());
                 }
+
                 Debug.WriteLine($"[PluginStoreService] Hash verified OK");
             }
         }
-        catch (CaptchaRequiredException) { throw; }
-        catch (PrivatePluginAccessException) { throw; }
-        catch (HashMismatchException) { throw; }
+        catch (CaptchaRequiredException)
+        {
+            throw;
+        }
+        catch (PrivatePluginAccessException)
+        {
+            throw;
+        }
+        catch (HashMismatchException)
+        {
+            throw;
+        }
         catch (OperationCanceledException)
         {
             Debug.WriteLine($"[PluginStoreService] Download cancelled, cleaning up partial file: {destinationPath}");
-            try { File.Delete(destinationPath); }
-            catch (Exception ex) { Debug.WriteLine($"[PluginStoreService] Failed to delete partial file: {ex.Message}"); }
+            try
+            {
+                File.Delete(destinationPath);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[PluginStoreService] Failed to delete partial file: {ex.Message}");
+            }
+
             throw;
         }
         catch (HttpRequestException ex) when (ex.InnerException is System.Net.Sockets.SocketException)
@@ -547,7 +606,8 @@ public class PluginStoreService
         catch (Exception ex)
         {
             Debug.WriteLine($"[PluginStoreService] Error downloading file: {ex.Message}");
-            throw new InvalidOperationException(string.Format("PluginStoreDownloadFileError".GetLocalized(), ex.Message), ex);
+            throw new InvalidOperationException(
+                string.Format("PluginStoreDownloadFileError".GetLocalized(), ex.Message), ex);
         }
     }
     
@@ -564,7 +624,10 @@ public class PluginStoreService
                 return dotIndex > 0 ? fileName[..dotIndex] : fileName;
             }
         }
-        catch { }
+        catch
+        {
+        }
+
         return "unknown";
     }
 
@@ -576,8 +639,15 @@ public class PluginStoreService
 
 public class CaptchaRequiredException : Exception
 {
-    public string VerifyUrl { get; }
-    public string PluginId { get; }
+    public string VerifyUrl
+    {
+        get;
+    }
+
+    public string PluginId
+    {
+        get;
+    }
 
     public CaptchaRequiredException(string verifyUrl, string pluginId)
         : base($"Captcha required for plugin '{pluginId}'")
@@ -589,7 +659,10 @@ public class CaptchaRequiredException : Exception
 
 public class PrivatePluginAccessException : Exception
 {
-    public string PluginId { get; }
+    public string PluginId
+    {
+        get;
+    }
 
     public PrivatePluginAccessException(string pluginId, string message)
         : base(message)
@@ -598,119 +671,228 @@ public class PrivatePluginAccessException : Exception
     }
 }
 
-
 public class PluginListData
 {
     [JsonPropertyName("total")]
-    public int Total { get; set; }
+    public int Total
+    {
+        get;
+        set;
+    }
 
     [JsonPropertyName("page")]
-    public int Page { get; set; }
+    public int Page
+    {
+        get;
+        set;
+    }
 
     [JsonPropertyName("plugins")]
-    public List<PluginStoreItem> Plugins { get; set; } = new();
+    public List<PluginStoreItem> Plugins
+    {
+        get;
+        set;
+    } = new();
 }
 
-public class PluginListResponse : PluginListData { }
+public class PluginListResponse : PluginListData
+{
+}
 
 public class CategoriesData
 {
     [JsonPropertyName("categories")]
-    public List<PluginStoreCategory> Categories { get; set; } = new();
+    public List<PluginStoreCategory> Categories
+    {
+        get;
+        set;
+    } = new();
 }
 
 public class PluginStatsData
 {
     [JsonPropertyName("id")]
-    public string Id { get; set; } = string.Empty;
+    public string Id
+    {
+        get;
+        set;
+    } = string.Empty;
 
     [JsonPropertyName("name")]
-    public string Name { get; set; } = string.Empty;
+    public string Name
+    {
+        get;
+        set;
+    } = string.Empty;
 
     [JsonPropertyName("total")]
-    public long Total { get; set; }
+    public long Total
+    {
+        get;
+        set;
+    }
 
     [JsonPropertyName("daily")]
-    public List<DailyStat> Daily { get; set; } = new();
+    public List<DailyStat> Daily
+    {
+        get;
+        set;
+    } = new();
 
     [JsonPropertyName("monthly")]
-    public List<MonthlyStat> Monthly { get; set; } = new();
+    public List<MonthlyStat> Monthly
+    {
+        get;
+        set;
+    } = new();
 }
 
 public class DailyStat
 {
     [JsonPropertyName("date")]
-    public string Date { get; set; } = string.Empty;
+    public string Date
+    {
+        get;
+        set;
+    } = string.Empty;
 
     [JsonPropertyName("count")]
-    public long Count { get; set; }
+    public long Count
+    {
+        get;
+        set;
+    }
 }
 
 public class MonthlyStat
 {
     [JsonPropertyName("month")]
-    public string Month { get; set; } = string.Empty;
+    public string Month
+    {
+        get;
+        set;
+    } = string.Empty;
 
     [JsonPropertyName("count")]
-    public long Count { get; set; }
+    public long Count
+    {
+        get;
+        set;
+    }
 }
 
 public class LeaderboardData
 {
     [JsonPropertyName("leaderboard")]
-    public List<LeaderboardEntry> Leaderboard { get; set; } = new();
+    public List<LeaderboardEntry> Leaderboard
+    {
+        get;
+        set;
+    } = new();
 }
 
 public class LeaderboardEntry
 {
     [JsonPropertyName("id")]
-    public string Id { get; set; } = string.Empty;
+    public string Id
+    {
+        get;
+        set;
+    } = string.Empty;
 
     [JsonPropertyName("name")]
-    public string Name { get; set; } = string.Empty;
+    public string Name
+    {
+        get;
+        set;
+    } = string.Empty;
 
     [JsonPropertyName("total")]
-    public long Total { get; set; }
+    public long Total
+    {
+        get;
+        set;
+    }
 }
 
 public class DownloadTokenResponse
 {
     [JsonPropertyName("dl_token")]
-    public string DlToken { get; set; } = string.Empty;
+    public string DlToken
+    {
+        get;
+        set;
+    } = string.Empty;
 
     [JsonPropertyName("plugin_id")]
-    public string PluginId { get; set; } = string.Empty;
+    public string PluginId
+    {
+        get;
+        set;
+    } = string.Empty;
 
     [JsonPropertyName("expires_in")]
-    public int ExpiresIn { get; set; }
+    public int ExpiresIn
+    {
+        get;
+        set;
+    }
 }
 
 public class PrivateAccessResponse
 {
     [JsonPropertyName("plugin")]
-    public PluginStoreItem? Plugin { get; set; }
+    public PluginStoreItem? Plugin
+    {
+        get;
+        set;
+    }
 
     [JsonPropertyName("access_token")]
-    public string AccessToken { get; set; } = string.Empty;
+    public string AccessToken
+    {
+        get;
+        set;
+    } = string.Empty;
 
     [JsonPropertyName("expires_in")]
-    public int ExpiresIn { get; set; }
+    public int ExpiresIn
+    {
+        get;
+        set;
+    }
 }
 
 public class GateErrorResponse
 {
     [JsonPropertyName("retcode")]
-    public int Retcode { get; set; }
+    public int Retcode
+    {
+        get;
+        set;
+    }
 
     [JsonPropertyName("message")]
-    public string Message { get; set; } = string.Empty;
+    public string Message
+    {
+        get;
+        set;
+    } = string.Empty;
 
     [JsonPropertyName("data")]
-    public GateErrorData? Data { get; set; }
+    public GateErrorData? Data
+    {
+        get;
+        set;
+    }
 }
 
 public class GateErrorData
 {
     [JsonPropertyName("verify_url")]
-    public string? VerifyUrl { get; set; }
+    public string? VerifyUrl
+    {
+        get;
+        set;
+    }
 }

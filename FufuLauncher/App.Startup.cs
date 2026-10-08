@@ -2,6 +2,7 @@
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
+
 using System.Diagnostics;
 using CommunityToolkit.Mvvm.Messaging;
 using FufuLauncher.Contracts.Services;
@@ -26,22 +27,28 @@ public partial class App
 
             _mainDispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
 
-            _ = Task.Run(LoadUidLookupAsync);
-
             //全量加载设置
             GetService<ILocalSettingsService>().StartBackgroundLoad();
 
+            await GetService<LightweightPluginService>().InitializeAsync();
+            await GetService<ConstraintService>().InitializeAsync();
+
             await VerifyResourceFilesAsync();
+
+            await ApplyLanguageSettingAsync();
+
+            var localUids = await LoadUidLookupAsync();
+            if (await EnforceBanListAsync(localUids))
+            {
+                return;
+            }
 
             if (!AppPaths.IsFirstRun)
             {
-                await ApplyLanguageSettingAsync();
                 await SetDefaultThemeAsync();
             }
             else
             {
-                await ApplyLanguageSettingAsync();
-
                 WeakReferenceMessenger.Default.Register<Messages.AgreementAcceptedMessage>(this, (r, m) =>
                 {
                     WeakReferenceMessenger.Default.Unregister<Messages.AgreementAcceptedMessage>(r);
@@ -51,6 +58,7 @@ public partial class App
                     });
                 });
             }
+
             var accountManager = GetService<AccountManager>();
             await accountManager.InitializeAsync();
             MainWindow = new MainWindow();
@@ -65,17 +73,21 @@ public partial class App
             await activationService.ActivateAsync(args);
 
             Debug.WriteLine("App主窗口已激活");
-            var shouldRunBackgroundTasks = !AppPaths.IsFirstRun && 
-                !(MainWindow is MainWindow mw && mw.IsAgreementShowing);
+            var shouldRunBackgroundTasks = !AppPaths.IsFirstRun &&
+                                           !(MainWindow is MainWindow mw && mw.IsAgreementShowing);
             if (shouldRunBackgroundTasks)
             {
                 _ = Task.Run(PlayStartupSoundDelayedAsync);
 
                 _ = Task.Run(CheckForAnnouncementAsync);
 
+                _ = Task.Run(async () => await GetService<ConstraintService>().RefreshAsync());
+
                 _ = Task.Run(RunStartupUpdateCheckAsync);
 
                 _ = Task.Run(CheckStoragePathsAsync);
+
+                _ = Task.Run(SyncStartupRegistrationAsync);
 
                 ProcessStartupLaunchArguments();
             }
@@ -114,6 +126,25 @@ public partial class App
         }
     }
 
+    private static async Task SyncStartupRegistrationAsync()
+    {
+        try
+        {
+            var settingsService = GetService<ILocalSettingsService>();
+            var startupJson = await settingsService.ReadSettingAsync(LocalSettingsService.IsStartupEnabledKey);
+            var requestedEnabled = startupJson != null && Convert.ToBoolean(startupJson);
+
+            if (requestedEnabled || StartupManager.IsRegistered())
+            {
+                StartupManager.ResolveEnabledState(requestedEnabled);
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[App] 同步开机自启注册表项失败: {ex.Message}");
+        }
+    }
+
     private async Task VerifyResourceFilesAsync()
     {
         try
@@ -147,7 +178,8 @@ public partial class App
             var localSettingsService = GetService<ILocalSettingsService>();
             var languageValue = await localSettingsService.ReadSettingAsync("AppLanguage");
 
-            Debug.WriteLine($"[App] ApplyLanguageSettingAsync: raw value='{languageValue}' (type={languageValue?.GetType().Name ?? "null"})");
+            Debug.WriteLine(
+                $"[App] ApplyLanguageSettingAsync: raw value='{languageValue}' (type={languageValue?.GetType().Name ?? "null"})");
 
             var language = languageValue != null && int.TryParse(languageValue.ToString(), out var languageCode)
                 ? (AppLanguage)languageCode

@@ -2,6 +2,7 @@
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
+
 using System.Diagnostics;
 using FufuLauncher.Activation;
 using FufuLauncher.Contracts.Services;
@@ -72,7 +73,8 @@ public class PluginMirrorDownloadService
         {
             await dispatcherQueue.EnqueueAsync(() =>
             {
-                window = CreateWindow(storeService, targetUrl, destinationPath, progress, expectedHash, cancellationToken);
+                window = CreateWindow(storeService, targetUrl, destinationPath, progress, expectedHash,
+                    cancellationToken);
             });
         }
 

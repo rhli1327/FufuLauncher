@@ -1,12 +1,12 @@
-﻿/*
+/*
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
+
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Security.Cryptography;
 using System.Text;
-using FufuLauncher.Models.MiHoYo.Fingerprint;
 
 namespace FufuLauncher.Services;
 
@@ -20,7 +20,7 @@ public partial class AccountManager
 
     private async Task WriteCookieFileAsync(string path, Dictionary<string, string> cookies)
     {
-        var file = new AccountCookieFile(cookies, await ReadFingerprintCoreAsync(path));
+        var file = new AccountCookieFile(cookies);
         await WriteAccountCookieFileAsync(path, file);
     }
 
@@ -75,13 +75,7 @@ public partial class AccountManager
             cookiesProp.ValueKind == JsonValueKind.Object)
         {
             var cookies = ReadStringDictionary(cookiesProp);
-            DeviceFpRequest? fingerprint = null;
-            if (TryGetPropertyIgnoreCase(root, "fingerprint", out var fpProp) &&
-                fpProp.ValueKind == JsonValueKind.Object)
-            {
-                fingerprint = fpProp.Deserialize<DeviceFpRequest>();
-            }
-            return new AccountCookieFile(cookies, fingerprint);
+            return new AccountCookieFile(cookies);
         }
 
         if (TryGetPropertyIgnoreCase(root, "values", out var valuesProp) &&

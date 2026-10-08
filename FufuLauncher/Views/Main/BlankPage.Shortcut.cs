@@ -2,6 +2,7 @@
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
+
 using System.Text.Json;
 using FufuLauncher.Contracts.Services;
 using FufuLauncher.Helpers;
@@ -47,6 +48,7 @@ public sealed partial class BlankPage
                         break;
                     }
                 }
+
                 if (!found)
                 {
                     await ShowError(string.Format("Err_ExeNotFoundInFolder_Format".GetLocalized(), rawPath));
@@ -56,7 +58,7 @@ public sealed partial class BlankPage
 
             var appPath = Environment.ProcessPath;
 
-            var presetsDir = Path.Combine(AppContext.BaseDirectory, "Plugins", "Presets");
+            var presetsDir = AppPaths.PluginPresetsDir;
             var presets = new List<PresetModel>();
 
             if (Directory.Exists(presetsDir))
@@ -69,7 +71,9 @@ public sealed partial class BlankPage
                         var preset = JsonSerializer.Deserialize<PresetModel>(File.ReadAllText(file));
                         if (preset != null) presets.Add(preset);
                     }
-                    catch { }
+                    catch
+                    {
+                    }
                 }
             }
 
@@ -82,15 +86,44 @@ public sealed partial class BlankPage
                 Margin = new Thickness(0, 10, 0, 0)
             };
 
+            var defaultShortcutName = Path.GetFileNameWithoutExtension("FileName_ShortcutName".GetLocalized());
+            var nameTextBox = new TextBox
+            {
+                Text = defaultShortcutName,
+                PlaceholderText = "Placeholder_ShortcutName".GetLocalized(),
+                Width = 300,
+                Margin = new Thickness(0, 10, 0, 0)
+            };
+            bool nameEdited = false;
+            nameTextBox.TextChanged += (_, _) => nameEdited = true;
+            presetComboBox.SelectionChanged += (_, _) =>
+            {
+                if (!nameEdited && presetComboBox.SelectedItem is PresetModel preset)
+                {
+                    nameTextBox.Text = string.IsNullOrWhiteSpace(preset.Name) ? defaultShortcutName : preset.Name;
+                }
+            };
+
             var customParamsObj = await localSettings.ReadSettingAsync("CustomLaunchParameters");
             var customLaunchParams = customParamsObj as string;
-            string customParamsDisplay = string.IsNullOrWhiteSpace(customLaunchParams) ? "None_Value".GetLocalized() : customLaunchParams;
+            string customParamsDisplay = string.IsNullOrWhiteSpace(customLaunchParams)
+                ? "None_Value".GetLocalized()
+                : customLaunchParams;
 
             var contentPanel = new StackPanel { Spacing = 10 };
-            contentPanel.Children.Add(new TextBlock { Text = "Msg_ChooseShortcutAction".GetLocalized(), TextWrapping = TextWrapping.Wrap });
-            contentPanel.Children.Add(new TextBlock { Text = string.Format("Msg_ImportedLaunchParams_Format".GetLocalized(), customParamsDisplay), Opacity = 0.7, TextWrapping = TextWrapping.Wrap });
-            contentPanel.Children.Add(new TextBlock { Text = "Label_SpecifyInjectionPreset".GetLocalized(), Margin = new Thickness(0, 5, 0, 0) });
+            contentPanel.Children.Add(new TextBlock
+                { Text = "Msg_ChooseShortcutAction".GetLocalized(), TextWrapping = TextWrapping.Wrap });
+            contentPanel.Children.Add(new TextBlock
+            {
+                Text = string.Format("Msg_ImportedLaunchParams_Format".GetLocalized(), customParamsDisplay),
+                Opacity = 0.7, TextWrapping = TextWrapping.Wrap
+            });
+            contentPanel.Children.Add(new TextBlock
+                { Text = "Label_SpecifyInjectionPreset".GetLocalized(), Margin = new Thickness(0, 5, 0, 0) });
             contentPanel.Children.Add(presetComboBox);
+            contentPanel.Children.Add(new TextBlock
+                { Text = "Label_ShortcutName".GetLocalized(), Margin = new Thickness(0, 5, 0, 0) });
+            contentPanel.Children.Add(nameTextBox);
 
             var choiceDialog = new ContentDialog
             {
@@ -116,8 +149,9 @@ public sealed partial class BlankPage
                 presetArg = $" --preset {GameLauncherService.QuoteArgument(selectedPreset.Id, forceQuotes: true)}";
             }
 
-            var pluginPath = Path.Combine(
-                AppContext.BaseDirectory, "Plugins", "FuFuPlugin", "FufuLauncher.UnlockerIsland.dll");
+            var pluginPath = App.GetService<LightweightPluginService>().IsLightweightMode
+                ? LauncherService.GetBundledLitePluginDllPath()
+                : new LauncherService().GetDefaultDllPath();
             if (!LauncherService.IsAllowedPluginDllPath(pluginPath))
             {
                 await ShowError("主插件缺失或完整性校验失败，无法创建注入快捷方式。");
@@ -125,13 +159,33 @@ public sealed partial class BlankPage
             }
 
             var customParamsArg = string.IsNullOrWhiteSpace(customLaunchParams) ? "" : " " + customLaunchParams;
-            var argsOnly = $"--elevated-inject {GameLauncherService.QuoteArgument(finalExePath)}{presetArg} --{customParamsArg}";
+            var argsOnly =
+                $"--elevated-inject {GameLauncherService.QuoteArgument(finalExePath)}{presetArg} --{customParamsArg}";
             var fullCommandLine = $"{GameLauncherService.QuoteArgument(appPath ?? string.Empty)} {argsOnly}";
 
             if (choiceResult == ContentDialogResult.Primary)
             {
                 var desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
-                var shortcutPath = Path.Combine(desktopPath, "FileName_ShortcutName".GetLocalized());
+
+                var shortcutName = string.IsNullOrWhiteSpace(nameTextBox.Text)
+                    ? defaultShortcutName
+                    : nameTextBox.Text.Trim();
+                foreach (var invalidChar in Path.GetInvalidFileNameChars())
+                {
+                    shortcutName = shortcutName.Replace(invalidChar.ToString(), string.Empty);
+                }
+
+                if (string.IsNullOrWhiteSpace(shortcutName))
+                {
+                    shortcutName = defaultShortcutName;
+                }
+
+                if (!shortcutName.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase))
+                {
+                    shortcutName += ".lnk";
+                }
+
+                var shortcutPath = Path.Combine(desktopPath, shortcutName);
 
                 Type shellType = Type.GetTypeFromProgID("WScript.Shell");
                 dynamic shell = Activator.CreateInstance(shellType);

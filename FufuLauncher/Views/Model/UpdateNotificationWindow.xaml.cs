@@ -2,6 +2,7 @@
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
+
 using System;
 using System.Diagnostics;
 using System.Globalization;
@@ -25,7 +26,9 @@ public sealed partial class UpdateNotificationWindow : WindowEx
     {
         Timeout = TimeSpan.FromSeconds(30)
     };
-    private static readonly Regex UrlRegex = new(@"https?://[A-Za-z0-9\-._~:/?#\[\]@!$&()*+,;=%]+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    private static readonly Regex UrlRegex = new(@"https?://[A-Za-z0-9\-._~:/?#\[\]@!$&()*+,;=%]+",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     private readonly bool _isPreview;
     private readonly string _updateInfoUrl;
@@ -38,6 +41,7 @@ public sealed partial class UpdateNotificationWindow : WindowEx
 
         _isPreview = isPreview;
         _updateInfoUrl = updateInfoUrl;
+        RootGrid.RequestedTheme = App.GetService<IThemeSelectorService>().Theme;
 
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
@@ -118,12 +122,15 @@ public sealed partial class UpdateNotificationWindow : WindowEx
                     }
                 }
             }
+
             _initialHeightAdjustmentPending = true;
             StatusPanel.Visibility = Visibility.Collapsed;
             AnnouncementScrollViewer.Visibility = Visibility.Visible;
             DispatcherQueue.TryEnqueue(() => TryAdjustInitialHeight(AnnouncementContent.ActualHeight));
         }
-        catch (OperationCanceledException) when (_loadCancellation.IsCancellationRequested) { }
+        catch (OperationCanceledException) when (_loadCancellation.IsCancellationRequested)
+        {
+        }
         catch (Exception ex)
         {
             Debug.WriteLine($"[UpdateNotificationWindow] {ex.Message}");
@@ -134,11 +141,12 @@ public sealed partial class UpdateNotificationWindow : WindowEx
         }
     }
 
-    private static TextBlock CreateAnnouncementTextBlock(string text, AnnouncementSection section, Thickness margin)
+    private TextBlock CreateAnnouncementTextBlock(string text, AnnouncementSection section, Thickness margin)
     {
         var isHeading = section.Tag is "h1" or "h2" or "h3" or "h4" or "h5" or "h6";
         var block = new TextBlock
         {
+            Style = (Style)RootGrid.Resources["AnnouncementTextBlockStyle"],
             FontFamily = new FontFamily("Microsoft YaHei"),
             FontSize = section.FontSize,
             FontWeight = isHeading ? Microsoft.UI.Text.FontWeights.Bold : Microsoft.UI.Text.FontWeights.Normal,
@@ -258,6 +266,7 @@ public sealed partial class UpdateNotificationWindow : WindowEx
                     ResolveFontSize(document, node, defaultSize, bodyFontSize),
                     ResolveTextAlignment(document, node)));
             }
+
             return;
         }
 
@@ -403,6 +412,7 @@ public sealed partial class UpdateNotificationWindow : WindowEx
                     declarations.Append(rule.Groups["rules"].Value).Append(';');
             }
         }
+
         declarations.Append(node.GetAttributeValue("style", string.Empty));
         return declarations.ToString();
     }
@@ -426,19 +436,14 @@ public sealed partial class UpdateNotificationWindow : WindowEx
 
     private async void OnUpdateBtnClicked(object sender, RoutedEventArgs e)
     {
-        if (_isPreview)
-        {
-            LaunchPreviewUpdater();
-        }
-        else if (App.MainWindow is MainWindow mainWindow)
-        {
-            await mainWindow.NavigateToSettingsUpdateSectionAsync();
-        }
-
+        if (sender is Button button) button.IsEnabled = false;
+        if (await LaunchUpdaterAsync(_isPreview))
         Close();
+        else if (sender is Button retryButton)
+            retryButton.IsEnabled = true;
     }
 
-    private void LaunchPreviewUpdater()
+    private async Task<bool> LaunchUpdaterAsync(bool isPreview)
     {
         try
         {
@@ -447,14 +452,14 @@ public sealed partial class UpdateNotificationWindow : WindowEx
             if (!File.Exists(updaterPath))
             {
                 Debug.WriteLine("未找到 UpdateFufuLauncher.exe");
-                return;
+                return false;
             }
 
             bool useThirdPartyCdn = false;
             try
             {
                 var localSettingsService = App.GetService<ILocalSettingsService>();
-                var cdnSetting = localSettingsService.ReadSettingAsync("IsUseThirdPartyCDNEnabled").Result;
+                var cdnSetting = await localSettingsService.ReadSettingAsync("IsUseThirdPartyCDNEnabled");
                 if (cdnSetting != null)
                 {
                     useThirdPartyCdn = Convert.ToBoolean(cdnSetting);
@@ -470,14 +475,16 @@ public sealed partial class UpdateNotificationWindow : WindowEx
                 FileName = updaterPath,
                 UseShellExecute = true,
                 Verb = "runas",
-                Arguments = $"--use-third-party-cdn={useThirdPartyCdn.ToString().ToLower()} --preview" +
-                            $" --installed-version={AppVersionHelper.FullVersion}"
+                Arguments = $"--use-third-party-cdn={useThirdPartyCdn.ToString().ToLower()}" +
+                            $" --installed-version={AppVersionHelper.FullVersion}" +
+                            (isPreview ? " --preview" : string.Empty)
             };
-            Process.Start(startInfo);
+            return Process.Start(startInfo) != null;
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"启动预览版更新程序失败: {ex.Message}");
+            Debug.WriteLine($"启动更新程序失败: {ex.Message}");
+            return false;
         }
     }
 }

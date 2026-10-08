@@ -2,6 +2,7 @@
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
+
 using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
@@ -60,8 +61,14 @@ public static class PluginVerifier
             Debug.WriteLine($"  Expected: {expectedHash}");
             Debug.WriteLine($"  Actual:   {actualHash}");
             
-            try { File.Delete(filePath); }
-            catch (Exception ex) { Debug.WriteLine($"[PluginVerifier] Failed to delete bad file: {ex.Message}"); }
+            try
+            {
+                File.Delete(filePath);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[PluginVerifier] Failed to delete bad file: {ex.Message}");
+            }
 
             throw new HashMismatchException(
                 "PluginStoreHashMismatch".GetLocalized());
@@ -118,7 +125,8 @@ public static class PluginVerifier
             if (lowerScript.Contains(pattern))
             {
                 Debug.WriteLine($"[PluginVerifier] SECURITY BLOCK: {description}");
-                return SecurityValidationResult.Fail(string.Format("PluginStoreSecurityBannedOp".GetLocalized(), description));
+                return SecurityValidationResult.Fail(string.Format("PluginStoreSecurityBannedOp".GetLocalized(),
+                    description));
             }
         }
         
@@ -176,25 +184,40 @@ public static class PluginVerifier
         {
             sb.Append(b.ToString("x2"));
         }
+
         return sb.ToString();
     }
 }
 
 public class HashMismatchException : Exception
 {
-    public HashMismatchException(string message) : base(message) { }
-    public HashMismatchException(string message, Exception inner) : base(message, inner) { }
+    public HashMismatchException(string message) : base(message)
+    {
+    }
+
+    public HashMismatchException(string message, Exception inner) : base(message, inner)
+    {
+    }
 }
 
 public class SecurityViolationException : Exception
 {
-    public SecurityViolationException(string message) : base(message) { }
+    public SecurityViolationException(string message) : base(message)
+    {
+    }
 }
 
 public class SecurityValidationResult
 {
-    public bool IsValid { get; }
-    public string? Reason { get; }
+    public bool IsValid
+    {
+        get;
+    }
+
+    public string? Reason
+    {
+        get;
+    }
 
     private SecurityValidationResult(bool isValid, string? reason = null)
     {

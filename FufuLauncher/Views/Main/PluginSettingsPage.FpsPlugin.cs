@@ -2,6 +2,7 @@
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
+
 using System.IO.Compression;
 using System.Security.Cryptography;
 using Microsoft.UI.Xaml;
@@ -69,8 +70,8 @@ public sealed partial class PluginSettingsPage
         }
     }
 
-private async Task EnforceFpsPluginDisableAsync()
-{
+    private async Task EnforceFpsPluginDisableAsync()
+    {
     _isEnforcingFpsDisable = true;
     try
     {
@@ -100,7 +101,7 @@ private async Task EnforceFpsPluginDisableAsync()
     {
         _isEnforcingFpsDisable = false;
     }
-}
+    }
 
     private async void OnRepairFpsPluginClick(object sender, RoutedEventArgs e)
     {
@@ -109,14 +110,23 @@ private async Task EnforceFpsPluginDisableAsync()
 
     private async Task PerformFpsPluginRepairAsync(bool showUI)
     {
-        string zipFilePath = Path.Combine(AppContext.BaseDirectory, "Assets", "Launcher" , "FPS.zip");
+        string zipFilePath = Path.Combine(AppContext.BaseDirectory, "Assets", "Launcher", "FPS.zip");
         string pluginsDir = Path.Combine(AppContext.BaseDirectory, "Plugins");
         string extractPath = Path.Combine(Path.GetTempPath(), "FPS_Extract_" + Guid.NewGuid());
         string finalDestDir = Path.Combine(pluginsDir, "FPS");
 
         if (!File.Exists(zipFilePath))
         {
-            if (showUI) WeakReferenceMessenger.Default.Send(new NotificationMessage("ErrorTitle".GetLocalized(), "Plugin_FileNotFound".GetLocalized(), NotificationType.Error));
+            if (showUI)
+                WeakReferenceMessenger.Default.Send(new NotificationMessage("ErrorTitle".GetLocalized(),
+                    "Plugin_FileNotFound".GetLocalized(), NotificationType.Error));
+            return;
+        }
+
+        var preLockedFile = FileLockHelper.FindLockedFileInDirectory(finalDestDir);
+        if (preLockedFile != null)
+        {
+            if (showUI) await ShowLockedFileDialogAsync(preLockedFile);
             return;
         }
 
@@ -140,7 +150,9 @@ private async Task EnforceFpsPluginDisableAsync()
             await Task.Run(() => Helpers.DownloadSecurity.ExtractZipSafely(zipFilePath, extractPath));
             
             var subDirs = Directory.GetDirectories(extractPath);
-            string sourceDirToMove = (subDirs.Length == 1 && Directory.GetFiles(extractPath).Length == 0) ? subDirs[0] : extractPath;
+            string sourceDirToMove = (subDirs.Length == 1 && Directory.GetFiles(extractPath).Length == 0)
+                ? subDirs[0]
+                : extractPath;
 
             if (Directory.Exists(finalDestDir)) Directory.Delete(finalDestDir, true);
             
@@ -151,7 +163,9 @@ private async Task EnforceFpsPluginDisableAsync()
 
             await VerifyFpsPluginHashAsync();
 
-            if (showUI) WeakReferenceMessenger.Default.Send(new NotificationMessage("Success".GetLocalized(), "Fps_Repair_Success".GetLocalized(), NotificationType.Success));
+            if (showUI)
+                WeakReferenceMessenger.Default.Send(new NotificationMessage("Success".GetLocalized(),
+                    "Fps_Repair_Success".GetLocalized(), NotificationType.Success));
             
             ViewModel.RefreshPluginStates();
         }
@@ -160,6 +174,13 @@ private async Task EnforceFpsPluginDisableAsync()
             if (progressDialog != null) progressDialog.Hide();
             if (showUI)
             {
+                var lockedFile = FileLockHelper.FindLockedFileInDirectory(finalDestDir);
+                if (lockedFile != null)
+                {
+                    await ShowLockedFileDialogAsync(lockedFile);
+                    return;
+                }
+
                 var failDialog = new ContentDialog
                 {
                     Title = "Fps_Repair_Fail_Title".GetLocalized(),

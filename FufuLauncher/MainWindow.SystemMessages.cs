@@ -2,6 +2,7 @@
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
+
 using System.Diagnostics;
 using FufuLauncher.Constants;
 using FufuLauncher.Helpers;
@@ -113,6 +114,18 @@ public sealed partial class MainWindow
         catch (Exception ex)
         {
             Debug.WriteLine($"[Announcement] 定时检查公告失败: {ex.Message}");
+        }
+    }
+
+    private async Task CheckPeriodicConstraintAsync()
+    {
+        try
+        {
+            await _constraintService.RefreshAsync();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[策略约束] 定时检查失败: {ex.Message}");
         }
     }
 

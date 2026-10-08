@@ -1,7 +1,8 @@
-﻿/*
+/*
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
+
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using FufuLauncher.ViewModels;
@@ -36,6 +37,7 @@ public sealed partial class PluginSettingsPage
                 ViewModel.ForceUnlockAndSwitchPreset(preset);
                 return;
             }
+
             ViewModel.SwitchPreset(preset);
         }
     }
@@ -140,7 +142,20 @@ public sealed partial class PluginSettingsPage
 
             if (ViewModel.SelectedPluginIndex == 0)
             {
-                string urlLatest = Constants.ApiEndpoints.PluginRawUrl;
+                if (ViewModel.IsLightweightMode)
+                {
+                    if (!await InstallLightweightPluginWithProgressAsync("LightweightMode_ReinstallTitle"))
+                    {
+                        return;
+                    }
+
+                    ViewModel.LoadConfiguration();
+                    ViewModel.RefreshPluginStates();
+                    return;
+                }
+
+                string urlLatest =
+                    Constants.ApiEndpoints.PluginRawUrl;
                 await DownloadAndInstallPluginAsync(urlLatest);
             }
             else if (ViewModel.SelectedPluginIndex == 1)

@@ -2,6 +2,7 @@
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
+
 using CommunityToolkit.Mvvm.Messaging;
 using FufuLauncher.Helpers;
 using FufuLauncher.Messages;
@@ -12,26 +13,41 @@ public partial class PluginSettingsViewModel
 {
     #region 配置加载
 
-
-public void LoadConfiguration()
+    public void LoadConfiguration()
     {
-        Settings.Clear();
-
-        if (SelectedPluginIndex == 2)
+        if (_deferConfigurationLoading)
         {
-            PluginName = "千星奇域头像替换";
-            PluginDescription = "注意：开启此功能会自动禁用FPS插件，两者不可同时开启，替换头像是永久性的";
-            PluginDeveloper = "不可用";
-            LastModifiedDate = "不可用";
-            AvailablePresets.Clear();
-            CurrentPreset = null;
+            RequestConfigurationLoad();
             return;
         }
 
+        LoadConfigurationSynchronously();
+    }
+
+    private void LoadConfigurationSynchronously()
+    {
+        Settings.Clear();
+        PinnedSettings.Clear();
+        _settingOrder.Clear();
+        _settingOrderIndexes.Clear();
+        NotifySelectionChanged();
+
         if (!File.Exists(_iniPath))
         {
-            PluginName = SelectedPluginIndex == 0 ? "未安装 FuFuPlugin" : "未安装 FPS 插件";
+            if (SelectedPluginIndex == 0)
+            {
+                PluginName = IsLightweightMode
+                    ? "LightweightMode_LiteNotInstalled".GetLocalized()
+                    : "未安装 FuFuPlugin";
+            }
+            else
+            {
+                PluginName = "未安装 FPS 插件";
+            }
+
             PluginDescription = "请确保Plugins目录下存在对应的文件夹及config.ini文件";
+            AvailablePresets.Clear();
+            CurrentPreset = null;
             return;
         }
 
@@ -72,19 +88,33 @@ public void LoadConfiguration()
                 if (SelectedPluginIndex == 0)
                 {
                     // Translations under "Plugin_<SectionKey>" were authored specifically for
-                    // FuFuPlugin's config.ini. Other plugins (FPS, Avatar) can reuse the same
+                    // FuFuPlugin's config.ini. Other plugins (FPS) can reuse the same
                     // section names for unrelated settings, so only apply this lookup for
                     // FuFuPlugin to avoid showing a mistranslated label on another plugin's setting.
                     var localizationKey = $"Plugin_{section.Key}";
                     var localizedName = localizationKey.GetLocalized();
                     name = localizedName != localizationKey ? localizedName : iniName;
                 }
+
                 var type = dic.GetValueOrDefault("Type", "string");
                 var value = dic.GetValueOrDefault("Value", "");
                 var help = dic.GetValueOrDefault("help", "");
-                
-                var settingItem = new PluginSettingItem(_iniFile, section.Key, name, type, value, help, OnSettingValueChanged, UseKeyListInput);
-                Settings.Add(settingItem);
+
+                var settingItem = new PluginSettingItem(_iniFile, section.Key, name, type, value, help,
+                    OnSettingValueChanged, UseKeyListInput);
+
+                _settingOrderIndexes[section.Key] = _settingOrder.Count;
+                _settingOrder.Add(section.Key);
+
+                if (IsSettingPinned(section.Key))
+                {
+                    settingItem.IsPinned = true;
+                    PinnedSettings.Add(settingItem);
+                }
+                else
+                {
+                    Settings.Add(settingItem);
+                }
             }
         }
         catch (Exception ex)
@@ -97,5 +127,6 @@ public void LoadConfiguration()
             ));
         }
     }
+
     #endregion
 }

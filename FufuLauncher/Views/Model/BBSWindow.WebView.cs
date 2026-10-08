@@ -2,6 +2,7 @@
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
+
 using FufuLauncher.Constants;
 using Microsoft.Web.WebView2.Core;
 
@@ -58,14 +59,15 @@ public sealed partial class BBSWindow
     {
         try
         {
-           
             await EnsureDeviceFpAsync();
 
             await BBSWebView.EnsureCoreWebView2Async();
             UpdateWebViewSettings();
 
-            BBSWebView.CoreWebView2.AddWebResourceRequestedFilter("*://*.mihoyo.com/*", CoreWebView2WebResourceContext.All);
-            BBSWebView.CoreWebView2.AddWebResourceRequestedFilter("*://*.hoyolab.com/*", CoreWebView2WebResourceContext.All);
+            BBSWebView.CoreWebView2.AddWebResourceRequestedFilter("*://*.mihoyo.com/*",
+                CoreWebView2WebResourceContext.All);
+            BBSWebView.CoreWebView2.AddWebResourceRequestedFilter("*://*.hoyolab.com/*",
+                CoreWebView2WebResourceContext.All);
 
             BBSWebView.CoreWebView2.WebResourceRequested += CoreWebView2_WebResourceRequested;
             BBSWebView.CoreWebView2.WebMessageReceived += CoreWebView2_WebMessageReceived;

@@ -2,6 +2,7 @@
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
+
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Text.Json;
@@ -23,8 +24,8 @@ namespace FufuLauncher.ViewModels;
 
 public partial class AccountViewModel : ObservableRecipient
 {
-
     #region 字段
+
     private readonly ILocalSettingsService _localSettingsService;
     private readonly IUserInfoService _userInfoService;
     private readonly INavigationService _navigationService;
@@ -35,17 +36,22 @@ public partial class AccountViewModel : ObservableRecipient
     private int _loadVersion;
     private string? _lastNotifiedAccountId;
     private volatile bool _isDisposed;
+
     #endregion
 
     #region 生命周期
+
     public void Cleanup()
     {
         _isDisposed = true;
-        Interlocked.Increment(ref _loadVersion); 
+        WeakReferenceMessenger.Default.UnregisterAll(this);
+        Interlocked.Increment(ref _loadVersion);
     }
+
     #endregion
 
     #region 属性
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsLoggedIn))]
     [NotifyPropertyChangedFor(nameof(IsNotLoggedIn))]
@@ -53,6 +59,7 @@ public partial class AccountViewModel : ObservableRecipient
 
     public bool IsLoggedIn => CurrentAccount != null;
     public bool IsNotLoggedIn => CurrentAccount == null;
+
     public IRelayCommand OpenSecurityCenterCommand
     {
         get;
@@ -79,6 +86,7 @@ public partial class AccountViewModel : ObservableRecipient
     #endregion
 
     #region 命令
+
     public IRelayCommand LockAccountCommand
     {
         get;
@@ -88,37 +96,46 @@ public partial class AccountViewModel : ObservableRecipient
     {
         get;
     }
+
     public IRelayCommand LogoutCommand
     {
         get;
     }
+
     public IRelayCommand LoadUserInfoCommand
     {
         get;
     }
+
     public IRelayCommand OpenGenshinDataCommand
     {
         get;
     }
+
     public IRelayCommand CopyCookieCommand
     {
         get;
     }
+
     public IRelayCommand RefreshCookieCommand
     {
         get;
     }
+
     public IRelayCommand AddAccountCommand
     {
         get;
     }
+
     public IRelayCommand<AccountInfo> SwitchAccountCommand
     {
         get;
     }
+
     #endregion
 
     #region 构造函数
+
     public AccountViewModel(
         ILocalSettingsService localSettingsService,
         IUserInfoService userInfoService,
@@ -132,6 +149,16 @@ public partial class AccountViewModel : ObservableRecipient
         _notificationService = notificationService;
         _dispatcherQueue = App.MainWindow.DispatcherQueue;
         _accountManager = accountManager;
+        WeakReferenceMessenger.Default.Register<GameRoleChangedMessage>(this, (r, m) =>
+            RunOnUIThread(() =>
+            {
+                if (_isDisposed || CurrentAccount?.AccountId != m.AccountId ||
+                    _accountManager.ActiveAccountId != m.AccountId) return;
+                var role = GameRoleSelection.Current(_accountManager.GetActiveAccountEntry()!);
+                CurrentAccount.GameUid = role?.game_uid ?? "";
+                CurrentAccount.Level = role?.level.ToString() ?? "";
+                CurrentAccount.Server = role?.region_name ?? "";
+            }));
         LoginCommand = new AsyncRelayCommand(LoginAsync);
         LogoutCommand = new AsyncRelayCommand(LogoutAsync);
         LoadUserInfoCommand = new AsyncRelayCommand(async () => await LoadUserInfoAsync());
@@ -144,20 +171,22 @@ public partial class AccountViewModel : ObservableRecipient
         LockAccountCommand = new AsyncRelayCommand(LockAccountAsync);
         // 不在此处加载 — OnNavigatedTo 会触发 RefreshDataAsync
     }
+
     #endregion
 
     #region 公开方法
+
     public async Task DeleteAccountAsync(AccountInfo account)
     {
         if (account == null) return;
-        var accountId = account.AccountId; 
+        var accountId = account.AccountId;
         bool isCurrentAccount = _accountManager.ActiveAccountId == accountId;
 
         try
         {
             await _accountManager.DeleteAccountAsync(accountId);
 
-            
+
             RefreshSavedAccountsList();
 
             if (isCurrentAccount)
@@ -169,7 +198,6 @@ public partial class AccountViewModel : ObservableRecipient
                 }
                 else
                 {
-                    
                     RunOnUIThread(() =>
                     {
                         CurrentAccount = null;
@@ -186,6 +214,7 @@ public partial class AccountViewModel : ObservableRecipient
             RunOnUIThread(() => StatusMessage = $"删除失败: {ex.Message}");
         }
     }
+
     public async Task<bool> LoadUserInfoAsync()
     {
         var myVersion = Interlocked.Increment(ref _loadVersion);
@@ -231,7 +260,7 @@ public partial class AccountViewModel : ObservableRecipient
             var newRolesInfo = await rolesTask;
             var newUserFullInfo = await userInfoTask;
 
-            if (myVersion != _loadVersion)
+            if (myVersion != _loadVersion || _isDisposed || _accountManager.ActiveAccountId != activeId)
             {
                 Debug.WriteLine($"[LoadUserInfo][{entry.Id}] 结果已过期(v{myVersion}→{_loadVersion})，丢弃");
                 return false;
@@ -243,19 +272,22 @@ public partial class AccountViewModel : ObservableRecipient
 
             var userInfo = UserFullInfo?.data?.user_info;
             var hasBoundRole = GameRolesInfo?.data?.list?.Count > 0;
-            var role = GameRolesInfo?.data?.list?.FirstOrDefault();
+            if (newRolesInfo.retcode == 0 && newRolesInfo.data?.list != null)
+                await App.GetService<GameRoleService>().UpdateBindingsAsync(entry.Id, newRolesInfo.data.list);
+            if (_isDisposed || myVersion != _loadVersion || _accountManager.ActiveAccountId != entry.Id) return false;
+            var role = GameRoleSelection.Current(entry);
 
             var nickname = userInfo?.nickname ?? role?.nickname ?? $"用户 {entry.Stuid}";
             var avatarUrl = userInfo?.avatar_url ?? "ms-appx:///Assets/DefaultAvatar.png";
             var gameUid = role?.game_uid ?? "";
             var isOs = entry.Id.StartsWith("os_");
-            var server = isOs ? "国际服" : "国服";
+            var server = role?.region_name ?? (isOs ? "国际服" : "国服");
             var level = role?.level.ToString() ?? "";
             var sign = string.IsNullOrEmpty(userInfo?.introduce) ? "这个人很懒，什么都没有写..." : userInfo.introduce;
             var ipRegion = userInfo?.ip_region ?? "未知";
             var gender = userInfo?.gender ?? 0;
 
-            await _accountManager.UpdateAccountMetaAsync(entry.Id, nickname, avatarUrl, gameUid);
+            await _accountManager.UpdateAccountMetaAsync(entry.Id, nickname, avatarUrl);
 
             RunOnUIThread(() =>
             {
@@ -263,6 +295,7 @@ public partial class AccountViewModel : ObservableRecipient
                 {
                     CurrentAccount = new AccountInfo { AccountId = entry.Id, Stuid = entry.Stuid };
                 }
+
                 CurrentAccount.Nickname = nickname;
                 CurrentAccount.AvatarUrl = avatarUrl;
                 CurrentAccount.GameUid = gameUid;
@@ -315,7 +348,10 @@ public partial class AccountViewModel : ObservableRecipient
 
     [RelayCommand]
     private void NavigateToGacha() => _navigationService.NavigateTo(typeof(GachaViewModel).FullName!);
-    private async Task LockAccountAsync() => await OpenSecurityWindowInternalAsync(ApiEndpoints.AccountLockUrl, "正在打开账号冻结页面...");
+
+    private async Task LockAccountAsync() =>
+        await OpenSecurityWindowInternalAsync(ApiEndpoints.AccountLockUrl, "正在打开账号冻结页面...");
+
     private async Task CopyCookieAsync()
     {
         try
@@ -326,7 +362,8 @@ public partial class AccountViewModel : ObservableRecipient
                 RunOnUIThread(() =>
                 {
                     StatusMessage = "未找到登录信息";
-                    WeakReferenceMessenger.Default.Send(new NotificationMessage("复制失败", "未找到登录信息", NotificationType.Error));
+                    WeakReferenceMessenger.Default.Send(new NotificationMessage("复制失败", "未找到登录信息",
+                        NotificationType.Error));
                 });
                 return;
             }
@@ -337,7 +374,8 @@ public partial class AccountViewModel : ObservableRecipient
                 RunOnUIThread(() =>
                 {
                     StatusMessage = "未找到有效的 Cookie";
-                    WeakReferenceMessenger.Default.Send(new NotificationMessage("复制失败", "未找到有效的 Cookie", NotificationType.Error));
+                    WeakReferenceMessenger.Default.Send(new NotificationMessage("复制失败", "未找到有效的 Cookie",
+                        NotificationType.Error));
                 });
                 return;
             }
@@ -350,7 +388,8 @@ public partial class AccountViewModel : ObservableRecipient
                 dataPackage.SetText(cookieString);
                 Clipboard.SetContent(dataPackage);
                 StatusMessage = "Cookie 已复制到剪切板";
-                WeakReferenceMessenger.Default.Send(new NotificationMessage("复制成功", "Cookie 已成功复制到剪贴板", NotificationType.Success));
+                WeakReferenceMessenger.Default.Send(new NotificationMessage("复制成功", "Cookie 已成功复制到剪贴板",
+                    NotificationType.Success));
             });
         }
         catch (Exception ex)
@@ -358,10 +397,12 @@ public partial class AccountViewModel : ObservableRecipient
             RunOnUIThread(() =>
             {
                 StatusMessage = $"复制失败: {ex.Message}";
-                WeakReferenceMessenger.Default.Send(new NotificationMessage("复制失败", ex.Message, NotificationType.Error));
+                WeakReferenceMessenger.Default.Send(new NotificationMessage("复制失败", ex.Message,
+                    NotificationType.Error));
             });
         }
     }
+
     private async Task RefreshCookieAsync()
     {
         try
@@ -372,7 +413,8 @@ public partial class AccountViewModel : ObservableRecipient
                 RunOnUIThread(() =>
                 {
                     StatusMessage = "未找到登录信息";
-                    WeakReferenceMessenger.Default.Send(new NotificationMessage("Home_RefreshFailed".GetLocalized(), "Home_NoActiveAccount".GetLocalized(), NotificationType.Error));
+                    WeakReferenceMessenger.Default.Send(new NotificationMessage("Home_RefreshFailed".GetLocalized(),
+                        "Home_NoActiveAccount".GetLocalized(), NotificationType.Error));
                 });
                 return;
             }
@@ -383,7 +425,8 @@ public partial class AccountViewModel : ObservableRecipient
                 RunOnUIThread(() =>
                 {
                     StatusMessage = "未找到有效的 Cookie";
-                    WeakReferenceMessenger.Default.Send(new NotificationMessage("Home_RefreshFailed".GetLocalized(), "Home_CannotLoadCredentials".GetLocalized(), NotificationType.Error));
+                    WeakReferenceMessenger.Default.Send(new NotificationMessage("Home_RefreshFailed".GetLocalized(),
+                        "Home_CannotLoadCredentials".GetLocalized(), NotificationType.Error));
                 });
                 return;
             }
@@ -407,11 +450,15 @@ public partial class AccountViewModel : ObservableRecipient
             RunOnUIThread(() =>
             {
                 StatusMessage = $"Cookie 刷新失败: {ex.Message}";
-                WeakReferenceMessenger.Default.Send(new NotificationMessage("Home_RefreshFailed".GetLocalized(), ex.Message, NotificationType.Error));
+                WeakReferenceMessenger.Default.Send(new NotificationMessage("Home_RefreshFailed".GetLocalized(),
+                    ex.Message, NotificationType.Error));
             });
         }
     }
-    private async Task OpenSecurityCenterAsync() => await OpenSecurityWindowInternalAsync(ApiEndpoints.AccountSecurityUrl, "正在打开账号安全中心...");
+
+    private async Task OpenSecurityCenterAsync() =>
+        await OpenSecurityWindowInternalAsync(ApiEndpoints.AccountSecurityUrl, "正在打开账号安全中心...");
+
     private async Task OpenSecurityWindowInternalAsync(string url, string loadingMsg)
     {
         try
@@ -437,6 +484,7 @@ public partial class AccountViewModel : ObservableRecipient
             RunOnUIThread(() => StatusMessage = $"操作失败: {ex.Message}");
         }
     }
+
     private async Task LoadActiveAccountAsync(string accountId)
     {
         var cookies = await _accountManager.LoadCookiesAsync(accountId);
@@ -463,9 +511,9 @@ public partial class AccountViewModel : ObservableRecipient
         var loaded = await LoadUserInfoAsync();
         if (!loaded)
         {
-            
         }
     }
+
     private async Task OpenGenshinDataAsync()
     {
         try
@@ -504,6 +552,7 @@ public partial class AccountViewModel : ObservableRecipient
                     GameUid = entry.GameUid ?? ""
                 });
             }
+
             OnPropertyChanged(nameof(HasSavedAccounts));
         });
     }
@@ -516,8 +565,12 @@ public partial class AccountViewModel : ObservableRecipient
             if (!_isDisposed) action();
         }
         else
-            _dispatcherQueue.TryEnqueue(() => { if (!_isDisposed) action(); });
+            _dispatcherQueue.TryEnqueue(() =>
+            {
+                if (!_isDisposed) action();
+            });
     }
+
     #endregion
 
     #region 账号数据管理（加载、保存、备份）
@@ -574,7 +627,7 @@ public partial class AccountViewModel : ObservableRecipient
             Debug.WriteLine($"[LoadAccountInfo] 已加载账户: {entry.Nickname} ({entry.Id})");
 
             // LoadUserInfoAsync 已在 LoadActiveAccountAsync 中被调用
-            RefreshSavedAccountsList(); 
+            RefreshSavedAccountsList();
         }
         catch (Exception ex)
         {
@@ -593,9 +646,11 @@ public partial class AccountViewModel : ObservableRecipient
         await LoadAccountInfo();
         RefreshSavedAccountsList();
     }
+
     #endregion
 
     #region 登录/退出/切换/添加账号
+
     private async Task LoginAsync()
     {
         if (_accountManager.GetAllAccounts().Count >= MaxAccounts)
@@ -603,6 +658,7 @@ public partial class AccountViewModel : ObservableRecipient
             StatusMessage = $"最多只能添加 {MaxAccounts} 个账户";
             return;
         }
+
         try
         {
             RunOnUIThread(() => StatusMessage = "正在打开登录窗口...");
@@ -629,11 +685,11 @@ public partial class AccountViewModel : ObservableRecipient
             RunOnUIThread(() => StatusMessage = $"登录出错: {ex.Message}");
         }
     }
+
     private async Task LogoutAsync()
     {
         try
         {
-    
             Interlocked.Increment(ref _loadVersion);
             await _accountManager.LogoutAsync();
             WeakReferenceMessenger.Default.Send(new AccountChangedMessage());
@@ -649,7 +705,7 @@ public partial class AccountViewModel : ObservableRecipient
             });
             _lastNotifiedAccountId = null;
 
-           
+
             RefreshSavedAccountsList();
         }
         catch (Exception ex)
@@ -657,12 +713,17 @@ public partial class AccountViewModel : ObservableRecipient
             RunOnUIThread(() => StatusMessage = $"退出失败: {ex.Message}");
         }
     }
+
     private async Task SwitchToAccountAsync(AccountInfo? targetAccount)
     {
         if (targetAccount == null) return;
 
         // 同步清空，确保 UI 在切换瞬间就不显示旧数据
-        RunOnUIThread(() => { GameRolesInfo = null; UserFullInfo = null; });
+        RunOnUIThread(() =>
+        {
+            GameRolesInfo = null;
+            UserFullInfo = null;
+        });
         await _accountManager.SwitchAccountAsync(targetAccount.AccountId);
         WeakReferenceMessenger.Default.Send(new AccountChangedMessage());
         await LoadActiveAccountAsync(targetAccount.AccountId);
@@ -682,6 +743,7 @@ public partial class AccountViewModel : ObservableRecipient
         RunOnUIThread(() => StatusMessage = "账户登录成功");
         _notificationService.Show("账户登录成功", $"已登录到 {targetAccount.Nickname}", NotificationType.Success, 3000);
     }
+
     private async Task AddNewAccountAsync()
     {
         if (_accountManager.GetAllAccounts().Count >= MaxAccounts)
@@ -689,6 +751,7 @@ public partial class AccountViewModel : ObservableRecipient
             StatusMessage = $"最多只能添加 {MaxAccounts} 个账户";
             return;
         }
+
         try
         {
             var loginWindow = new LoginQrWindow();
@@ -704,14 +767,12 @@ public partial class AccountViewModel : ObservableRecipient
         }
         catch (TaskCanceledException)
         {
-            
         }
         catch (Exception ex)
         {
             RunOnUIThread(() => StatusMessage = $"添加账户失败: {ex.Message}");
         }
     }
+
     #endregion
-
 }
-

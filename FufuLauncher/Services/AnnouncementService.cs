@@ -2,9 +2,12 @@
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
+
+using System.Diagnostics;
 using System.Text.Json;
 using FufuLauncher.Constants;
 using FufuLauncher.Contracts.Services;
+using FufuLauncher.Helpers;
 using FufuLauncher.Models;
 
 namespace FufuLauncher.Services;
@@ -13,14 +16,15 @@ public class AnnouncementService : IAnnouncementService
 {
     private readonly HttpClient _httpClient;
     private readonly ILocalSettingsService _localSettingsService;
-    
+    private readonly SemaphoreSlim _checkGate = new(1, 1);
+
     public AnnouncementService(ILocalSettingsService localSettingsService)
     {
         _localSettingsService = localSettingsService;
         _httpClient = new HttpClient();
         _httpClient.Timeout = TimeSpan.FromSeconds(10);
     }
-    
+
     public async Task<string?> GetCurrentAnnouncementUrlAsync()
     {
         try
@@ -32,12 +36,12 @@ public class AnnouncementService : IAnnouncementService
             {
                 return data.Info;
             }
-            
+
             return null;
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[AnnouncementService] 获取当前公告URL异常: {ex.Message}");
+            Debug.WriteLine($"[AnnouncementService] 获取当前公告URL异常: {ex.Message}");
             return null;
         }
     }
@@ -53,9 +57,10 @@ public class AnnouncementService : IAnnouncementService
             return await _httpClient.GetStringAsync(ApiEndpoints.AnnouncementFallbackUrl);
         }
     }
-    
+
     public async Task<string?> CheckForNewAnnouncementAsync()
     {
+        await _checkGate.WaitAsync();
         try
         {
             var remoteUrl = await GetCurrentAnnouncementUrlAsync();
@@ -64,26 +69,58 @@ public class AnnouncementService : IAnnouncementService
             {
                 return null;
             }
-            
+
             string localUrl = string.Empty;
-            var cachedUrlObj = await _localSettingsService.ReadSettingAsync(LocalSettingsService.LastAnnouncementUrlKey);
+            var cachedUrlObj =
+                await _localSettingsService.ReadSettingAsync(LocalSettingsService.LastAnnouncementUrlKey);
             if (cachedUrlObj is string cachedUrl)
             {
                 localUrl = cachedUrl;
             }
-            
-            if (!string.Equals(remoteUrl, localUrl, StringComparison.OrdinalIgnoreCase))
+
+            if (string.Equals(remoteUrl, localUrl, StringComparison.OrdinalIgnoreCase))
             {
-                await _localSettingsService.SaveSettingAsync(LocalSettingsService.LastAnnouncementUrlKey, remoteUrl);
-                return remoteUrl;
+                return null;
             }
-            
-            return null;
+
+            if (await ShouldSuppressDuringGameAsync())
+            {
+                return null;
+            }
+
+            await _localSettingsService.SaveSettingAsync(LocalSettingsService.LastAnnouncementUrlKey, remoteUrl);
+            return remoteUrl;
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[AnnouncementService] 检查公告更新逻辑异常: {ex.Message}");
+            Debug.WriteLine($"[AnnouncementService] 检查公告更新逻辑异常: {ex.Message}");
             return null;
+        }
+        finally
+        {
+            _checkGate.Release();
+        }
+    }
+
+    private async Task<bool> ShouldSuppressDuringGameAsync()
+    {
+        try
+        {
+            var settingObj =
+                await _localSettingsService.ReadSettingAsync(LocalSettingsService.SuppressAnnouncementInGameKey);
+            bool isEnabled = settingObj == null || Convert.ToBoolean(settingObj);
+
+            if (!isEnabled)
+            {
+                return false;
+            }
+
+            return await GameProcessHelper.IsGameRunningAsync();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[AnnouncementService] 游戏运行状态检查异常: {ex.Message}");
+            return false;
         }
     }
 }

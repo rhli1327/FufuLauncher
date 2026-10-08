@@ -1,7 +1,8 @@
-﻿/*
+/*
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
+
 using System.Diagnostics;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -12,6 +13,7 @@ using FufuLauncher.Messages;
 using FufuLauncher.Models;
 using FufuLauncher.Services;
 using FufuLauncher.Services.Background;
+using FufuLauncher.Services.MiHoYo.DailyNote;
 using Microsoft.UI.Dispatching;
 
 namespace FufuLauncher.ViewModels
@@ -19,6 +21,7 @@ namespace FufuLauncher.ViewModels
     public partial class MainViewModel : ObservableRecipient
     {
         #region 服务字段
+
         private readonly IHoyoverseContentService _contentService;
         private readonly IBackgroundRenderer _backgroundRenderer;
         private readonly IDevBuildDetectionService _devBuildDetectionService;
@@ -30,9 +33,11 @@ namespace FufuLauncher.ViewModels
         private readonly DailyNoteCardService _dailyNoteCardService;
         private readonly DispatcherQueue _dispatcherQueue;
         private static bool _isFirstLoad = true;
+
         #endregion
 
         #region 构造函数与消息订阅
+
         public MainViewModel(
             IHoyoverseBackgroundService backgroundService,
             IHoyoverseContentService contentService,
@@ -71,8 +76,26 @@ namespace FufuLauncher.ViewModels
             WeakReferenceMessenger.Default.Register<AccountChangedMessage>(this, async (r, m) =>
             {
                 await ClearDailyNoteDataAsync();
-                await LoadDailyNoteAsync();
+                await Task.WhenAll(LoadDailyNoteAsync(force: true), LoadCheckinStatusAsync());
             });
+            WeakReferenceMessenger.Default.Register<GameRoleChangedMessage>(this, (r, m) =>
+                _dispatcherQueue.TryEnqueue(async () =>
+                {
+                    if (App.GetService<AccountManager>().ActiveAccountId != m.AccountId) return;
+                    await ClearDailyNoteDataAsync();
+                    await Task.WhenAll(LoadDailyNoteAsync(force: true), LoadCheckinStatusAsync());
+                }));
+            WeakReferenceMessenger.Default.Register<GameRolesUpdatedMessage>(this, (r, m) =>
+                _dispatcherQueue.TryEnqueue(async () =>
+                {
+                    var account = App.GetService<AccountManager>().GetActiveAccountEntry();
+                    if (account?.Id != m.AccountId) return;
+                    if (GameRoleSelection.Current(account) == null)
+                    {
+                        await ClearDailyNoteDataAsync();
+                        await Task.WhenAll(LoadDailyNoteAsync(force: true), LoadCheckinStatusAsync());
+                    }
+                }));
 
             WeakReferenceMessenger.Default.Register<DevBuildDetectionCompletedMessage>(this, async (r, m) =>
             {
@@ -104,7 +127,8 @@ namespace FufuLauncher.ViewModels
             ToggleInfoCardCommand = new RelayCommand(ToggleInfoCard);
             ToggleBackgroundTypeCommand = new RelayCommand(ToggleBackgroundType);
             ExecuteCheckinCommand = new AsyncRelayCommand(ExecuteCheckinAsync);
-            LaunchGameCommand = new AsyncRelayCommand(LaunchGameAsync, AsyncRelayCommandOptions.AllowConcurrentExecutions);
+            LaunchGameCommand =
+                new AsyncRelayCommand(LaunchGameAsync, AsyncRelayCommandOptions.AllowConcurrentExecutions);
             OpenScreenshotFolderCommand = new AsyncRelayCommand(OpenScreenshotFolderAsync);
             SelectSpecificBackgroundCommand = new AsyncRelayCommand<BackgroundUrlInfo>(SelectSpecificBackgroundAsync);
 
@@ -131,9 +155,11 @@ namespace FufuLauncher.ViewModels
                 });
             });
         }
+
         #endregion
 
         #region 生命周期
+
         public async Task InitializeAsync()
         {
             await LoadTextStylesAsync();
@@ -189,10 +215,9 @@ namespace FufuLauncher.ViewModels
 
             var refreshGameTask = ForceRefreshGameStateAsync();
             var checkinTask = LoadCheckinStatusAsync();
-            var dailyNoteTask = LoadDailyNoteAsync();
             var loadPinnedPresetsTask = LoadPinnedPresetsAsync();
 
-            await Task.WhenAll(refreshGameTask, checkinTask, dailyNoteTask, loadPinnedPresetsTask);
+            await Task.WhenAll(refreshGameTask, checkinTask, loadPinnedPresetsTask);
         }
 
         private async Task RefreshSettingsAsync()
@@ -211,7 +236,9 @@ namespace FufuLauncher.ViewModels
                 _gameMonitoringCts?.Cancel();
                 _gameMonitoringCts?.Dispose();
             }
-            catch { }
+            catch
+            {
+            }
 
             if (BackgroundVideoPlayer != null)
             {
@@ -220,14 +247,18 @@ namespace FufuLauncher.ViewModels
                     BackgroundVideoPlayer.Pause();
                     BackgroundVideoPlayer = null;
                 }
-                catch { }
+                catch
+                {
+                }
             }
 
             WeakReferenceMessenger.Default.UnregisterAll(this);
         }
+
         #endregion
 
         #region UI 线程调度
+
         private Task UpdateUI(Action uiAction)
         {
             if (_dispatcherQueue == null)
@@ -238,6 +269,7 @@ namespace FufuLauncher.ViewModels
 
             return _dispatcherQueue.EnqueueAsync(() => uiAction());
         }
+
         #endregion
     }
 }

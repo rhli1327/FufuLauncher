@@ -1,7 +1,8 @@
-﻿/*
+/*
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
+
 using System.Diagnostics;
 using System.Text.Json;
 
@@ -9,7 +10,10 @@ namespace FufuLauncher.Helpers;
 
 public static class AppPaths
 {
-    public static string RootDir { get; } = Path.Combine(
+    public static string RootDir
+    {
+        get;
+    } = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FufuLauncher");
 
     public static string SettingsDir => Path.Combine(RootDir, "Settings");
@@ -26,10 +30,13 @@ public static class AppPaths
     public static string GameAccountsFile => Path.Combine(DataDir, "game_accounts.json");
     public static string GachaDataFile => Path.Combine(DataDir, "gacha_data.json");
     public static string MetadataDb => Path.Combine(DataDir, "metadata.db");
+
     public static string FufuConfigFile => Path.Combine(DataDir, "FufuConfig.cfg");
+
     //public static string ConfigFile => Path.Combine(DataDir, "config.json");
     //public static string ConfigLabFile => Path.Combine(DataDir, "config.lab.json");
     public static string InventoryCacheFile => Path.Combine(DataDir, "inventory_cache.json");
+    public static string MiHoYoDeviceFile => Path.Combine(DataDir, "mihoyo_device.json");
     public static string ServerCacheDir => Path.Combine(CacheDir, "ServerCache");
     public static string VerifyCacheDir => Path.Combine(CacheDir, "VerifyCache");
     public static string PluginPresetsDir => Path.Combine(DataDir, "PluginPresets");
@@ -40,10 +47,23 @@ public static class AppPaths
         _cacheDir = Path.Combine(RootDir, "Cache");
     }
 
-    public static bool IsFirstRun { get; private set; }
+    public static bool IsFirstRun
+    {
+        get;
+        private set;
+    }
 
-    public static string? MissingDataDir { get; private set; }
-    public static string? MissingCacheDir { get; private set; }
+    public static string? MissingDataDir
+    {
+        get;
+        private set;
+    }
+
+    public static string? MissingCacheDir
+    {
+        get;
+        private set;
+    }
 
     public static bool HasMissingPaths => MissingDataDir != null || MissingCacheDir != null;
 
@@ -85,6 +105,7 @@ public static class AppPaths
             {
                 Debug.WriteLine($"[AppPaths] paths.json 创建失败: {ex.Message}");
             }
+
             return;
         }
 
@@ -95,6 +116,7 @@ public static class AppPaths
             if (MoveDirectoryContents(defaultData, _dataDir))
                 TryDeleteEmptyDirectory(defaultData);
         }
+
         if (!string.Equals(defaultCache, _cacheDir, StringComparison.OrdinalIgnoreCase)
             && Directory.Exists(defaultCache)
             && !ArePathsOverlapping(defaultCache, _cacheDir))
@@ -150,6 +172,7 @@ public static class AppPaths
         {
             TryDeleteEmptyDirectory(oldDataDir);
         }
+
         if (cacheMovedOk && !string.Equals(oldCacheDir, newCacheDir, StringComparison.OrdinalIgnoreCase))
         {
             TryDeleteEmptyDirectory(oldCacheDir);
@@ -163,7 +186,9 @@ public static class AppPaths
             if (Directory.Exists(dir) && Directory.GetFileSystemEntries(dir).Length == 0)
                 Directory.Delete(dir, false);
         }
-        catch { }
+        catch
+        {
+        }
     }
 
     private static void WritePathsConfig(string dataDir, string cacheDir)
@@ -176,7 +201,7 @@ public static class AppPaths
         };
         File.WriteAllText(PathsConfigFile, JsonSerializer.Serialize(config));
     }
-    
+
     public static string? ValidateCustomPaths(string dataPath, string cachePath)
     {
         var dataLabel = "AgreementPage_UserDataDir".GetLocalized();
@@ -204,7 +229,8 @@ public static class AppPaths
             return string.Format("StoragePath_Error_Nested".GetLocalized(), dataLabel, dataPath, cacheLabel, cachePath);
 
         var appDir = NormalizeDirectory(AppContext.BaseDirectory);
-        var appDirDisplay = AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        var appDirDisplay =
+            AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
 
         if (fullData.StartsWith(appDir, StringComparison.OrdinalIgnoreCase))
             return string.Format("StoragePath_Error_UnderAppDir".GetLocalized(), dataLabel, dataPath, appDirDisplay);
@@ -216,7 +242,8 @@ public static class AppPaths
             return string.Format("StoragePath_Error_ParentOfAppDir".GetLocalized(), dataLabel, dataPath, appDirDisplay);
 
         if (appDir.StartsWith(fullCache, StringComparison.OrdinalIgnoreCase))
-            return string.Format("StoragePath_Error_ParentOfAppDir".GetLocalized(), cacheLabel, cachePath, appDirDisplay);
+            return string.Format("StoragePath_Error_ParentOfAppDir".GetLocalized(), cacheLabel, cachePath,
+                appDirDisplay);
 
         if (string.Equals(Path.GetPathRoot(dataPath), fullData, StringComparison.OrdinalIgnoreCase))
             return string.Format("StoragePath_Error_DriveRoot".GetLocalized(), dataLabel, dataPath);
@@ -254,14 +281,14 @@ public static class AppPaths
             var full1 = NormalizeDirectory(path1);
             var full2 = NormalizeDirectory(path2);
             return full1.StartsWith(full2, StringComparison.OrdinalIgnoreCase)
-                || full2.StartsWith(full1, StringComparison.OrdinalIgnoreCase);
+                   || full2.StartsWith(full1, StringComparison.OrdinalIgnoreCase);
         }
         catch
         {
             return true;
         }
     }
-    
+
     private static bool IsSubdirectoryOf(string candidate, string parent)
     {
         var fullCandidate = NormalizeDirectory(candidate);
@@ -275,7 +302,7 @@ public static class AppPaths
         try
         {
             if (!Directory.Exists(sourceDir)) return true;
-            
+
             if (IsSubdirectoryOf(destDir, sourceDir))
             {
                 Debug.WriteLine($"[AppPaths] 中止迁移: 目标目录是源目录的子目录 {sourceDir} -> {destDir}");
@@ -293,6 +320,7 @@ public static class AppPaths
                     {
                         File.Copy(file, destFile, false);
                     }
+
                     if (File.Exists(destFile))
                     {
                         File.Delete(file);
@@ -310,8 +338,8 @@ public static class AppPaths
                 var fullDir = Path.GetFullPath(dir);
                 var fullDest = Path.GetFullPath(destDir);
                 if (string.Equals(fullDir.TrimEnd(Path.DirectorySeparatorChar),
-                                   fullDest.TrimEnd(Path.DirectorySeparatorChar),
-                                   StringComparison.OrdinalIgnoreCase))
+                        fullDest.TrimEnd(Path.DirectorySeparatorChar),
+                        StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
                 }
@@ -326,13 +354,16 @@ public static class AppPaths
                 if (Directory.GetFileSystemEntries(sourceDir).Length == 0)
                     Directory.Delete(sourceDir, false);
             }
-            catch { }
+            catch
+            {
+            }
         }
         catch (Exception ex)
         {
             allSuccess = false;
             Debug.WriteLine($"[AppPaths] 迁移目录失败 {sourceDir} -> {destDir}: {ex.Message}");
         }
+
         return allSuccess;
     }
 
@@ -356,10 +387,10 @@ public static class AppPaths
     }
 
     /// <summary>
-    /// Verifies the configured DataDir is creatable and writable. If a custom
-    /// DataDir is unusable (missing drive, read-only location, revoked
-    /// permissions, etc.), fall back to the default %LOCALAPPDATA% location so
-    /// the SQLite databases can still be opened.
+    ///     Verifies the configured DataDir is creatable and writable. If a custom
+    ///     DataDir is unusable (missing drive, read-only location, revoked
+    ///     permissions, etc.), fall back to the default %LOCALAPPDATA% location so
+    ///     the SQLite databases can still be opened.
     /// </summary>
     private static void ValidateOrFallbackDataDir()
     {
@@ -456,6 +487,7 @@ public static class AppPaths
                 string dest = Path.Combine(DataDir, Path.GetFileName(file));
                 MoveFileIfExists(file, dest);
             }
+
             foreach (var file in Directory.GetFiles(exeDir, "display_*.json"))
             {
                 string dest = Path.Combine(DataDir, Path.GetFileName(file));
@@ -485,4 +517,3 @@ public static class AppPaths
         }
     }
 }
-

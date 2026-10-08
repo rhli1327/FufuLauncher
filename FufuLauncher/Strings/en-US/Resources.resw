@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -1231,6 +1231,12 @@ Or copy the launch command for use with Steam or scripts?</value>
   <data name="FileName_ShortcutName" xml:space="preserve">
     <value>Launch Genshin Impact.lnk</value>
   </data>
+  <data name="Label_ShortcutName" xml:space="preserve">
+    <value>Shortcut name</value>
+  </data>
+  <data name="Placeholder_ShortcutName" xml:space="preserve">
+    <value>Custom name (without .lnk, leave empty for default)</value>
+  </data>
   <data name="Desc_ShortcutDescription" xml:space="preserve">
     <value>Launch Genshin Impact via FufuLauncher injection</value>
   </data>
@@ -2168,6 +2174,9 @@ Go to the Microsoft website to download and install it?</value>
   </data>
   <data name="Announcement_Loading" xml:space="preserve">
     <value>Loading announcement...</value>
+  </data>
+  <data name="Announcement_OpenInEdge" xml:space="preserve">
+    <value>Open in Edge</value>
   </data>
   <data name="CommunityPage_Back" xml:space="preserve">
     <value>Back</value>
@@ -3213,6 +3222,33 @@ Go to the Microsoft website to download and install it?</value>
   </data>
   <data name="GachaAnalysis_GetViaMiyoushe" xml:space="preserve">
     <value>Get via MiYouShe Account</value>
+  </data>
+  <data name="GachaAnalysis_GetViaGame" xml:space="preserve">
+    <value>Get from Game</value>
+  </data>
+  <data name="GachaAnalysis_GameDesc" xml:space="preserve">
+    <value>Open wish history in the game
+Bilibili supported; no MiYouShe login</value>
+  </data>
+  <data name="GachaAnalysis_CacheInstructions" xml:space="preserve">
+    <value>Sign in to the game account you want to export, open Wish History, and wait for the records to load. Then select “Start”.
+
+Official CN, Bilibili, and global servers are supported without signing in to MiYouShe. Check that you are using the intended game account.</value>
+  </data>
+  <data name="GachaAnalysis_CacheStart" xml:space="preserve">
+    <value>Start</value>
+  </data>
+  <data name="GachaAnalysis_CacheReading" xml:space="preserve">
+    <value>Reading the wish history link from the game...</value>
+  </data>
+  <data name="GachaAnalysis_CacheMissingPath" xml:space="preserve">
+    <value>Set the correct game path in the launcher, then open Wish History in the game.</value>
+  </data>
+  <data name="GachaAnalysis_CacheNoLink" xml:space="preserve">
+    <value>No wish history link found. Sign in to the intended game account, open Wish History, and wait for it to load before trying again.</value>
+  </data>
+  <data name="GachaAnalysis_CacheReadFailed" xml:space="preserve">
+    <value>Unable to read the wish history link from the game. Reopen Wish History and try again.</value>
   </data>
   <data name="GachaAnalysis_GetViaUrl" xml:space="preserve">
     <value>Get via URL</value>
@@ -5565,6 +5601,12 @@ Do you still want to execute it? (Not recommended)</value>
   <data name="Fps_HashMismatch_Content" xml:space="preserve">
     <value>The FPS display plugin hash does not match. It may have been tampered with or corrupted. Please reinstall the launcher.</value>
   </data>
+  <data name="Fps_Missing_Content" xml:space="preserve">
+    <value>FPS plugin DLL file not found. It may not be installed, was accidentally deleted, or was blocked by antivirus software. Please use "Repair FPS Display Plugin" in the Functions menu and try again.</value>
+  </data>
+  <data name="Fps_Missing_Title" xml:space="preserve">
+    <value>FPS Plugin Missing</value>
+  </data>
   <data name="Fps_Repair_Fail_Title" xml:space="preserve">
     <value>Repair Failed</value>
   </data>
@@ -5817,6 +5859,12 @@ You can retry with another node or download directly from the official source.</
   </data>
   <data name="PreviewUpdateAnnouncementCaption" xml:space="preserve">
     <value>When enabled, an update announcement window pops up automatically when a new pre-release build is detected.</value>
+  </data>
+  <data name="SuppressAnnouncementInGameTitle" xml:space="preserve">
+    <value>Pause Launcher Announcements While Playing</value>
+  </data>
+  <data name="SuppressAnnouncementInGameCaption" xml:space="preserve">
+    <value>When enabled, launcher announcements will not pop up automatically while the game is running. They will appear normally again after you exit the game or restart the launcher.</value>
   </data>
   <data name="UpdateNotification_PreviewBanner" xml:space="preserve">
     <value>This is a pre-release update and may be unstable. Please update with caution.</value>
@@ -6182,4 +6230,812 @@ Error: {0}</value>
   <data name="BrowseOfficialBgCaption" xml:space="preserve">
     <value>Browse every background published by the game, preview and save them locally; static images can be set as the launcher background directly.</value>
   </data>
+  <data name="LightweightMode_StandardTooltip" xml:space="preserve">
+    <value>Standard mode (main plugin)</value>
+  </data>
+  <data name="LightweightMode_LiteTooltip" xml:space="preserve">
+    <value>Lightweight mode (YuanShen-UnlockerLite)</value>
+  </data>
+  <data name="LightweightMode_PluginComboLabel" xml:space="preserve">
+    <value>YuanShen-UnlockerLite (Lite Plugin)</value>
+  </data>
+  <data name="LightweightMode_LiteEnabledLabel" xml:space="preserve">
+    <value>Lite Plugin Enabled</value>
+  </data>
+  <data name="LightweightMode_ReinstallBtn" xml:space="preserve">
+    <value>Reinstall Lite Plugin</value>
+  </data>
+  <data name="LightweightMode_EnterTitle" xml:space="preserve">
+    <value>Switch to Lightweight Mode</value>
+  </data>
+  <data name="LightweightMode_EnterContent" xml:space="preserve">
+    <value>The main plugin will be disabled, the latest YuanShen-UnlockerLite will be downloaded and installed, and this page will show the lite plugin configuration instead.</value>
+  </data>
+  <data name="LightweightMode_EnterConfirm" xml:space="preserve">
+    <value>Switch</value>
+  </data>
+  <data name="LightweightMode_ExitTitle" xml:space="preserve">
+    <value>Switch Back to Standard Mode</value>
+  </data>
+  <data name="LightweightMode_ExitContent" xml:space="preserve">
+    <value>The lite plugin will be removed and the main plugin will be enabled again.</value>
+  </data>
+  <data name="LightweightMode_ExitConfirm" xml:space="preserve">
+    <value>Switch</value>
+  </data>
+  <data name="LightweightMode_EnterSuccess" xml:space="preserve">
+    <value>Switched to lightweight mode</value>
+  </data>
+  <data name="LightweightMode_ExitSuccess" xml:space="preserve">
+    <value>Switched back to standard mode</value>
+  </data>
+  <data name="LightweightMode_ExitSuccessNoMain" xml:space="preserve">
+    <value>Switched back to standard mode, but the main plugin was not found. Please download it first.</value>
+  </data>
+  <data name="LightweightMode_InstallTitle" xml:space="preserve">
+    <value>Installing Lite Plugin</value>
+  </data>
+  <data name="LightweightMode_ReinstallTitle" xml:space="preserve">
+    <value>Reinstalling Lite Plugin</value>
+  </data>
+  <data name="LightweightMode_StatusResolving" xml:space="preserve">
+    <value>Resolving the latest release...</value>
+  </data>
+  <data name="LightweightMode_StatusDownloading" xml:space="preserve">
+    <value>Downloading...</value>
+  </data>
+  <data name="LightweightMode_StatusInstalling" xml:space="preserve">
+    <value>Installing...</value>
+  </data>
+  <data name="LightweightMode_DownloadFailed" xml:space="preserve">
+    <value>Failed to download the lightweight plugin: {0}</value>
+  </data>
+  <data name="LightweightMode_InvalidPackage" xml:space="preserve">
+    <value>Invalid package content: YuanShen-UnlockerLite.dll was not found.</value>
+  </data>
+  <data name="LightweightMode_InstallFailed" xml:space="preserve">
+    <value>Failed to install the lightweight plugin: {0} Please check your network and try again.</value>
+  </data>
+  <data name="LightweightMode_ReinstallSuccess" xml:space="preserve">
+    <value>The lightweight plugin was reinstalled.</value>
+  </data>
+  <data name="LightweightMode_BlockMainInstall" xml:space="preserve">
+    <value>Installing or enabling the main plugin is disabled in lightweight mode. Switch back to standard mode to restore it.</value>
+  </data>
+  <data name="LightweightMode_BlockLiteInstall" xml:space="preserve">
+    <value>The lightweight plugin can only be installed or enabled in lightweight mode.</value>
+  </data>
+  <data name="LightweightMode_LiteDisabledOverlay" xml:space="preserve">
+    <value>The lite plugin is disabled or not installed. Reinstall it from the Functions menu.</value>
+  </data>
+  <data name="LightweightMode_LiteNotInstalled" xml:space="preserve">
+    <value>YuanShen-UnlockerLite is not installed</value>
+  </data>
+  <data name="LightweightMode_LiteMissing_Title" xml:space="preserve">
+    <value>Lightweight Plugin Missing</value>
+  </data>
+  <data name="LightweightMode_LiteMissing_Content" xml:space="preserve">
+    <value>Lightweight plugin DLL file not found. It may not be installed, was accidentally deleted, or was blocked by antivirus software. Please reinstall it from the Functions menu.</value>
+  </data>
+  <data name="Constraint_BlockedTitle" xml:space="preserve">
+    <value>Action Restricted</value>
+  </data>
+  <data name="Constraint_BlockedDefault" xml:space="preserve">
+    <value>The main plugin cannot be enabled in the current state. Please use lightweight mode.</value>
+  </data>
+  <data name="Constraint_AutoApplied" xml:space="preserve">
+    <value>The main plugin was disabled and lightweight mode was enabled automatically by the server policy.</value>
+  </data>
+  <data name="Settings_IgnoreConstraint_Title" xml:space="preserve">
+    <value>Ignore Usage Restrictions</value>
+  </data>
+  <data name="Settings_IgnoreConstraint_Caption" xml:space="preserve">
+    <value>Disabling this restriction affects the usage restriction policy applied during software updates. Proceed with caution.</value>
+  </data>
+  <data name="Constraint_ModeSwitchExplanation" xml:space="preserve">
+    <value>Why we do this: when the game updates, the old main plugin may run into various unexpected issues or even security risks. The lightweight plugin works across all game versions, so we temporarily switch you to lightweight mode during game updates to keep the basic features working, and will switch back automatically once the main plugin is adapted.</value>
+  </data>
+  <data name="PinSettingTooltip" xml:space="preserve">
+    <value>Pin this item to the top</value>
+  </data>
+  <data name="UnpinSettingTooltip" xml:space="preserve">
+    <value>Unpin this item</value>
+  </data>
+  <data name="BatchActions_SelectedCount" xml:space="preserve">
+    <value>Selected: {0}</value>
+  </data>
+  <data name="BatchActions_Enable" xml:space="preserve">
+    <value>Enable Selected</value>
+  </data>
+  <data name="BatchActions_Disable" xml:space="preserve">
+    <value>Disable Selected</value>
+  </data>
+  <data name="BatchActions_Pin" xml:space="preserve">
+    <value>Pin Selected</value>
+  </data>
+  <data name="BatchActions_Unpin" xml:space="preserve">
+    <value>Unpin Selected</value>
+  </data>
+  <data name="BatchActions_ClearSelection" xml:space="preserve">
+    <value>Clear Selection</value>
+  </data>
+  <data name="Plugin_FileLocked_Title" xml:space="preserve">
+    <value>Plugin File In Use</value>
+  </data>
+  <data name="Plugin_FileLocked_Content" xml:space="preserve">
+    <value>The plugin file "{0}" is in use by another program, so the operation could not be completed. Please close the game or the program using the file and try again. If this keeps happening, antivirus scanning may be the cause - wait a moment and retry.</value>
+  </data>
+  <data name="PluginPage_FreeCamHelpTitle" xml:space="preserve">
+    <value>Free Camera Instructions</value>
+  </data>
+  <data name="PluginPage_FileNotFoundTitle" xml:space="preserve">
+    <value>File Not Found</value>
+  </data>
+  <data name="PluginPage_FreeCamImageMissing" xml:space="preserve">
+    <value>freecam.png was not found in the Assets folder.</value>
+  </data>
+  <data name="PluginPage_DuplicateTitle" xml:space="preserve">
+    <value>Plugin Conflict Warning</value>
+  </data>
+  <data name="PluginPage_OpenPluginFolderBtn" xml:space="preserve">
+    <value>Open Plugin Folder</value>
+  </data>
+  <data name="PluginPage_IgnoreBtn" xml:space="preserve">
+    <value>Ignore</value>
+  </data>
+  <data name="PluginPage_GetPluginsTitle" xml:space="preserve">
+    <value>Get Plugins</value>
+  </data>
+  <data name="PluginPage_DownloadLatestOption" xml:space="preserve">
+    <value>Download / Update Plugin</value>
+  </data>
+  <data name="PluginPage_DownloadCustomOption" xml:space="preserve">
+    <value>Custom Plugin URL</value>
+  </data>
+  <data name="PluginPage_DownloadCustomPlaceholder" xml:space="preserve">
+    <value>Enter a direct download URL</value>
+  </data>
+  <data name="PluginPage_DownloadNotice" xml:space="preserve">
+    <value>Note: the game already includes gamepad hot-switching.</value>
+  </data>
+  <data name="PluginPage_DownloadChooseHint" xml:space="preserve">
+    <value>Choose the plugin package to download and install:</value>
+  </data>
+  <data name="PluginPage_DownloadProxyHint" xml:space="preserve">
+    <value>A proxy is used by default; if it fails, the launcher switches to a direct GitHub connection.</value>
+  </data>
+  <data name="PluginPage_DownloadAndInstallBtn" xml:space="preserve">
+    <value>Download and Install</value>
+  </data>
+  <data name="PluginPage_InputErrorTitle" xml:space="preserve">
+    <value>Invalid Input</value>
+  </data>
+  <data name="PluginPage_InvalidUrlMessage" xml:space="preserve">
+    <value>Please enter a valid plugin download URL.</value>
+  </data>
+  <data name="PluginPage_FetchingFormat" xml:space="preserve">
+    <value>Fetching {0}</value>
+  </data>
+  <data name="PluginPage_StatusConnecting" xml:space="preserve">
+    <value>Connecting...</value>
+  </data>
+  <data name="PluginPage_StatusSwitchingLine" xml:space="preserve">
+    <value>Connection failed, trying the backup route...</value>
+  </data>
+  <data name="PluginPage_DownloadHttpFailedFormat" xml:space="preserve">
+    <value>Download failed (HTTP {0})</value>
+  </data>
+  <data name="PluginPage_LineBackup" xml:space="preserve">
+    <value>backup route</value>
+  </data>
+  <data name="PluginPage_LineMain" xml:space="preserve">
+    <value>primary route</value>
+  </data>
+  <data name="PluginPage_StatusDownloadingFormat" xml:space="preserve">
+    <value>Downloading via {0}... {1}%</value>
+  </data>
+  <data name="PluginPage_StatusExtracting" xml:space="preserve">
+    <value>Extracting...</value>
+  </data>
+  <data name="PluginPage_StatusInstalling" xml:space="preserve">
+    <value>Installing...</value>
+  </data>
+  <data name="PluginPage_DownloadErrorTitle" xml:space="preserve">
+    <value>Download / Install Error</value>
+  </data>
+  <data name="PluginPage_DownloadErrorContentFormat" xml:space="preserve">
+    <value>Automatic download failed: {0}&#10;&#10;Click the button below to open your browser and download manually.</value>
+  </data>
+  <data name="PluginPage_ManualDownloadBtn" xml:space="preserve">
+    <value>Manual Download</value>
+  </data>
+  <data name="PluginPage_SecurityWarningContent" xml:space="preserve">
+    <value>Security software can block this program's injection. If it stops working or plugins disappear, please turn off your security center.</value>
+  </data>
+  <data name="PluginPage_RenameFolderTitle" xml:space="preserve">
+    <value>Rename Plugin Folder</value>
+  </data>
+  <data name="PluginPage_DuplicateDetectedHeader" xml:space="preserve">
+    <value>Duplicate plugins detected:</value>
+  </data>
+  <data name="PluginPage_DuplicatePluginNameFormat" xml:space="preserve">
+    <value>Plugin name: {0}</value>
+  </data>
+  <data name="PluginPage_DuplicateConflictsHeader" xml:space="preserve">
+    <value>Conflicting folders:</value>
+  </data>
+  <data name="PluginPage_DuplicateFolderItemFormat" xml:space="preserve">
+    <value>   - {0}</value>
+  </data>
+  <data name="PluginPage_DuplicateHint" xml:space="preserve">
+    <value>It is recommended to delete the older plugin version manually.</value>
+  </data>
+  <data name="Settings_PluginSignature_Title" xml:space="preserve">
+    <value>Verify Plugin Signatures</value>
+  </data>
+  <data name="Settings_PluginSignature_Caption" xml:space="preserve">
+    <value>Check the digital signature of installed plugin DLLs and inspect the signature details.</value>
+  </data>
+  <data name="Settings_PluginSignature_Btn" xml:space="preserve">
+    <value>Verify</value>
+  </data>
+  <data name="PluginSignature_DialogTitle" xml:space="preserve">
+    <value>Plugin Signature Results</value>
+  </data>
+  <data name="PluginSignature_Checking" xml:space="preserve">
+    <value>Verifying plugin signatures...</value>
+  </data>
+  <data name="PluginSignature_NoPlugins" xml:space="preserve">
+    <value>No plugin DLLs were found in the Plugins folder.</value>
+  </data>
+  <data name="PluginSignature_Failed" xml:space="preserve">
+    <value>Verification failed: {0}</value>
+  </data>
+  <data name="PluginSignature_Signed" xml:space="preserve">
+    <value>Signed</value>
+  </data>
+  <data name="PluginSignature_Unsigned" xml:space="preserve">
+    <value>Not signed</value>
+  </data>
+  <data name="PluginSignature_File" xml:space="preserve">
+    <value>File</value>
+  </data>
+  <data name="PluginSignature_Signer" xml:space="preserve">
+    <value>Signer</value>
+  </data>
+  <data name="PluginSignature_Issuer" xml:space="preserve">
+    <value>Issuer</value>
+  </data>
+  <data name="PluginSignature_SerialNumber" xml:space="preserve">
+    <value>Serial number</value>
+  </data>
+  <data name="PluginSignature_Thumbprint" xml:space="preserve">
+    <value>Thumbprint</value>
+  </data>
+  <data name="PluginSignature_ValidFrom" xml:space="preserve">
+    <value>Valid from</value>
+  </data>
+  <data name="PluginSignature_ValidTo" xml:space="preserve">
+    <value>Valid to</value>
+  </data>
+  <data name="PluginSignature_SignatureAlgorithm" xml:space="preserve">
+    <value>Signature algorithm</value>
+  </data>
+  <data name="PluginSignature_PublicKey" xml:space="preserve">
+    <value>Public key algorithm</value>
+  </data>
+  <data name="PluginSignature_TrustStatus" xml:space="preserve">
+    <value>Trust status</value>
+  </data>
+  <data name="PluginSignature_TrustValid" xml:space="preserve">
+    <value>Signature is valid and trusted.</value>
+  </data>
+  <data name="PluginSignature_TrustNotSigned" xml:space="preserve">
+    <value>The file has no digital signature.</value>
+  </data>
+  <data name="PluginSignature_TrustBadDigest" xml:space="preserve">
+    <value>Signature verification failed: the file may have been modified.</value>
+  </data>
+  <data name="PluginSignature_TrustSubjectNotTrusted" xml:space="preserve">
+    <value>The signing identity is not trusted.</value>
+  </data>
+  <data name="PluginSignature_TrustExpired" xml:space="preserve">
+    <value>The signing certificate has expired.</value>
+  </data>
+  <data name="PluginSignature_TrustRevoked" xml:space="preserve">
+    <value>The signing certificate has been revoked.</value>
+  </data>
+  <data name="PluginSignature_TrustUntrustedRoot" xml:space="preserve">
+    <value>Signature is not trusted: the certificate chain or root certificate is not trusted.</value>
+  </data>
+  <data name="PluginSignature_TrustWrongUsage" xml:space="preserve">
+    <value>The certificate usage does not match code signing.</value>
+  </data>
+  <data name="PluginSignature_TrustUnknown" xml:space="preserve">
+    <value>Unknown status (0x{0})</value>
+  </data>
+  <data name="Plugin_StopSwitchBtn" xml:space="preserve">
+    <value>Stop</value>
+  </data>
+  <data name="Plugin_StopRequested" xml:space="preserve">
+    <value>Stopping...</value>
+  </data>
+  <data name="Plugin_SwitchStopped_Title" xml:space="preserve">
+    <value>Stopped</value>
+  </data>
+  <data name="Plugin_SwitchStopped_Content" xml:space="preserve">
+    <value>The switch was stopped and nothing was changed.</value>
+  </data>
+  <data name="DailyNote_NoIdentityService" xml:space="preserve">
+    <value>The account identity service is unavailable, so daily note data cannot be read.</value>
+  </data>
+  <data name="PluginStoreAccessDenied" xml:space="preserve">
+    <value>Access denied.</value>
+  </data>
+  <data name="PluginStoreCancelling" xml:space="preserve">
+    <value>Cancelling...</value>
+  </data>
+  <data name="PluginStoreCaptchaCancelled" xml:space="preserve">
+    <value>Captcha verification was cancelled.</value>
+  </data>
+  <data name="PluginStoreCaptchaFailed" xml:space="preserve">
+    <value>Captcha verification failed.</value>
+  </data>
+  <data name="PluginStoreCaptchaRequired" xml:space="preserve">
+    <value>Captcha verification is required.</value>
+  </data>
+  <data name="PluginStoreCaptchaRetryExhausted" xml:space="preserve">
+    <value>Captcha retry limit reached. Please try again later.</value>
+  </data>
+  <data name="PluginStoreExtracting" xml:space="preserve">
+    <value>Extracting...</value>
+  </data>
+  <data name="PluginStoreHttpError" xml:space="preserve">
+    <value>Request failed (HTTP {0}): {1}</value>
+  </data>
+  <data name="PluginStorePrivateAccessCancelled" xml:space="preserve">
+    <value>Private plugin access verification was cancelled.</value>
+  </data>
+  <data name="PluginStorePrivateAccessDenied" xml:space="preserve">
+    <value>Private plugin access was denied.</value>
+  </data>
+  <data name="PluginStorePrivateAccessRequired" xml:space="preserve">
+    <value>Private plugin access authorization is required.</value>
+  </data>
+  <data name="PluginStoreRetrying" xml:space="preserve">
+    <value>Retrying...</value>
+  </data>
+  <data name="PluginStoreWritingConfig" xml:space="preserve">
+    <value>Writing configuration...</value>
+  </data>
+  <data name="EnableCaptchaNotice" xml:space="preserve">
+    <value>Show CAPTCHA popup notice</value>
+  </data>
+  <data name="EnableCaptchaNoticeCaption" xml:space="preserve">
+    <value>Shows a notice in the miHoYo risk-control CAPTCHA window explaining where it comes from. Turning it off only hides the text; verification still works.</value>
+  </data>
+  <data name="CaptchaNoticeWatermark" xml:space="preserve">
+    <value>MIYOUSHE NOTES · CAPTCHA</value>
+  </data>
+  <data name="CaptchaNoticeTitle" xml:space="preserve">
+    <value>This CAPTCHA belongs to Miyoushe Daily Notes</value>
+  </data>
+  <data name="CaptchaNoticeLine1" xml:space="preserve">
+    <value>This window is triggered by miHoYo risk control and is only used to verify "Daily Notes" requests. It is not the launcher's own CAPTCHA.</value>
+  </data>
+  <data name="CaptchaNoticeLine2" xml:space="preserve">
+    <value>Complete the verification to view your Daily Notes. To hide this notice, turn it off in Settings → Advanced Options.</value>
+  </data>
+  <data name="DeviceInfo_Title" xml:space="preserve">
+    <value>Miyoushe Device Info</value>
+  </data>
+  <data name="DeviceInfo_Caption" xml:space="preserve">
+    <value>View and edit the device fingerprint, identifiers and device profile of the selected account</value>
+  </data>
+  <data name="DeviceInfo_Account" xml:space="preserve">
+    <value>Account</value>
+  </data>
+  <data name="DeviceInfo_Device" xml:space="preserve">
+    <value>Device</value>
+  </data>
+  <data name="DeviceInfo_FingerprintSection" xml:space="preserve">
+    <value>Device Fingerprint</value>
+  </data>
+  <data name="DeviceInfo_FingerprintCaption" xml:space="preserve">
+    <value>Device identifiers used for Miyoushe API authentication. Changes apply to this account right after saving.</value>
+  </data>
+  <data name="DeviceInfo_ExtSection" xml:space="preserve">
+    <value>Device Profile (ext_fields)</value>
+  </data>
+  <data name="DeviceInfo_ExtCaption" xml:space="preserve">
+    <value>Device traits reported with the fingerprint. Each field can be edited individually.</value>
+  </data>
+  <data name="DeviceInfo_Randomize" xml:space="preserve">
+    <value>Randomize IDs</value>
+  </data>
+  <data name="DeviceInfo_Reload" xml:space="preserve">
+    <value>Reload</value>
+  </data>
+  <data name="DeviceInfo_RestoreDefaults" xml:space="preserve">
+    <value>Restore Defaults</value>
+  </data>
+  <data name="DeviceInfo_Save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="DeviceInfo_FilterPlaceholder" xml:space="preserve">
+    <value>Filter fields</value>
+  </data>
+  <data name="DeviceInfo_NoAccount" xml:space="preserve">
+    <value>No account available</value>
+  </data>
+  <data name="DeviceInfo_NoFingerprint" xml:space="preserve">
+    <value>This account has no device fingerprint yet. Sign in and load data once, then you can edit it.</value>
+  </data>
+  <data name="DeviceInfo_Saved" xml:space="preserve">
+    <value>Saved</value>
+  </data>
+  <data name="DeviceInfo_SaveFailed" xml:space="preserve">
+    <value>Save failed</value>
+  </data>
+  <data name="DeviceInfo_InvalidJson" xml:space="preserve">
+    <value>ext_fields is not valid JSON</value>
+  </data>
+  <data name="DeviceInfo_Randomized" xml:space="preserve">
+    <value>Random device IDs generated. Save to apply.</value>
+  </data>
+  <data name="DeviceInfo_DefaultsRestored" xml:space="preserve">
+    <value>Default device profile restored. Save to apply.</value>
+  </data>
+  <data name="DeviceInfo_DeviceIdRequired" xml:space="preserve">
+    <value>device_id cannot be empty</value>
+  </data>
+  <data name="DeviceInfo_SeedIdInvalid" xml:space="preserve">
+    <value>seed_id must be a valid GUID</value>
+  </data>
+  <data name="DeviceInfo_SeedTimeInvalid" xml:space="preserve">
+    <value>seed_time must be a valid Unix millisecond timestamp</value>
+  </data>
+  <data name="DeviceInfo_ResetToDefaults" xml:space="preserve">
+    <value>Reset to Defaults</value>
+  </data>
+  <data name="DeviceInfo_Resetting" xml:space="preserve">
+    <value>Resetting to default configuration...</value>
+  </data>
+  <data name="DeviceInfo_ResetDone" xml:space="preserve">
+    <value>Reset to default configuration</value>
+  </data>
+  <data name="DeviceInfo_ResetFailed" xml:space="preserve">
+    <value>Reset failed. Check your network and try again.</value>
+  </data>
+  <data name="Miyoushe_Title" xml:space="preserve"><value>Miyoushe</value></data>
+  <data name="Miyoushe_CardHint" xml:space="preserve"><value>Browse news, community posts and followed creators</value></data>
+  <data name="Miyoushe_Explore" xml:space="preserve"><value>Explore</value></data>
+  <data name="Miyoushe_Forum" xml:space="preserve"><value>Community</value></data>
+  <data name="Miyoushe_News" xml:space="preserve"><value>Official news</value></data>
+  <data name="Miyoushe_Following" xml:space="preserve"><value>Following</value></data>
+  <data name="Miyoushe_Favorites" xml:space="preserve"><value>Miyoushe favorites</value></data>
+  <data name="Miyoushe_Library" xml:space="preserve"><value>My library</value></data>
+  <data name="Miyoushe_Bookmarks" xml:space="preserve"><value>Local bookmarks</value></data>
+  <data name="Miyoushe_History" xml:space="preserve"><value>History</value></data>
+  <data name="Miyoushe_MyProfile" xml:space="preserve"><value>My profile</value></data>
+  <data name="Miyoushe_User" xml:space="preserve"><value>Author profile</value></data>
+  <data name="Miyoushe_Topic" xml:space="preserve"><value>Topic</value></data>
+  <data name="Miyoushe_Collection" xml:space="preserve"><value>Collection</value></data>
+  <data name="Miyoushe_Search" xml:space="preserve"><value>Search results</value></data>
+  <data name="Miyoushe_SearchHint" xml:space="preserve"><value>Search posts, or paste a post ID / Miyoushe link</value></data>
+  <data name="Miyoushe_Guest" xml:space="preserve"><value>Guest</value></data>
+  <data name="Miyoushe_GuestHint" xml:space="preserve"><value>Public posts are available as a guest. Select a Chinese server account for your feeds and favorites.</value></data>
+  <data name="Miyoushe_AccountHint" xml:space="preserve"><value>Switching applies only to this window</value></data>
+  <data name="Miyoushe_LoginHint" xml:space="preserve"><value>Log in to a Chinese server account in the launcher&apos;s account manager, then select it here. Sign in again if the session has expired.</value></data>
+  <data name="Miyoushe_IdentityError" xml:space="preserve"><value>The account device identity is unavailable. Switched to guest mode. Sign in again in account management and retry.</value></data>
+  <data name="Miyoushe_Refresh" xml:space="preserve"><value>Refresh</value></data>
+  <data name="Miyoushe_RefreshHint" xml:space="preserve"><value>Refresh the current page (F5)</value></data>
+  <data name="Miyoushe_Refreshed" xml:space="preserve"><value>Refreshed ({0})</value></data>
+  <data name="Miyoushe_Empty" xml:space="preserve"><value>No posts to display</value></data>
+  <data name="Miyoushe_More" xml:space="preserve"><value>Load more</value></data>
+  <data name="Miyoushe_SelectPost" xml:space="preserve"><value>Select a post to start reading</value></data>
+  <data name="Miyoushe_Save" xml:space="preserve"><value>Save locally</value></data>
+  <data name="Miyoushe_CopyLink" xml:space="preserve"><value>Copy link</value></data>
+  <data name="Miyoushe_Original" xml:space="preserve"><value>Open original</value></data>
+  <data name="Miyoushe_Article" xml:space="preserve"><value>Article</value></data>
+  <data name="Miyoushe_Comments" xml:space="preserve"><value>Comments</value></data>
+  <data name="Miyoushe_HotReplies" xml:space="preserve"><value>Top comments</value></data>
+  <data name="Miyoushe_LatestReplies" xml:space="preserve"><value>Newest comments</value></data>
+  <data name="Miyoushe_OldestReplies" xml:space="preserve"><value>Oldest comments</value></data>
+  <data name="Miyoushe_OnlyAuthor" xml:space="preserve"><value>Author only</value></data>
+  <data name="Miyoushe_Hot" xml:space="preserve"><value>Popular</value></data>
+  <data name="Miyoushe_Latest" xml:space="preserve"><value>Newest posts</value></data>
+  <data name="Miyoushe_Featured" xml:space="preserve"><value>Featured</value></data>
+  <data name="Miyoushe_Notices" xml:space="preserve"><value>Notices</value></data>
+  <data name="Miyoushe_Events" xml:space="preserve"><value>Events</value></data>
+  <data name="Miyoushe_NoComments" xml:space="preserve"><value>No comments yet</value></data>
+  <data name="Miyoushe_SubReplies" xml:space="preserve"><value>View {0} replies</value></data>
+  <data name="Miyoushe_Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Miyoushe_Image" xml:space="preserve"><value>Image</value></data>
+  <data name="Miyoushe_OpenImage" xml:space="preserve"><value>Open original image</value></data>
+  <data name="Miyoushe_LinkCopied" xml:space="preserve"><value>Post link copied</value></data>
+  <data name="Miyoushe_SearchTooLong" xml:space="preserve"><value>Search text must be at most 200 characters</value></data>
+  <data name="Miyoushe_Retry" xml:space="preserve"><value>Retry</value></data>
+  <data name="Miyoushe_Timeout" xml:space="preserve"><value>Request timed out. Please try again.</value></data>
+  <data name="Miyoushe_Verify" xml:space="preserve"><value>Complete verification</value></data>
+  <data name="Miyoushe_RiskHint" xml:space="preserve"><value>Miyoushe requires verification. Requests are paused. Complete the official captcha to retry the last operation.</value></data>
+  <data name="Miyoushe_VerifyHint" xml:space="preserve"><value>Complete the official Miyoushe captcha. Close this window to cancel.</value></data>
+  <data name="Miyoushe_VerifyLoadError" xml:space="preserve"><value>Captcha failed to load. Check your connection and retry, or verify on the official Miyoushe website.</value></data>
+  <data name="Miyoushe_VerifyCancelled" xml:space="preserve"><value>Verification cancelled. Requests remain paused. Retry to verify again.</value></data>
+  <data name="Miyoushe_LibraryError" xml:space="preserve"><value>Could not read local bookmarks or history. The existing file has been preserved.</value></data>
+  <data name="Miyoushe_Back" xml:space="preserve"><value>Back</value></data>
+  <data name="Miyoushe_RightComments" xml:space="preserve"><value>Side comments</value></data>
+  <data name="Miyoushe_CommentsLayoutHint" xml:space="preserve"><value>Show comments in the right sidebar; turn off to place them below the post</value></data>
+  <data name="Miyoushe_LoadingComments" xml:space="preserve"><value>Loading comments…</value></data>
+  <data name="Miyoushe_CommentsUnavailable" xml:space="preserve"><value>Comments are unavailable. Use the message above to retry.</value></data>
+  <data name="Miyoushe_Like" xml:space="preserve"><value>Like</value></data>
+  <data name="Miyoushe_Liked" xml:space="preserve"><value>Liked</value></data>
+  <data name="Miyoushe_PublishComment" xml:space="preserve"><value>Comment</value></data>
+  <data name="Miyoushe_Reply" xml:space="preserve"><value>Reply</value></data>
+  <data name="Miyoushe_ReplyTo" xml:space="preserve"><value>Reply to @{0}</value></data>
+  <data name="Miyoushe_CommentHint" xml:space="preserve"><value>Write a comment (up to 1000 characters)</value></data>
+  <data name="Miyoushe_SendComment" xml:space="preserve"><value>Publish to Miyoushe</value></data>
+  <data name="Miyoushe_Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Miyoushe_VerifyAndSend" xml:space="preserve"><value>Verify and publish</value></data>
+  <data name="Miyoushe_Resubmit" xml:space="preserve"><value>Publish again</value></data>
+  <data name="Miyoushe_CommentSent" xml:space="preserve"><value>Comment submitted; showing latest comments</value></data>
+  <data name="Miyoushe_SubmissionUncertain" xml:space="preserve"><value>Submission could not be confirmed. Your draft is kept. Check the original post before publishing again.</value></data>
+  <data name="Miyoushe_CommentRiskHint" xml:space="preserve"><value>Miyoushe requires verification. Select Verify and publish to complete the official captcha and submit this comment.</value></data>
+    <data name="ModTrust_Title" xml:space="preserve">
+    <value>Code signing trust (FufuLauncher CA)</value>
+  </data>
+    <data name="ModTrust_Loading" xml:space="preserve">
+    <value>Loading trust status...</value>
+  </data>
+    <data name="ModTrust_RefreshBtn" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+    <data name="ModTrust_PackageMissing" xml:space="preserve">
+    <value>Trust package not deployed: place the certificate and manifest files under Assets\Trust, or click "Update now" to sync from the official endpoint.</value>
+  </data>
+    <data name="ModTrust_StatusFormat" xml:space="preserve">
+    <value>Status: {0}</value>
+    <value>Sync endpoint: {1}</value>
+  </data>
+    <data name="ModTrust_InstalledUser" xml:space="preserve">
+    <value>installed (current user)</value>
+  </data>
+    <data name="ModTrust_InstalledMachine" xml:space="preserve">
+    <value>installed (machine)</value>
+  </data>
+    <data name="ModTrust_NotInstalled" xml:space="preserve">
+    <value>not installed</value>
+  </data>
+    <data name="ModTrust_InstallTitle" xml:space="preserve">
+    <value>Certificate install / uninstall</value>
+  </data>
+        <data name="ModTrust_InstallCaption" xml:space="preserve">
+    <value>After installing, code signatures we issue are recognised by Windows and this launcher. You can remove them at any time.</value>
+  </data>
+    <data name="ModTrust_InstallUserBtn" xml:space="preserve">
+    <value>Install (user)</value>
+  </data>
+    <data name="ModTrust_UninstallUserBtn" xml:space="preserve">
+    <value>Uninstall (user)</value>
+  </data>
+        <data name="ModTrust_InstallMachineBtn" xml:space="preserve">
+    <value>Install (machine, admin)</value>
+  </data>
+        <data name="ModTrust_UninstallMachineBtn" xml:space="preserve">
+    <value>Uninstall (machine, admin)</value>
+  </data>
+    <data name="ModTrust_ScopeUser" xml:space="preserve">
+    <value>current user</value>
+  </data>
+    <data name="ModTrust_ScopeMachine" xml:space="preserve">
+    <value>machine</value>
+  </data>
+        <data name="ModTrust_InstallConfirm" xml:space="preserve">
+    <value>Install the platform certificate for the {0}? Code signatures we issue will then be recognised. Continue?</value>
+  </data>
+        <data name="ModTrust_UninstallConfirm" xml:space="preserve">
+    <value>Remove the platform certificate for the {0}? Code signatures we issue will no longer be trusted. Continue?</value>
+  </data>
+        <data name="ModTrust_SyncTitle" xml:space="preserve">
+    <value>Trust info update</value>
+  </data>
+        <data name="ModTrust_SyncCaption" xml:space="preserve">
+    <value>Updates code signing trust info from the official endpoint.</value>
+  </data>
+    <data name="ModTrust_SyncBtn" xml:space="preserve">
+    <value>Update now</value>
+  </data>
+        <data name="ModTrust_SyncConfirm" xml:space="preserve">
+    <value>Trust information will be downloaded from the official endpoint and verified; it is not applied if verification fails. Continue?</value>
+  </data>
+                <data name="ModTrust_StrictTitle" xml:space="preserve">
+    <value>Enable blocking</value>
+  </data>
+        <data name="ModTrust_StrictConfirm" xml:space="preserve">
+    <value>Once enabled, files that fail signature verification will no longer load, which may affect the third-party plugins you are using. Continue?</value>
+  </data>
+    <data name="ModTrust_BlockedTitle" xml:space="preserve">
+    <value>Code signature verification failed</value>
+  </data>
+        <data name="ModTrust_BlockedMsg" xml:space="preserve">
+    <value>This file failed signature verification and was blocked:</value>
+    <value></value>
+    <value>{0}</value>
+    <value></value>
+    <value>See Settings -&gt; Security -&gt; Code signing trust for details.</value>
+  </data>
+    <data name="ModTrust_WarnTitle" xml:space="preserve">
+    <value>Code signing notice</value>
+  </data>
+    <data name="ModTrust_InstalledMachineEffective" xml:space="preserve">
+    <value>installed (machine, applies to all users)</value>
+  </data>
+    <data name="ModTrust_InstalledBoth" xml:space="preserve">
+    <value>installed (current user + machine)</value>
+  </data>
+    <data name="ModTrust_MachineHint" xml:space="preserve">
+    <value>The current-user scope is provided by the machine installation; install and uninstall from the machine scope.</value>
+  </data>
+  <data name="SectionStartup" xml:space="preserve">
+    <value>Startup</value>
+  </data>
+  <data name="RunAtStartupTitle" xml:space="preserve">
+    <value>Launch at Startup</value>
+  </data>
+  <data name="RunAtStartupCaption" xml:space="preserve">
+    <value>Start FufuLauncher automatically when you sign in to Windows</value>
+  </data>
+  <data name="RunAtStartupFailedTitle" xml:space="preserve">
+    <value>Couldn't Enable Launch at Startup</value>
+  </data>
+  <data name="RunAtStartupFailedMessage" xml:space="preserve">
+    <value>Failed to write the startup entry. Check system permissions or security software settings.</value>
+  </data>
+  <data name="PluginDllConflict_Title" xml:space="preserve">
+    <value>Plugin DLL Conflict</value>
+  </data>
+  <data name="PluginDllConflict_Message" xml:space="preserve">
+    <value>We found DLLs with the same name in multiple plugins, so injection has been stopped. If injection continues, an outdated plugin version may be loaded and the game or plugins may stop working properly.</value>
+  </data>
+  <data name="PluginDllConflict_DllNameFormat" xml:space="preserve">
+    <value>DLL name: {0}</value>
+  </data>
+  <data name="PluginDllConflict_NewestBadge" xml:space="preserve">
+    <value>Newest</value>
+  </data>
+  <data name="PluginDllConflict_OlderBadge" xml:space="preserve">
+    <value>Outdated</value>
+  </data>
+  <data name="PluginDllConflict_LocateBtn" xml:space="preserve">
+    <value>Locate file</value>
+  </data>
+  <data name="PluginDllConflict_Hint" xml:space="preserve">
+    <value>Keep only the newest plugin, and delete or rename the duplicate DLLs in the other plugins. If you are not sure which one to keep, delete all plugins and reinstall them.</value>
+  </data>
+  <data name="PluginConflictCheckTitle" xml:space="preserve">
+    <value>Plugin Conflict Check</value>
+  </data>
+  <data name="PluginConflictCheckCaption" xml:space="preserve">
+    <value>Checks for plugin DLLs with the same name before injection, and stops injection so you can resolve the conflict</value>
+  </data>
+  <data name="PluginConflictMainOnlyTitle" xml:space="preserve">
+    <value>Main plugin only</value>
+  </data>
+  <data name="PluginConflictMainOnlyCaption" xml:space="preserve">
+    <value>Only checks FufuLauncher.UnlockerIsland.dll; turn off to check every plugin DLL</value>
+  </data>
+  <data name="ModTrust_ModeTitle" xml:space="preserve">
+    <value>Action for invalid signatures</value>
+  </data>
+  <data name="ModTrust_ModeCaption" xml:space="preserve">
+    <value>Choose what happens to files that fail signature verification: do nothing (still load), notify only (load and warn), or block (stop loading)</value>
+  </data>
+  <data name="ModTrust_ModeOff" xml:space="preserve">
+    <value>Do nothing</value>
+  </data>
+  <data name="ModTrust_ModeWarn" xml:space="preserve">
+    <value>Notify only</value>
+  </data>
+  <data name="ModTrust_ModeEnforce" xml:space="preserve">
+    <value>Block</value>
+  </data>
+  <data name="PluginDllConflict_DeleteBtn" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="PluginDllConflict_ConfirmDeleteBtn" xml:space="preserve">
+    <value>Confirm delete</value>
+  </data>
+  <data name="PluginDllConflict_DeleteConfirm" xml:space="preserve">
+    <value>This deletes the DLL and the config.ini in the same folder. It cannot be undone. Continue?</value>
+  </data>
+  <data name="PluginDllConflict_DeleteFailedFormat" xml:space="preserve">
+    <value>Delete failed: {0}</value>
+  </data>
+  <data name="PluginDllConflict_Resolved" xml:space="preserve">
+    <value>The duplicate DLL conflict has been resolved. You can restart the game now.</value>
+  </data>
+  <data name="BanCheck_KilledTitle" xml:space="preserve">
+    <value>Access Denied</value>
+  </data>
+  <data name="BanCheck_KilledMessage" xml:space="preserve">
+    <value>This device is blocked from using FufuLauncher.{0}{0}UID: {1}{0}Reason: {2}{0}{0}If you believe this is a mistake, you can file an appeal here (if the UID shows as "-", leave it blank in the form):{0}{3}{0}{0}Open the appeal page now? Choosing No will close the launcher.</value>
+  </data>
+  <data name="BanCheck_RevokedReason" xml:space="preserve">
+    <value>access revoked by the server</value>
+  </data>
+  <data name="BanCheck_BannedReason" xml:space="preserve">
+    <value>UID is on the server block list</value>
+  </data>
+  <data name="GachaAnalysis_ReadingBoundRoles" xml:space="preserve"><value>Checking game characters bound to MiYouShe...</value></data>
+  <data name="GachaAnalysis_SelectRole" xml:space="preserve"><value>Select Game Character</value></data>
+  <data name="GachaAnalysis_SelectRoleHint" xml:space="preserve"><value>Choose the character whose wish history you want to fetch. Bilibili characters are listed under Irminsul. If your character is missing, cancel and check your MiYouShe bindings, or use Get from Game.</value></data>
+  <data name="GachaAnalysis_SkyIsland" xml:space="preserve"><value>Celestia (Official)</value></data>
+  <data name="GachaAnalysis_WorldTree" xml:space="preserve"><value>Irminsul (Bilibili)</value></data>
+  <data name="GachaAnalysis_SkyIslandShort" xml:space="preserve"><value>Celestia</value></data>
+  <data name="GachaAnalysis_WorldTreeShort" xml:space="preserve"><value>Irminsul</value></data>
+  <data name="GameRole_Select" xml:space="preserve"><value>Switch game role</value></data>
+  <data name="GameRole_Hint" xml:space="preserve"><value>Set the default on Bound Roles. Each feature can independently select a server.</value></data>
+  <data name="GameRole_Refresh" xml:space="preserve"><value>Refresh bound roles</value></data>
+  <data name="GameRole_Unavailable" xml:space="preserve"><value>The selected role is no longer in the binding list. Select a role or refresh.</value></data>
+  <data name="GameRole_WidgetMismatch" xml:space="preserve"><value>The fallback Daily Notes response could not confirm the selected role. Enable this role&#x27;s Daily Notes and retry.</value></data>
+  <data name="GameRole_SkyIsland" xml:space="preserve"><value>Celestia</value></data>
+  <data name="GameRole_WorldTree" xml:space="preserve"><value>Irminsul</value></data>
+  <data name="MiyousheQr_Title" xml:space="preserve"><value>Screen QR scanner</value></data>
+  <data name="MiyousheQr_Instructions" xml:space="preserve"><value>Scan once reads the selected region once. Continuous scan watches for new QR codes in the selected region. Confirm login using your current MiYouShe account.</value></data>
+  <data name="MiyousheQr_CurrentAccount" xml:space="preserve"><value>Current MiYouShe account</value></data>
+  <data name="MiyousheQr_Target" xml:space="preserve"><value>Login target</value></data>
+  <data name="MiyousheQr_ConfirmHint" xml:space="preserve"><value>Confirming will log the device displaying this code into the account above.</value></data>
+  <data name="MiyousheQr_Capture" xml:space="preserve"><value>Scan once</value></data>
+  <data name="MiyousheQr_Confirm" xml:space="preserve"><value>Confirm login</value></data>
+  <data name="MiyousheQr_SelectionHint" xml:space="preserve"><value>Drag to select the QR code · Esc or right click to cancel</value></data>
+  <data name="MiyousheQr_Genshin" xml:space="preserve"><value>Genshin Impact</value></data>
+  <data name="MiyousheQr_StarRail" xml:space="preserve"><value>Honkai: Star Rail</value></data>
+  <data name="MiyousheQr_Zzz" xml:space="preserve"><value>Zenless Zone Zero</value></data>
+  <data name="MiyousheQr_Honkai3" xml:space="preserve"><value>Honkai Impact 3rd</value></data>
+  <data name="MiyousheQr_Passport" xml:space="preserve"><value>miHoYo account</value></data>
+  <data name="MiyousheQr_NoAccount" xml:space="preserve"><value>Log into MiYouShe in the launcher first.</value></data>
+  <data name="MiyousheQr_CnOnly" xml:space="preserve"><value>Switch to a Chinese MiYouShe account before scanning.</value></data>
+  <data name="MiyousheQr_CredentialsMissing" xml:space="preserve"><value>This account lacks the credentials required for scanning. Log into the launcher again using the MiYouShe app.</value></data>
+  <data name="MiyousheQr_AccountChanged" xml:space="preserve"><value>The current MiYouShe account changed. Select the QR code again.</value></data>
+  <data name="MiyousheQr_Expired" xml:space="preserve"><value>This QR code expired. Refresh it on the target device and select it again.</value></data>
+  <data name="MiyousheQr_Unsupported" xml:space="preserve"><value>Unsupported login QR code. Chinese miHoYo account, Genshin, Star Rail, ZZZ and Honkai Impact 3rd login codes are supported.</value></data>
+  <data name="MiyousheQr_NotFound" xml:space="preserve"><value>No QR code found. Select the entire code with some blank space around it.</value></data>
+  <data name="MiyousheQr_Multiple" xml:space="preserve"><value>Multiple QR codes found. Click a green area to choose one. Press Esc or right-click to cancel.</value></data>
+  <data name="MiyousheQr_Cancelled" xml:space="preserve"><value>Selection cancelled.</value></data>
+  <data name="MiyousheQr_Recognizing" xml:space="preserve"><value>Reading QR code…</value></data>
+  <data name="MiyousheQr_Ready" xml:space="preserve"><value>QR code recognized. Check the account and target, then confirm.</value></data>
+  <data name="MiyousheQr_Confirming" xml:space="preserve"><value>Confirming login…</value></data>
+  <data name="MiyousheQr_Success" xml:space="preserve"><value>Login confirmed. Check the target device.</value></data>
+  <data name="MiyousheQr_ResultUnknown" xml:space="preserve"><value>The login result is uncertain. Check the target device first. If not logged in, refresh the QR code and select it again.</value></data>
+  <data name="MiyousheQr_CaptureFailed" xml:space="preserve"><value>Screen selection or QR reading failed. Try again.</value></data>
+  <data name="MiyousheQr_HttpError" xml:space="preserve"><value>The scan service could not be reached. Refresh the QR code and retry.</value></data>
+  <data name="MiyousheQr_ResponseError" xml:space="preserve"><value>The scan service returned an unexpected response. Refresh the QR code and retry.</value></data>
+  <data name="MiyousheQr_Rejected" xml:space="preserve"><value>The scan request was rejected. Refresh the QR code. If it still fails, log into MiYouShe again.</value></data>
+  <data name="MiyousheQr_Continuous" xml:space="preserve"><value>Continuous scan</value></data>
+  <data name="MiyousheQr_Stop" xml:space="preserve"><value>Stop scanning</value></data>
+  <data name="MiyousheQr_AutoConfirm" xml:space="preserve"><value>Automatically confirm login</value></data>
+  <data name="MiyousheQr_AutoConfirmHint" xml:space="preserve"><value>Select before scanning to immediately confirm new supported QR codes using your current MiYouShe account.</value></data>
+  <data name="MiyousheQr_Scanning" xml:space="preserve"><value>Watching for new QR codes. {0} login(s) confirmed. Click Stop scanning to finish.</value></data>
+  <data name="MiyousheQr_StopAfterLogin" xml:space="preserve"><value>Stop scanning after login</value></data>
+  <data name="MiyousheQr_StopAfterLoginHint" xml:space="preserve"><value>Stop continuous scanning and remove its outline after a successful login. Uncheck to keep scanning for subsequent QR codes.</value></data>
+  <data name="MiyousheQr_Stopped" xml:space="preserve"><value>Scanning stopped.</value></data>
+  <data name="MiyousheQr_RegionUnavailable" xml:space="preserve"><value>The selected region is unavailable. Select the QR region again.</value></data>
+  <data name="MiyousheQr_SessionLimit" xml:space="preserve"><value>The continuous scan session reached its limit. Start a new session.</value></data>
+  <data name="PluginConfigPage_AutoSaveHint" xml:space="preserve"><value>Changes are saved automatically</value></data>
+  <data name="PluginConfigPage_Saving" xml:space="preserve"><value>Saving…</value></data>
+  <data name="PluginConfigPage_SaveFailed" xml:space="preserve"><value>Configuration save failed</value></data>
+  <data name="PluginConfigPage_SaveFailedMessage" xml:space="preserve"><value>Unable to write the configuration file. Check file permissions and try again. Details: {0}</value></data>
+  <data name="PluginConfigPage_LoadFailed" xml:space="preserve"><value>Configuration load failed</value></data>
+  <data name="PluginConfigPage_LoadFailedMessage" xml:space="preserve"><value>Unable to read the plugin configuration file. Details: {0}</value></data>
+  <data name="PluginConfigPage_LoadFailedHint" xml:space="preserve"><value>Make sure the configuration file exists and is readable, then reload it.</value></data>
+  <data name="PluginConfigPage_MissingFile" xml:space="preserve"><value>The configuration file does not exist: {0}</value></data>
+  <data name="PluginConfigPage_NoOptions" xml:space="preserve"><value>No configurable settings</value></data>
+  <data name="PluginConfigPage_NoOptionsHint" xml:space="preserve"><value>This plugin does not expose any adjustable settings.</value></data>
+  <data name="PluginConfigPage_NoResults" xml:space="preserve"><value>No matching settings</value></data>
+  <data name="PluginConfigPage_NoResultsHint" xml:space="preserve"><value>Try another keyword or clear the search.</value></data>
+  <data name="PluginConfigPage_ClearSearch" xml:space="preserve"><value>Clear search</value></data>
+  <data name="PluginConfigPage_OptionCount" xml:space="preserve"><value>{0} settings</value></data>
+  <data name="PluginConfigPage_FilteredOptionCount" xml:space="preserve"><value>{0} / {1} settings</value></data>
+  <data name="PluginConfigPage_ConfigFile" xml:space="preserve"><value>Configuration file</value></data>
+  <data name="PluginConfigPage_ValuePlaceholder" xml:space="preserve"><value>Enter a value…</value></data>
 </root>

@@ -54,6 +54,12 @@
   <data name="Fps_HashMismatch_Content" xml:space="preserve">
     <value>幀數顯示插件雜湊不符，可能已被竄改或損壞，請重新安裝啟動器</value>
   </data>
+  <data name="Fps_Missing_Content" xml:space="preserve">
+    <value>未找到FPS插件DLL檔案，插件可能未安裝、被誤刪或被防毒軟體攔截。請點擊功能選單中的「修復FPS顯示插件」後重試。</value>
+  </data>
+  <data name="Fps_Missing_Title" xml:space="preserve">
+    <value>FPS插件缺失</value>
+  </data>
   <data name="Fps_Repair_Fail_Title" xml:space="preserve">
     <value>修復失敗</value>
   </data>
@@ -150,7 +156,7 @@
     <value>未找到檔案，請確認啟動器檔案完整</value>
   </data>
   <data name="Plugin_MainMissing_Content" xml:space="preserve">
-    <value>未找到主插件 DLL 檔案，插件可能未安裝、被誤刪或被防毒軟體攔截。請重新下載插件，或將啟動器目錄加入防毒軟體白名單後再試。</value>
+    <value>未找到主插件DLL檔案，插件可能未安裝、被誤刪或被防毒軟體攔截。請重新下載插件，或將啟動器目錄加入防毒軟體白名單後再試。</value>
   </data>
   <data name="Plugin_MainMissing_Title" xml:space="preserve">
     <value>主插件缺失</value>
@@ -965,10 +971,10 @@
     <value>功能</value>
   </data>
   <data name="DownloadPluginBtn" xml:space="preserve">
-    <value>下載插件(Download)</value>
+    <value>下載插件</value>
   </data>
   <data name="RepairFpsPluginBtn" xml:space="preserve">
-    <value>修復FPS顯示插件(Repair)</value>
+    <value>修復FPS顯示插件</value>
   </data>
   <data name="MainPluginEnabledLabel" xml:space="preserve">
     <value>主插件啟用</value>
@@ -1001,7 +1007,7 @@
     <value>提交PR</value>
   </data>
   <data name="EnableInjectionParenLabel" xml:space="preserve">
-    <value>啟用注入(Injection)</value>
+    <value>啟用注入</value>
   </data>
   <data name="ConfigPresetLabel" xml:space="preserve">
     <value>設定預設:</value>
@@ -2116,6 +2122,9 @@
   </data>
   <data name="Announcement_Loading" xml:space="preserve">
     <value>正在載入公告...</value>
+  </data>
+  <data name="Announcement_OpenInEdge" xml:space="preserve">
+    <value>在 Edge 中開啟</value>
   </data>
   <data name="CommunityPage_Back" xml:space="preserve">
     <value>上一頁</value>
@@ -5545,6 +5554,12 @@ UIGF v4.x/3.0/2.x</value>
   <data name="PreviewUpdateAnnouncementCaption" xml:space="preserve">
     <value>開啟後，偵測到新預覽版時自動彈出更新公告視窗</value>
   </data>
+  <data name="SuppressAnnouncementInGameTitle" xml:space="preserve">
+    <value>遊戲中暫停啟動器公告</value>
+  </data>
+  <data name="SuppressAnnouncementInGameCaption" xml:space="preserve">
+    <value>開啟後，遊戲執行期間不會自動彈出啟動器公告；結束遊戲或重啟啟動器後將恢復正常彈出</value>
+  </data>
   <data name="UpdateNotification_PreviewBanner" xml:space="preserve">
     <value>這是預覽版（Pre-release）更新，可能存在不穩定問題，請謹慎更新</value>
   </data>
@@ -5650,4 +5665,552 @@ UIGF v4.x/3.0/2.x</value>
   <data name="BrowseOfficialBgCaption" xml:space="preserve">
     <value>瀏覽遊戲官方下發的全部背景資源，支援預覽與儲存到本機，靜態背景可直接設為啟動器背景。</value>
   </data>
+  <data name="LightweightMode_StandardTooltip" xml:space="preserve">
+    <value>標準模式（主插件）</value>
+  </data>
+  <data name="LightweightMode_LiteTooltip" xml:space="preserve">
+    <value>輕量模式（YuanShen-UnlockerLite）</value>
+  </data>
+  <data name="LightweightMode_PluginComboLabel" xml:space="preserve">
+    <value>YuanShen-UnlockerLite (輕量插件)</value>
+  </data>
+  <data name="LightweightMode_LiteEnabledLabel" xml:space="preserve">
+    <value>輕量插件啟用</value>
+  </data>
+  <data name="LightweightMode_ReinstallBtn" xml:space="preserve">
+    <value>重新安裝輕量插件</value>
+  </data>
+  <data name="LightweightMode_EnterTitle" xml:space="preserve">
+    <value>切換到輕量模式</value>
+  </data>
+  <data name="LightweightMode_EnterContent" xml:space="preserve">
+    <value>切換後將自動停用主插件，並下載安裝最新的 YuanShen-UnlockerLite 輕量插件，本頁設定將改為輕量插件的設定。</value>
+  </data>
+  <data name="LightweightMode_EnterConfirm" xml:space="preserve">
+    <value>切換</value>
+  </data>
+  <data name="LightweightMode_ExitTitle" xml:space="preserve">
+    <value>切換回標準模式</value>
+  </data>
+  <data name="LightweightMode_ExitContent" xml:space="preserve">
+    <value>切換後將刪除輕量插件並重新啟用主插件。</value>
+  </data>
+  <data name="LightweightMode_ExitConfirm" xml:space="preserve">
+    <value>切換</value>
+  </data>
+  <data name="LightweightMode_EnterSuccess" xml:space="preserve">
+    <value>已切換到輕量模式</value>
+  </data>
+  <data name="LightweightMode_ExitSuccess" xml:space="preserve">
+    <value>已切換回標準模式</value>
+  </data>
+  <data name="LightweightMode_ExitSuccessNoMain" xml:space="preserve">
+    <value>已切換回標準模式，但未偵測到主插件，請先下載安裝主插件</value>
+  </data>
+  <data name="LightweightMode_InstallTitle" xml:space="preserve">
+    <value>正在安裝輕量插件</value>
+  </data>
+  <data name="LightweightMode_ReinstallTitle" xml:space="preserve">
+    <value>正在重新安裝輕量插件</value>
+  </data>
+  <data name="LightweightMode_StatusResolving" xml:space="preserve">
+    <value>正在取得最新版本...</value>
+  </data>
+  <data name="LightweightMode_StatusDownloading" xml:space="preserve">
+    <value>正在下載...</value>
+  </data>
+  <data name="LightweightMode_StatusInstalling" xml:space="preserve">
+    <value>正在安裝...</value>
+  </data>
+  <data name="LightweightMode_DownloadFailed" xml:space="preserve">
+    <value>下載輕量插件失敗：{0}</value>
+  </data>
+  <data name="LightweightMode_InvalidPackage" xml:space="preserve">
+    <value>插件包內容不正確，未找到 YuanShen-UnlockerLite.dll</value>
+  </data>
+  <data name="LightweightMode_InstallFailed" xml:space="preserve">
+    <value>安裝輕量插件失敗：{0} 請檢查網路後重試。</value>
+  </data>
+  <data name="LightweightMode_ReinstallSuccess" xml:space="preserve">
+    <value>輕量插件已覆蓋安裝</value>
+  </data>
+  <data name="LightweightMode_BlockMainInstall" xml:space="preserve">
+    <value>輕量模式下已停用主插件的安裝與啟用，如需恢復請切換回標準模式。</value>
+  </data>
+  <data name="LightweightMode_BlockLiteInstall" xml:space="preserve">
+    <value>未切換到輕量模式，無法安裝或啟用輕量插件。</value>
+  </data>
+  <data name="LightweightMode_LiteDisabledOverlay" xml:space="preserve">
+    <value>輕量插件已停用或未安裝，請在功能選單中重新安裝輕量插件</value>
+  </data>
+  <data name="LightweightMode_LiteNotInstalled" xml:space="preserve">
+    <value>未安裝 YuanShen-UnlockerLite</value>
+  </data>
+  <data name="LightweightMode_LiteMissing_Title" xml:space="preserve">
+    <value>輕量插件缺失</value>
+  </data>
+  <data name="LightweightMode_LiteMissing_Content" xml:space="preserve">
+    <value>未找到輕量插件DLL檔案，插件可能未安裝、被誤刪或被防毒軟體攔截。請在功能選單中重新安裝輕量插件。</value>
+  </data>
+  <data name="Constraint_BlockedTitle" xml:space="preserve">
+    <value>操作已受限</value>
+  </data>
+  <data name="Constraint_BlockedDefault" xml:space="preserve">
+    <value>目前狀態下無法啟用主插件，請使用輕量模式。</value>
+  </data>
+  <data name="Constraint_AutoApplied" xml:space="preserve">
+    <value>已根據伺服器端策略自動停用主插件並切換到輕量模式。</value>
+  </data>
+  <data name="Settings_IgnoreConstraint_Title" xml:space="preserve">
+    <value>忽略使用限制</value>
+  </data>
+  <data name="Settings_IgnoreConstraint_Caption" xml:space="preserve">
+    <value>取消此項限制會對軟體更新時的使用限制策略產生影響，請謹慎操作。</value>
+  </data>
+  <data name="Constraint_ModeSwitchExplanation" xml:space="preserve">
+    <value>為什麼要這樣做：遊戲更新時舊的主插件可能會遇到各類奇怪的問題，甚至是存在安全風險，輕量級插件全版本通用，因此在遊戲更新時我們將暫時將你切換到輕量級模式保障最基礎的使用，待主插件適配完成後將會自動切換回去。</value>
+  </data>
+  <data name="PinSettingTooltip" xml:space="preserve">
+    <value>收藏該項並置頂顯示</value>
+  </data>
+  <data name="UnpinSettingTooltip" xml:space="preserve">
+    <value>取消收藏</value>
+  </data>
+  <data name="BatchActions_SelectedCount" xml:space="preserve">
+    <value>已選擇 {0} 項</value>
+  </data>
+  <data name="BatchActions_Enable" xml:space="preserve">
+    <value>批次開啟</value>
+  </data>
+  <data name="BatchActions_Disable" xml:space="preserve">
+    <value>批次關閉</value>
+  </data>
+  <data name="BatchActions_Pin" xml:space="preserve">
+    <value>批次收藏</value>
+  </data>
+  <data name="BatchActions_Unpin" xml:space="preserve">
+    <value>批次取消收藏</value>
+  </data>
+  <data name="BatchActions_ClearSelection" xml:space="preserve">
+    <value>取消選擇</value>
+  </data>
+  <data name="Plugin_FileLocked_Title" xml:space="preserve">
+    <value>插件檔案被占用</value>
+  </data>
+  <data name="Plugin_FileLocked_Content" xml:space="preserve">
+    <value>插件檔案「{0}」正被其它程式占用，操作未能完成。請先關閉遊戲或占用該檔案的程式後重試；若反覆出現，可能是防毒軟體正在掃描，請稍後再試。</value>
+  </data>
+  <data name="PluginPage_FreeCamHelpTitle" xml:space="preserve">
+    <value>自由視角使用說明</value>
+  </data>
+  <data name="PluginPage_FileNotFoundTitle" xml:space="preserve">
+    <value>檔案未找到</value>
+  </data>
+  <data name="PluginPage_FreeCamImageMissing" xml:space="preserve">
+    <value>未能在 Assets 資料夾中找到 freecam.png</value>
+  </data>
+  <data name="PluginPage_DuplicateTitle" xml:space="preserve">
+    <value>插件衝突警告</value>
+  </data>
+  <data name="PluginPage_OpenPluginFolderBtn" xml:space="preserve">
+    <value>開啟插件目錄</value>
+  </data>
+  <data name="PluginPage_IgnoreBtn" xml:space="preserve">
+    <value>忽略</value>
+  </data>
+  <data name="PluginPage_GetPluginsTitle" xml:space="preserve">
+    <value>取得插件</value>
+  </data>
+  <data name="PluginPage_DownloadLatestOption" xml:space="preserve">
+    <value>下載/更新插件</value>
+  </data>
+  <data name="PluginPage_DownloadCustomOption" xml:space="preserve">
+    <value>自訂插件連結</value>
+  </data>
+  <data name="PluginPage_DownloadCustomPlaceholder" xml:space="preserve">
+    <value>請輸入下載直鏈</value>
+  </data>
+  <data name="PluginPage_DownloadNotice" xml:space="preserve">
+    <value>注意：遊戲已內建手把熱切換</value>
+  </data>
+  <data name="PluginPage_DownloadChooseHint" xml:space="preserve">
+    <value>請選擇要下載並安裝的插件包：</value>
+  </data>
+  <data name="PluginPage_DownloadProxyHint" xml:space="preserve">
+    <value>預設使用代理加速，若失敗將自動切換至 GitHub 直連</value>
+  </data>
+  <data name="PluginPage_DownloadAndInstallBtn" xml:space="preserve">
+    <value>下載並安裝</value>
+  </data>
+  <data name="PluginPage_InputErrorTitle" xml:space="preserve">
+    <value>輸入錯誤</value>
+  </data>
+  <data name="PluginPage_InvalidUrlMessage" xml:space="preserve">
+    <value>請輸入有效的插件下載連結。</value>
+  </data>
+  <data name="PluginPage_FetchingFormat" xml:space="preserve">
+    <value>正在取得 {0}</value>
+  </data>
+  <data name="PluginPage_StatusConnecting" xml:space="preserve">
+    <value>正在連線...</value>
+  </data>
+  <data name="PluginPage_StatusSwitchingLine" xml:space="preserve">
+    <value>連線失敗，正在嘗試備用線路...</value>
+  </data>
+  <data name="PluginPage_DownloadHttpFailedFormat" xml:space="preserve">
+    <value>下載失敗 (HTTP {0})</value>
+  </data>
+  <data name="PluginPage_LineBackup" xml:space="preserve">
+    <value>備用線路</value>
+  </data>
+  <data name="PluginPage_LineMain" xml:space="preserve">
+    <value>主線路</value>
+  </data>
+  <data name="PluginPage_StatusDownloadingFormat" xml:space="preserve">
+    <value>{0}下載中... {1}%</value>
+  </data>
+  <data name="PluginPage_StatusExtracting" xml:space="preserve">
+    <value>正在解壓縮...</value>
+  </data>
+  <data name="PluginPage_StatusInstalling" xml:space="preserve">
+    <value>正在安裝...</value>
+  </data>
+  <data name="PluginPage_DownloadErrorTitle" xml:space="preserve">
+    <value>下載/安裝錯誤</value>
+  </data>
+  <data name="PluginPage_DownloadErrorContentFormat" xml:space="preserve">
+    <value>自動下載失敗：{0}&#10;&#10;建議點擊下方按鈕開啟瀏覽器手動下載。</value>
+  </data>
+  <data name="PluginPage_ManualDownloadBtn" xml:space="preserve">
+    <value>手動下載</value>
+  </data>
+  <data name="PluginPage_SecurityWarningContent" xml:space="preserve">
+    <value>安全軟體會阻擋該程式的正常注入運行，如無法使用或者插件消失，請關閉你電腦的安全中心！</value>
+  </data>
+  <data name="PluginPage_RenameFolderTitle" xml:space="preserve">
+    <value>重新命名插件資料夾</value>
+  </data>
+  <data name="PluginPage_DuplicateDetectedHeader" xml:space="preserve">
+    <value>偵測到以下重複插件：</value>
+  </data>
+  <data name="PluginPage_DuplicatePluginNameFormat" xml:space="preserve">
+    <value>插件名稱：{0}</value>
+  </data>
+  <data name="PluginPage_DuplicateConflictsHeader" xml:space="preserve">
+    <value>衝突資料夾：</value>
+  </data>
+  <data name="PluginPage_DuplicateFolderItemFormat" xml:space="preserve">
+    <value>   - {0}</value>
+  </data>
+  <data name="PluginPage_DuplicateHint" xml:space="preserve">
+    <value>建議手動刪除舊版本插件</value>
+  </data>
+  <data name="Settings_PluginSignature_Title" xml:space="preserve">
+    <value>校驗插件簽名</value>
+  </data>
+  <data name="Settings_PluginSignature_Caption" xml:space="preserve">
+    <value>檢測已安裝插件DLL的數位簽章，並檢視簽章詳情</value>
+  </data>
+  <data name="Settings_PluginSignature_Btn" xml:space="preserve">
+    <value>開始校驗</value>
+  </data>
+  <data name="PluginSignature_DialogTitle" xml:space="preserve">
+    <value>插件簽章校驗結果</value>
+  </data>
+  <data name="PluginSignature_Checking" xml:space="preserve">
+    <value>正在校驗插件簽章...</value>
+  </data>
+  <data name="PluginSignature_NoPlugins" xml:space="preserve">
+    <value>未在 Plugins 目錄中找到任何插件 DLL</value>
+  </data>
+  <data name="PluginSignature_Failed" xml:space="preserve">
+    <value>校驗失敗：{0}</value>
+  </data>
+  <data name="PluginSignature_Signed" xml:space="preserve">
+    <value>已簽章</value>
+  </data>
+  <data name="PluginSignature_Unsigned" xml:space="preserve">
+    <value>未簽章</value>
+  </data>
+  <data name="PluginSignature_File" xml:space="preserve">
+    <value>檔案</value>
+  </data>
+  <data name="PluginSignature_Signer" xml:space="preserve">
+    <value>簽章者</value>
+  </data>
+  <data name="PluginSignature_Issuer" xml:space="preserve">
+    <value>簽發者</value>
+  </data>
+  <data name="PluginSignature_SerialNumber" xml:space="preserve">
+    <value>序號</value>
+  </data>
+  <data name="PluginSignature_Thumbprint" xml:space="preserve">
+    <value>指紋</value>
+  </data>
+  <data name="PluginSignature_ValidFrom" xml:space="preserve">
+    <value>有效期起</value>
+  </data>
+  <data name="PluginSignature_ValidTo" xml:space="preserve">
+    <value>有效期至</value>
+  </data>
+  <data name="PluginSignature_SignatureAlgorithm" xml:space="preserve">
+    <value>簽章演算法</value>
+  </data>
+  <data name="PluginSignature_PublicKey" xml:space="preserve">
+    <value>公鑰演算法</value>
+  </data>
+  <data name="PluginSignature_TrustStatus" xml:space="preserve">
+    <value>信任狀態</value>
+  </data>
+  <data name="PluginSignature_TrustValid" xml:space="preserve">
+    <value>簽章有效且受信任</value>
+  </data>
+  <data name="PluginSignature_TrustNotSigned" xml:space="preserve">
+    <value>檔案沒有數位簽章</value>
+  </data>
+  <data name="PluginSignature_TrustBadDigest" xml:space="preserve">
+    <value>簽章校驗失敗：檔案內容可能已被修改</value>
+  </data>
+  <data name="PluginSignature_TrustSubjectNotTrusted" xml:space="preserve">
+    <value>簽章主體不受信任</value>
+  </data>
+  <data name="PluginSignature_TrustExpired" xml:space="preserve">
+    <value>簽章憑證已過期</value>
+  </data>
+  <data name="PluginSignature_TrustRevoked" xml:space="preserve">
+    <value>簽章憑證已被撤銷</value>
+  </data>
+  <data name="PluginSignature_TrustUntrustedRoot" xml:space="preserve">
+    <value>簽章不受信任：憑證鏈或根憑證不在受信任清單</value>
+  </data>
+  <data name="PluginSignature_TrustWrongUsage" xml:space="preserve">
+    <value>憑證用途與程式碼簽章不符</value>
+  </data>
+  <data name="PluginSignature_TrustUnknown" xml:space="preserve">
+    <value>未知狀態（0x{0}）</value>
+  </data>
+  <data name="Plugin_StopSwitchBtn" xml:space="preserve">
+    <value>停止切換</value>
+  </data>
+  <data name="Plugin_StopRequested" xml:space="preserve">
+    <value>正在停止...</value>
+  </data>
+  <data name="Plugin_SwitchStopped_Title" xml:space="preserve">
+    <value>已停止</value>
+  </data>
+  <data name="Plugin_SwitchStopped_Content" xml:space="preserve">
+    <value>已停止切換，未做任何變更。</value>
+  </data>
+  <data name="DailyNote_NoIdentityService" xml:space="preserve">
+    <value>未能取得遊戲身分服務，無法讀取便籤資料</value>
+  </data>
+  <data name="PluginStoreAccessDenied" xml:space="preserve">
+    <value>存取被拒絕</value>
+  </data>
+  <data name="PluginStoreCancelling" xml:space="preserve">
+    <value>正在取消...</value>
+  </data>
+  <data name="PluginStoreCaptchaCancelled" xml:space="preserve">
+    <value>已取消驗證碼校驗</value>
+  </data>
+  <data name="PluginStoreCaptchaFailed" xml:space="preserve">
+    <value>驗證碼校驗失敗</value>
+  </data>
+  <data name="PluginStoreCaptchaRequired" xml:space="preserve">
+    <value>需要完成驗證碼校驗</value>
+  </data>
+  <data name="PluginStoreCaptchaRetryExhausted" xml:space="preserve">
+    <value>驗證碼校驗重試次數已用盡，請稍後再試</value>
+  </data>
+  <data name="PluginStoreExtracting" xml:space="preserve">
+    <value>正在解壓縮...</value>
+  </data>
+  <data name="PluginStoreHttpError" xml:space="preserve">
+    <value>請求失敗（HTTP {0}）：{1}</value>
+  </data>
+  <data name="PluginStorePrivateAccessCancelled" xml:space="preserve">
+    <value>已取消私密插件存取驗證</value>
+  </data>
+  <data name="PluginStorePrivateAccessDenied" xml:space="preserve">
+    <value>私密插件存取被拒絕</value>
+  </data>
+  <data name="PluginStorePrivateAccessRequired" xml:space="preserve">
+    <value>需要私密插件存取授權</value>
+  </data>
+  <data name="PluginStoreRetrying" xml:space="preserve">
+    <value>正在重試...</value>
+  </data>
+  <data name="PluginStoreWritingConfig" xml:space="preserve">
+    <value>正在寫入設定...</value>
+  </data>
+  <data name="EnableCaptchaNotice" xml:space="preserve">
+    <value>顯示驗證碼彈窗說明</value>
+  </data>
+  <data name="EnableCaptchaNoticeCaption" xml:space="preserve">
+    <value>在米遊社風控驗證碼彈窗中顯示來源說明；關閉後僅隱藏文字，驗證功能不受影響。</value>
+  </data>
+  <data name="CaptchaNoticeWatermark" xml:space="preserve">
+    <value>米遊社便箋 · 人機驗證</value>
+  </data>
+  <data name="CaptchaNoticeTitle" xml:space="preserve">
+    <value>此驗證來自米遊社便箋</value>
+  </data>
+  <data name="CaptchaNoticeLine1" xml:space="preserve">
+    <value>該彈窗由米遊社風控觸發，僅用於「便箋」資料的查詢驗證，並非啟動器自身的人機驗證。</value>
+  </data>
+  <data name="CaptchaNoticeLine2" xml:space="preserve">
+    <value>完成驗證後即可查看便箋；不想看到此提示，可在「設定 → 進階選項」中關閉。</value>
+  </data>
+  <data name="DeviceInfo_Title" xml:space="preserve">
+    <value>米遊社裝置資訊</value>
+  </data>
+  <data name="DeviceInfo_Caption" xml:space="preserve">
+    <value>檢視並修改目前帳號的裝置指紋、裝置識別與裝置畫像資料</value>
+  </data>
+  <data name="DeviceInfo_Account" xml:space="preserve">
+    <value>帳號</value>
+  </data>
+  <data name="DeviceInfo_FingerprintSection" xml:space="preserve">
+    <value>裝置指紋</value>
+  </data>
+  <data name="DeviceInfo_FingerprintCaption" xml:space="preserve">
+    <value>用於米遊社介面驗證的裝置識別，儲存後立即對此帳號生效</value>
+  </data>
+  <data name="DeviceInfo_ExtSection" xml:space="preserve">
+    <value>裝置畫像（ext_fields）</value>
+  </data>
+  <data name="DeviceInfo_ExtCaption" xml:space="preserve">
+    <value>隨裝置指紋上報的裝置特徵參數，可依需求逐項修改</value>
+  </data>
+  <data name="DeviceInfo_Randomize" xml:space="preserve">
+    <value>隨機產生識別</value>
+  </data>
+  <data name="DeviceInfo_Reload" xml:space="preserve">
+    <value>重新載入</value>
+  </data>
+  <data name="DeviceInfo_RestoreDefaults" xml:space="preserve">
+    <value>還原預設</value>
+  </data>
+  <data name="DeviceInfo_Save" xml:space="preserve">
+    <value>儲存</value>
+  </data>
+  <data name="DeviceInfo_FilterPlaceholder" xml:space="preserve">
+    <value>篩選欄位</value>
+  </data>
+  <data name="DeviceInfo_NoAccount" xml:space="preserve">
+    <value>目前沒有可用帳號</value>
+  </data>
+  <data name="DeviceInfo_NoFingerprint" xml:space="preserve">
+    <value>此帳號尚未產生裝置指紋，登入並載入一次資料後即可編輯</value>
+  </data>
+  <data name="DeviceInfo_Saved" xml:space="preserve">
+    <value>儲存成功</value>
+  </data>
+  <data name="DeviceInfo_SaveFailed" xml:space="preserve">
+    <value>儲存失敗</value>
+  </data>
+  <data name="DeviceInfo_InvalidJson" xml:space="preserve">
+    <value>ext_fields 不是有效的 JSON</value>
+  </data>
+  <data name="DeviceInfo_Randomized" xml:space="preserve">
+    <value>已產生隨機裝置識別，儲存後生效</value>
+  </data>
+  <data name="DeviceInfo_DefaultsRestored" xml:space="preserve">
+    <value>已還原預設裝置畫像，儲存後生效</value>
+  </data>
+  <data name="DeviceInfo_DeviceIdRequired" xml:space="preserve">
+    <value>device_id 不能為空</value>
+  </data>
+  <data name="DeviceInfo_ResetToDefaults" xml:space="preserve">
+    <value>一鍵重置</value>
+  </data>
+  <data name="DeviceInfo_Resetting" xml:space="preserve">
+    <value>正在重置為預設設定…</value>
+  </data>
+  <data name="DeviceInfo_ResetDone" xml:space="preserve">
+    <value>已重置為預設設定</value>
+  </data>
+  <data name="DeviceInfo_ResetFailed" xml:space="preserve">
+    <value>重置失敗，請檢查網路後重試</value>
+  </data>
+  <data name="SectionStartup" xml:space="preserve">
+    <value>啟動設定</value>
+  </data>
+  <data name="RunAtStartupTitle" xml:space="preserve">
+    <value>開機自動啟動</value>
+  </data>
+  <data name="RunAtStartupCaption" xml:space="preserve">
+    <value>登入 Windows 後自動啟動芙芙啟動器</value>
+  </data>
+  <data name="RunAtStartupFailedTitle" xml:space="preserve">
+    <value>無法開啟開機自動啟動</value>
+  </data>
+  <data name="RunAtStartupFailedMessage" xml:space="preserve">
+    <value>寫入開機啟動項失敗，請檢查系統權限或安全軟體設定。</value>
+  </data>
+  <data name="PluginDllConflict_Title" xml:space="preserve">
+    <value>外掛 DLL 衝突</value>
+  </data>
+  <data name="PluginDllConflict_Message" xml:space="preserve">
+    <value>我們發現多個外掛裡有同名的 DLL，已停止注入。如果繼續注入，可能會載入舊版外掛，造成遊戲或外掛無法正常運作。</value>
+  </data>
+  <data name="PluginDllConflict_DllNameFormat" xml:space="preserve">
+    <value>DLL 名稱：{0}</value>
+  </data>
+  <data name="PluginDllConflict_NewestBadge" xml:space="preserve">
+    <value>最新</value>
+  </data>
+  <data name="PluginDllConflict_OlderBadge" xml:space="preserve">
+    <value>舊版本</value>
+  </data>
+  <data name="PluginDllConflict_LocateBtn" xml:space="preserve">
+    <value>定位檔案</value>
+  </data>
+  <data name="PluginDllConflict_Hint" xml:space="preserve">
+    <value>請只保留最新版本的外掛，並把其他外掛裡的同名 DLL 刪除或重新命名；如果不清楚該保留哪一個，建議刪除全部外掛後重新安裝。</value>
+  </data>
+  <data name="PluginConflictCheckTitle" xml:space="preserve">
+    <value>外掛衝突偵測</value>
+  </data>
+  <data name="PluginConflictCheckCaption" xml:space="preserve">
+    <value>啟動注入前會檢查同名外掛 DLL，發現衝突時停止注入並提示處理</value>
+  </data>
+  <data name="PluginConflictMainOnlyTitle" xml:space="preserve">
+    <value>僅偵測主外掛</value>
+  </data>
+  <data name="PluginConflictMainOnlyCaption" xml:space="preserve">
+    <value>只檢查 FufuLauncher.UnlockerIsland.dll；關閉後檢查所有外掛 DLL</value>
+  </data>
+  <data name="PluginDllConflict_DeleteBtn" xml:space="preserve">
+    <value>刪除</value>
+  </data>
+  <data name="PluginDllConflict_ConfirmDeleteBtn" xml:space="preserve">
+    <value>確認刪除</value>
+  </data>
+  <data name="PluginDllConflict_DeleteConfirm" xml:space="preserve">
+    <value>將刪除該 DLL 及其同目錄下的 config.ini，刪除後無法復原。是否繼續？</value>
+  </data>
+  <data name="PluginDllConflict_DeleteFailedFormat" xml:space="preserve">
+    <value>刪除失敗：{0}</value>
+  </data>
+  <data name="PluginDllConflict_Resolved" xml:space="preserve">
+    <value>同名 DLL 衝突已處理完畢，可以重新啟動遊戲了。</value>
+  </data>
+  <data name="PluginConfigPage_AutoSaveHint" xml:space="preserve"><value>變更將自動儲存</value></data>
+  <data name="PluginConfigPage_Saving" xml:space="preserve"><value>正在儲存…</value></data>
+  <data name="PluginConfigPage_SaveFailed" xml:space="preserve"><value>設定儲存失敗</value></data>
+  <data name="PluginConfigPage_SaveFailedMessage" xml:space="preserve"><value>無法寫入設定檔，請檢查檔案權限後重試。錯誤詳細資訊：{0}</value></data>
+  <data name="PluginConfigPage_LoadFailed" xml:space="preserve"><value>設定載入失敗</value></data>
+  <data name="PluginConfigPage_LoadFailedMessage" xml:space="preserve"><value>無法讀取外掛設定檔。錯誤詳細資訊：{0}</value></data>
+  <data name="PluginConfigPage_LoadFailedHint" xml:space="preserve"><value>請確認設定檔存在且可讀取，然後重新載入。</value></data>
+  <data name="PluginConfigPage_MissingFile" xml:space="preserve"><value>設定檔不存在：{0}</value></data>
+  <data name="PluginConfigPage_NoOptions" xml:space="preserve"><value>目前沒有可設定的參數</value></data>
+  <data name="PluginConfigPage_NoOptionsHint" xml:space="preserve"><value>此外掛尚未提供可調整的設定參數。</value></data>
+  <data name="PluginConfigPage_NoResults" xml:space="preserve"><value>找不到符合的設定項目</value></data>
+  <data name="PluginConfigPage_NoResultsHint" xml:space="preserve"><value>請嘗試其他關鍵字，或清除搜尋條件。</value></data>
+  <data name="PluginConfigPage_ClearSearch" xml:space="preserve"><value>清除搜尋</value></data>
+  <data name="PluginConfigPage_OptionCount" xml:space="preserve"><value>{0} 個設定項目</value></data>
+  <data name="PluginConfigPage_FilteredOptionCount" xml:space="preserve"><value>{0} / {1} 個設定項目</value></data>
+  <data name="PluginConfigPage_ConfigFile" xml:space="preserve"><value>設定檔</value></data>
+  <data name="PluginConfigPage_ValuePlaceholder" xml:space="preserve"><value>請輸入設定值…</value></data>
 </root>

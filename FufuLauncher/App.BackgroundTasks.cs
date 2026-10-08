@@ -2,10 +2,12 @@
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
+
 using System.Diagnostics;
 using CommunityToolkit.Mvvm.Messaging;
 using FufuLauncher.Contracts.Services;
 using FufuLauncher.Helpers;
+using FufuLauncher.Services.UID;
 using FufuLauncher.Views;
 using Windows.Media.Core;
 using Windows.Media.Playback;
@@ -17,16 +19,121 @@ public partial class App
 {
     #region Background Tasks
 
-    private async Task LoadUidLookupAsync()
+    private const int BanCheckExitCode = 4;
+
+    private const uint MB_YESNO = 0x00000004;
+    private const int IDYES = 6;
+
+
+    private async Task<IReadOnlyList<string>> LoadUidLookupAsync()
     {
         try
         {
             var uidService = GetService<IUidLookupService>();
-            await uidService.LoadAndWriteUidsAsync();
+            return await uidService.LoadAndWriteUidsAsync();
         }
         catch (Exception ex)
         {
             Debug.WriteLine($"[UidLookup] 写入失败: {ex.Message}");
+            return Array.Empty<string>();
+        }
+    }
+
+
+    private async Task<bool> EnforceBanListAsync(IReadOnlyList<string>? knownUids = null)
+    {
+        BanCheckResult result;
+        try
+        {
+            result = await GetService<Services.UID.BanCheckService>().CheckAsync(knownUids);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[BanCheck] 检查失败，按放行处理 - {ex.Message}");
+            return false;
+        }
+
+        if (!result.ShouldTerminate) return false;
+
+        Debug.WriteLine($"[BanCheck] !!! TERMINATING - {result.Outcome} (UID: {result.Uid ?? "n/a"})");
+
+        var message = string.Format(
+            "BanCheck_KilledMessage".GetLocalized(),
+            Environment.NewLine,
+            result.Uid ?? "-",
+            result.Reason,
+            result.AppealUrl);
+
+        // MB_YESNO lets the blocked user jump straight to the appeal channel
+        // before the process exits, instead of hitting a dead end.
+        var choice = MessageBox(
+            IntPtr.Zero,
+            message,
+            "BanCheck_KilledTitle".GetLocalized(),
+            MB_YESNO | MB_ICONERROR);
+
+        if (choice == IDYES)
+        {
+            OpenAppealUrl(result.AppealUrl);
+        }
+
+        await RequestShutdownAsync();
+        return true;
+    }
+
+
+    private async Task RequestShutdownAsync()
+    {
+        try
+        {
+            // Close the shell if it was already created; before that point there is
+            // nothing to close and OnLaunched returns without building one.
+            var window = MainWindow;
+            if (window != null)
+            {
+                await _mainDispatcherQueue.EnqueueAsync(() =>
+                {
+                    try
+                    {
+                        window.Close();
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"[BanCheck] 关闭主窗口失败 - {ex.Message}");
+                    }
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[BanCheck] 调度关闭失败 - {ex.Message}");
+        }
+
+        // Give queued settings writes a brief window to complete.
+        await Task.Delay(150);
+
+        Environment.Exit(BanCheckExitCode);
+    }
+
+
+    private static void OpenAppealUrl(string? url)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(url)) return;
+
+            if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) ||
+                (uri.Scheme != Uri.UriSchemeHttps && uri.Scheme != Uri.UriSchemeHttp))
+            {
+                Debug.WriteLine($"[BanCheck] 拒绝打开非 http(s) 申诉链接: {url}");
+                return;
+            }
+
+            Process.Start(new ProcessStartInfo(uri.AbsoluteUri) { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[BanCheck] 打开申诉链接失败 - {ex.Message}");
         }
     }
 
@@ -174,11 +281,18 @@ public partial class App
                     mediaPlayer.Volume = 0.7;
 
                     int disposed = 0;
+
                     void DisposeOnce()
                     {
                         if (Interlocked.Exchange(ref disposed, 1) == 0)
                         {
-                            try { mediaPlayer.Dispose(); } catch { }
+                            try
+                            {
+                                mediaPlayer.Dispose();
+                            }
+                            catch
+                            {
+                            }
                         }
                     }
 
@@ -215,7 +329,8 @@ public partial class App
             var result = await updateService.CheckUpdateAsync();
 
             var devBuildService = GetService<IDevBuildDetectionService>();
-            WeakReferenceMessenger.Default.Send(new Messages.DevBuildDetectionCompletedMessage(devBuildService.IsDevBuild));
+            WeakReferenceMessenger.Default.Send(
+                new Messages.DevBuildDetectionCompletedMessage(devBuildService.IsDevBuild));
 
             if (result.IsDevBuild && MainWindow is MainWindow mainWindow)
             {

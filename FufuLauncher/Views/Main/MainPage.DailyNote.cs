@@ -2,6 +2,7 @@
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
+
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Animation;
@@ -19,7 +20,7 @@ public sealed partial class MainPage
             btn.IsEnabled = false;
             try
             {
-                await ViewModel.LoadDailyNoteAsync();
+                await ViewModel.LoadDailyNoteAsync(force: true);
             }
             finally
             {
@@ -54,8 +55,10 @@ public sealed partial class MainPage
         var duration = new Duration(TimeSpan.FromMilliseconds(300));
         var easing = new CubicEase { EasingMode = EasingMode.EaseInOut };
 
-        storyboard.Children.Add(CreateDoubleAnimation(DailyNoteDataPanel, "Opacity", isLoaded ? 1.0 : 0.0, duration, easing));
-        storyboard.Children.Add(CreateDoubleAnimation(DailyNoteEmptyText, "Opacity", isLoaded ? 0.0 : 0.8, duration, easing));
+        storyboard.Children.Add(CreateDoubleAnimation(DailyNoteDataPanel, "Opacity", isLoaded ? 1.0 : 0.0, duration,
+            easing));
+        storyboard.Children.Add(CreateDoubleAnimation(DailyNoteEmptyText, "Opacity", isLoaded ? 0.0 : 0.8, duration,
+            easing));
 
         DailyNoteDataPanel.IsHitTestVisible = isLoaded;
 

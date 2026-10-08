@@ -1,10 +1,13 @@
-﻿/*
+/*
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
+
 using System.Net.Http.Json;
 using System.Text.Json;
 using FufuLauncher.Constants;
+using CommunityToolkit.Mvvm.Messaging;
+using FufuLauncher.Messages;
 using FufuLauncher.Models;
 using FufuLauncher.Services;
 using Microsoft.UI.Xaml;
@@ -12,10 +15,19 @@ using Microsoft.UI.Xaml.Controls;
 
 namespace FufuLauncher.Views
 {
-
     public sealed partial class InventoryWindow : Window
     {
-        private readonly string _cachePath;
+        private string _cachePath = "";
+        private readonly GameRoleService _roles = App.GetService<GameRoleService>();
+
+        public GameRoleScope RoleSelection
+        {
+            get;
+        } = new();
+
+        private SelectedGameRole? _loadedRole;
+        private int _loadVersion;
+        private bool _closed;
         private List<InventoryItemModel> _currentItems = new();
 
         private static readonly HttpClient _httpClient = new(new HttpClientHandler
@@ -30,11 +42,37 @@ namespace FufuLauncher.Views
             ExtendsContentIntoTitleBar = true;
             SetTitleBar(AppTitleBar);
 
-            _cachePath = Helpers.AppPaths.InventoryCacheFile;
+            WeakReferenceMessenger.Default.Register<GameRoleChangedMessage>(this, (r, m) =>
+            {
+                if (!RoleSelection.HasOverride) DispatcherQueue.TryEnqueue(async () => await LoadInitialDataAsync());
+            });
+            WeakReferenceMessenger.Default.Register<FeatureGameRoleChangedMessage>(this, (r, m) =>
+            {
+                if (ReferenceEquals(m.Scope, RoleSelection))
+                    DispatcherQueue.TryEnqueue(async () => await LoadInitialDataAsync());
+            });
+            WeakReferenceMessenger.Default.Register<GameRolesUpdatedMessage>(this, (r, m) =>
+            {
+                var account = App.GetService<AccountManager>().GetActiveAccountEntry();
+                if (account?.Id == m.AccountId && RoleSelection.Current(account) == null)
+                    DispatcherQueue.TryEnqueue(async () => await LoadInitialDataAsync());
+            });
+            WeakReferenceMessenger.Default.Register<AccountChangedMessage>(this, (r, m) =>
+            {
+                RoleSelection.Reset();
+                DispatcherQueue.TryEnqueue(async () => await LoadInitialDataAsync());
+            });
+            Closed += (_, _) =>
+            {
+                _closed = true;
+                ++_loadVersion;
+                WeakReferenceMessenger.Default.UnregisterAll(this);
+            };
 
             if (_httpClient.DefaultRequestHeaders.UserAgent.Count == 0)
             {
-                _httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+                _httpClient.DefaultRequestHeaders.Add("User-Agent",
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
                 _httpClient.DefaultRequestHeaders.Add("Referer", ApiEndpoints.WebstaticRefererUrl);
             }
 
@@ -43,26 +81,44 @@ namespace FufuLauncher.Views
 
         private async Task LoadInitialDataAsync()
         {
+            if (_closed) return;
+            var version = ++_loadVersion;
+            _loadedRole = null;
+            RefreshButton.IsEnabled = true;
+            _currentItems = new();
+            RefreshUiBindings();
             try
             {
+                var selected = await _roles.GetCurrentAsync(RoleSelection);
+                if (version != _loadVersion || _closed || selected == null) return;
+                _cachePath = GetCachePath(selected);
                 if (File.Exists(_cachePath))
                 {
                     var json = await File.ReadAllTextAsync(_cachePath);
                     var data = JsonSerializer.Deserialize<InventoryData>(json);
-
-                    if (data?.Items.Count > 0)
+                    if (version != _loadVersion || _closed || !_roles.IsCurrent(selected, RoleSelection)) return;
+                    if (data != null)
                     {
+                        _loadedRole = selected;
                         _currentItems = data.Items;
                         RefreshUiBindings();
-                        StatusText.Text = $"上次更新: {DateTimeOffset.FromUnixTimeSeconds(data.LastUpdateTime).LocalDateTime:MM-dd HH:mm}";
+                        StatusText.Text =
+                            $"上次更新: {DateTimeOffset.FromUnixTimeSeconds(data.LastUpdateTime).LocalDateTime:MM-dd HH:mm}";
                         return;
                     }
                 }
+
                 await LoadInventoryDataAsync(false);
             }
-            catch { StatusText.Text = "加载失败，请检查配置"; }
+            catch (Exception ex)
+            {
+                if (version == _loadVersion && !_closed) StatusText.Text = ex.Message;
+            }
         }
-        
+
+        private static string GetCachePath(SelectedGameRole selected) => Path.Combine(
+            Helpers.AppPaths.DataDir, $"inventory_{selected.Role.region}_{selected.Role.game_uid}.json");
+
         private void RefreshUiBindings()
         {
             var sortedList = _currentItems.OrderByDescending(x => x.OwnedCount).ToList();
@@ -74,7 +130,7 @@ namespace FufuLauncher.Views
         {
             await LoadInventoryDataAsync(true);
         }
-        
+
         private async void OnTargetValueChanged(NumberBox sender, NumberBoxValueChangedEventArgs args)
         {
             await SaveToCacheAsync();
@@ -85,6 +141,8 @@ namespace FufuLauncher.Views
 
         private async Task SaveToCacheAsync()
         {
+            if (_loadedRole == null || string.IsNullOrEmpty(_cachePath)) return;
+            var path = _cachePath;
             try
             {
                 var data = new InventoryData
@@ -93,7 +151,7 @@ namespace FufuLauncher.Views
                     LastUpdateTime = DateTimeOffset.Now.ToUnixTimeSeconds()
                 };
                 var json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = false });
-                await File.WriteAllTextAsync(_cachePath, json);
+                await File.WriteAllTextAsync(path, json);
             }
             catch
             {
@@ -103,60 +161,52 @@ namespace FufuLauncher.Views
 
         private async Task LoadInventoryDataAsync(bool isManualRefresh)
         {
+            if (_closed) return;
+            var version = ++_loadVersion;
             RefreshButton.IsEnabled = false;
+            var existingItems = _currentItems.ToList();
             try
             {
                 StatusText.Text = isManualRefresh ? "正在请求米游社..." : "正在获取数据...";
-
-                var accountManager = App.GetService<AccountManager>();
-                var activeId = accountManager.ActiveAccountId;
-                if (activeId == null) throw new Exception("请先登录米游社账号");
-
-                var cookies = await accountManager.LoadCookiesAsync(activeId);
-                if (cookies == null || cookies.Count == 0) throw new Exception("无法读取登录凭证，请重新登录");
-
-                var cookie = string.Join("; ", cookies.Select(x => $"{x.Key}={x.Value}"));
-
-                if (string.IsNullOrEmpty(cookie)) throw new Exception("Cookie未配置");
-
-                var newItems = await Task.Run(async () =>
-                {
-                    var uid = await GetUidAsync(cookie);
-                    return await SyncInventoryFromApiAsync(cookie, uid);
-                });
-                
+                var selected = await _roles.GetCurrentAsync(RoleSelection)
+                               ?? throw new InvalidOperationException("请先登录米游社账号");
+                if (selected.ServerType != "cn")
+                    throw new InvalidOperationException("背包同步暂仅支持天空岛和世界树角色。");
+                if (version != _loadVersion || _closed) return;
+                if (_loadedRole == null || _loadedRole.Role.game_uid != selected.Role.game_uid ||
+                    _loadedRole.Role.region != selected.Role.region)
+                    existingItems.Clear();
+                var cookie = string.Join("; ", selected.Cookies.Select(x => $"{x.Key}={x.Value}"));
+                var newItems = await SyncInventoryFromApiAsync(cookie, selected.Role.game_uid, selected.Role.region);
+                if (version != _loadVersion || _closed || !_roles.IsCurrent(selected, RoleSelection)) return;
                 foreach (var newItem in newItems)
                 {
-                    var existing = _currentItems.FirstOrDefault(i => i.Id == newItem.Id);
-                    if (existing != null)
-                    {
-                        newItem.TargetCount = existing.TargetCount;
-                    }
+                    var existing = existingItems.FirstOrDefault(i => i.Id == newItem.Id);
+                    if (existing != null) newItem.TargetCount = existing.TargetCount;
                 }
 
+                _loadedRole = selected;
+                _cachePath = GetCachePath(selected);
                 _currentItems = newItems;
                 await SaveToCacheAsync();
+                if (version != _loadVersion || _closed || !_roles.IsCurrent(selected, RoleSelection)) return;
                 RefreshUiBindings();
                 StatusText.Text = $"同步成功: {DateTime.Now:HH:mm:ss}";
             }
-            catch (Exception ex) { StatusText.Text = $"同步失败: {ex.Message}"; }
-            finally { RefreshButton.IsEnabled = true; }
+            catch (Exception ex)
+            {
+                if (version == _loadVersion && !_closed) StatusText.Text = $"同步失败: {ex.Message}";
+            }
+            finally
+            {
+                if (version == _loadVersion && !_closed) RefreshButton.IsEnabled = true;
+            }
         }
 
-        private async Task<string?> GetUidAsync(string cookie)
-        {
-            var request = new HttpRequestMessage(HttpMethod.Get, ApiEndpoints.MihoyoBbsUserGameRolesUrl); 
-            request.Headers.Add("Cookie", cookie);
-            var response = await _httpClient.SendAsync(request);
-            var content = await response.Content.ReadAsStringAsync();
-            using var doc = JsonDocument.Parse(content);
-            return doc.RootElement.GetProperty("data").GetProperty("list")[0].GetProperty("game_uid").GetString();
-        }
-
-        private async Task<List<InventoryItemModel>> SyncInventoryFromApiAsync(string cookie, string? uid)
+        private async Task<List<InventoryItemModel>> SyncInventoryFromApiAsync(string cookie, string uid, string region)
         {
             var avatarPayload = new { page = 1, size = 1000, is_all = true };
-            var avatarResp = await PostWithCookieAsync(ApiEndpoints.CalculateAvatarListUrl, avatarPayload, cookie); 
+            var avatarResp = await PostWithCookieAsync(ApiEndpoints.CalculateAvatarListUrl, avatarPayload, cookie);
             using var avatarDoc = JsonDocument.Parse(avatarResp);
 
             var avatars = new List<(int Id, List<int> SkillIds, int WeaponCatId)>();
@@ -167,7 +217,8 @@ namespace FufuLauncher.Views
                     .Where(s => s.GetProperty("max_level").GetInt32() > 1)
                     .Select(s => s.GetProperty("group_id").GetInt32()).ToList();
                 if (skillIds.Count > 0)
-                    avatars.Add((avatar.GetProperty("id").GetInt32(), skillIds, avatar.GetProperty("weapon_cat_id").GetInt32()));
+                    avatars.Add((avatar.GetProperty("id").GetInt32(), skillIds,
+                        avatar.GetProperty("weapon_cat_id").GetInt32()));
             }
 
             var weaponPayload = new { page = 1, size = 1000, weapon_levels = new[] { 1, 2, 3, 4, 5 } };
@@ -190,8 +241,8 @@ namespace FufuLauncher.Views
                 }
             }).ToList();
 
-            var computePayload = new { items = deltas, region = "cn_gf01", uid };
-            var computeResp = await PostWithCookieAsync(ApiEndpoints.CalculateBatchComputeUrl, computePayload, cookie); 
+            var computePayload = new { items = deltas, region, uid };
+            var computeResp = await PostWithCookieAsync(ApiEndpoints.CalculateBatchComputeUrl, computePayload, cookie);
             using var computeDoc = JsonDocument.Parse(computeResp);
 
             var items = new List<InventoryItemModel>();
@@ -208,6 +259,7 @@ namespace FufuLauncher.Views
                     IconUrl = item.TryGetProperty("icon", out var icon) ? icon.GetString() : ""
                 });
             }
+
             return items;
         }
 
@@ -216,8 +268,13 @@ namespace FufuLauncher.Views
             var request = new HttpRequestMessage(HttpMethod.Post, url);
             request.Headers.Add("Cookie", cookie);
             request.Content = JsonContent.Create(payload);
-            var response = await _httpClient.SendAsync(request);
-            return await response.Content.ReadAsStringAsync();
+            using var response = await _httpClient.SendAsync(request);
+            response.EnsureSuccessStatusCode();
+            var json = await response.Content.ReadAsStringAsync();
+            using var document = JsonDocument.Parse(json);
+            if (!document.RootElement.TryGetProperty("retcode", out var code) || code.GetInt32() != 0)
+                throw new InvalidOperationException("背包接口请求失败，请检查该角色的登录和授权状态。");
+            return json;
         }
     }
 }

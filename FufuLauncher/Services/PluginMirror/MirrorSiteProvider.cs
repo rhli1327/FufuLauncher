@@ -2,6 +2,7 @@
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
+
 using System.Diagnostics;
 using System.Net;
 using System.Security.Cryptography;
@@ -14,21 +15,52 @@ namespace FufuLauncher.Services.PluginMirror;
 public class MirrorSiteConfig
 {
     [JsonPropertyName("ProbeUrl")]
-    public string ProbeUrl { get; set; } = string.Empty;
+    public string ProbeUrl
+    {
+        get;
+        set;
+    } = string.Empty;
 
     [JsonPropertyName("ProbeMd5")]
-    public string ProbeMd5 { get; set; } = string.Empty;
+    public string ProbeMd5
+    {
+        get;
+        set;
+    } = string.Empty;
 
     [JsonPropertyName("Mirrors")]
-    public List<string> Mirrors { get; set; } = new();
+    public List<string> Mirrors
+    {
+        get;
+        set;
+    } = new();
 }
 
 public class MirrorTestResult
 {
-    public string Domain { get; set; } = string.Empty;
-    public bool IsSuccess { get; set; }
-    public long ResponseTimeMs { get; set; } = long.MaxValue;
-    public string StatusDesc { get; set; } = string.Empty;
+    public string Domain
+    {
+        get;
+        set;
+    } = string.Empty;
+
+    public bool IsSuccess
+    {
+        get;
+        set;
+    }
+
+    public long ResponseTimeMs
+    {
+        get;
+        set;
+    } = long.MaxValue;
+
+    public string StatusDesc
+    {
+        get;
+        set;
+    } = string.Empty;
 }
 
 public readonly record struct MirrorTestProgress(int Tested, int Total);
@@ -119,7 +151,8 @@ public class MirrorSiteProvider
             for (int hop = 0; hop < 5; hop++)
             {
                 using var request = new HttpRequestMessage(HttpMethod.Get, current);
-                using var response = await RedirectProbeClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+                using var response =
+                    await RedirectProbeClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
 
                 if (response.StatusCode is HttpStatusCode.MovedPermanently or HttpStatusCode.Redirect
                     or HttpStatusCode.SeeOther or HttpStatusCode.TemporaryRedirect or HttpStatusCode.PermanentRedirect)
@@ -214,6 +247,7 @@ public class MirrorSiteProvider
             result.IsSuccess = false;
             result.ResponseTimeMs = long.MaxValue;
         }
+
         return result;
     }
 

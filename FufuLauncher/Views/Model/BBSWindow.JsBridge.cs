@@ -2,6 +2,7 @@
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
+
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
@@ -28,12 +29,14 @@ public sealed partial class BBSWindow
                     if (param.Payload["body"] is JsonObject bodyObj) b = SortJson(bodyObj);
                     else if (param.Payload["body"] != null) b = param.Payload["body"]!.ToString();
                 }
+
                 ds = CalculateDS2(_currentConfig.Salt, q, b);
             }
             else
             {
                 ds = CalculateDS1(_currentConfig.Salt);
             }
+
             return new JsResult { Data = new() { ["DS"] = ds } };
         }
 
@@ -42,7 +45,8 @@ public sealed partial class BBSWindow
             "closePage" => HandleClosePage(),
             "getHTTPRequestHeaders" => GetHttpRequestHeader(),
             "getCookieInfo" => GetCookieInfoMinimal(),
-            "getCookieToken" => new JsResult { Data = new() { ["cookie_token"] = cookieDic.GetValueOrDefault("cookie_token") ?? "" } },
+            "getCookieToken" => new JsResult
+                { Data = new() { ["cookie_token"] = cookieDic.GetValueOrDefault("cookie_token") ?? "" } },
             "getStatusBarHeight" => new JsResult { Data = new() { ["statusBarHeight"] = 0 } },
             "getUserInfo" => GetUserInfo(),
             "getCurrentLocale" => new JsResult { Data = new() { ["language"] = "zh-cn", ["timeZone"] = "GMT+8" } },
@@ -62,7 +66,8 @@ public sealed partial class BBSWindow
         return null;
     }
 
-    private async void CoreWebView2_WebMessageReceived(CoreWebView2 sender, CoreWebView2WebMessageReceivedEventArgs args)
+    private async void CoreWebView2_WebMessageReceived(CoreWebView2 sender,
+        CoreWebView2WebMessageReceivedEventArgs args)
     {
         try
         {
@@ -74,7 +79,8 @@ public sealed partial class BBSWindow
 
             string message = args.TryGetWebMessageAsString();
             if (string.IsNullOrEmpty(message)) return;
-            var param = JsonSerializer.Deserialize<JsParam>(message, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var param = JsonSerializer.Deserialize<JsParam>(message,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
             if (param == null) return;
 
             JsResult? result = await HandleJsMessageAsync(param);
@@ -84,7 +90,9 @@ public sealed partial class BBSWindow
                 await ExecuteCallback(param.Callback, result);
             }
         }
-        catch { }
+        catch
+        {
+        }
     }
 
     private JsResult? HandleClosePage()
@@ -138,16 +146,50 @@ public sealed partial class BBSWindow
 
     private class JsParam
     {
-        [JsonPropertyName("method")] public string Method { get; set; } = "";
-        [JsonPropertyName("payload")] public JsonNode? Payload { get; set; }
-        [JsonPropertyName("callback")] public string? Callback { get; set; }
+        [JsonPropertyName("method")]
+        public string Method
+        {
+            get;
+            set;
+        } = "";
+
+        [JsonPropertyName("payload")]
+        public JsonNode? Payload
+        {
+            get;
+            set;
+        }
+
+        [JsonPropertyName("callback")]
+        public string? Callback
+        {
+            get;
+            set;
+        }
     }
 
     private class JsResult
     {
-        [JsonPropertyName("retcode")] public int Code { get; set; } = 0;
-        [JsonPropertyName("message")] public string Message { get; set; } = "";
-        [JsonPropertyName("data")] public Dictionary<string, object> Data { get; set; } = new();
+        [JsonPropertyName("retcode")]
+        public int Code
+        {
+            get;
+            set;
+        } = 0;
+
+        [JsonPropertyName("message")]
+        public string Message
+        {
+            get;
+            set;
+        } = "";
+
+        [JsonPropertyName("data")]
+        public Dictionary<string, object> Data
+        {
+            get;
+            set;
+        } = new();
     }
 
     #endregion

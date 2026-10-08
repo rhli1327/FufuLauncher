@@ -2,6 +2,7 @@
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
+
 using System.Diagnostics;
 using System.Text.Json;
 using FufuLauncher.Data.Entities;
@@ -40,7 +41,10 @@ public partial class GachaAnalysisModel
                         }
                     }
                 }
-                catch (Exception ex) { Debug.WriteLine($"[Gacha] JSON 迁移失败: {ex.Message}"); }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[Gacha] JSON 迁移失败: {ex.Message}");
+                }
             }
 
             var uids = QueryKnownUidsFromDb();
@@ -52,7 +56,9 @@ public partial class GachaAnalysisModel
                 var lastUidObj = _localSettingsService.ReadSettingAsync(LastSelectedUidKey).GetAwaiter().GetResult();
                 lastUid = lastUidObj as string ?? "";
             }
-            catch { }
+            catch
+            {
+            }
 
             if (uids.Count > 0)
             {
@@ -63,27 +69,34 @@ public partial class GachaAnalysisModel
                 LoadGachaLogsFromDb(_currentUid);
                 _ = _localSettingsService.SaveSettingAsync(LastSelectedUidKey, _currentUid);
             }
+
             return (uids, _savedMetadata.Count);
         });
 
+        // Choose the account default before presenting any archive, so reopening the
+        // window does not briefly show the previous UID while bindings are refreshed.
+        var account = _accountManager.GetActiveAccountEntry();
+        if (account != null)
+        {
+            _currentUid = RoleSelection.Current(account)?.game_uid ?? "";
+            LoadGachaLogsFromDb(_currentUid);
+        }
+
         Debug.WriteLine($"[Gacha] 加载完成 - {uids.Count} UIDs, metadata {metadataCount} 条");
-        if (uids.Count > 0)
+        if (uids.Count > 0 || account != null)
         {
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
-                KnownUids.Clear();
-                UidComboItems.Clear();
-                foreach (var uid in uids)
-                {
-                    KnownUids.Add(uid);
-                    UidComboItems.Add(uid);
-                }
-                UidComboItems.Add(AddNewUserItem);
+                RefreshKnownUidsUI(uids);
                 SelectedUid = _currentUid;
-                RefreshUIFromCache();
-                HasGachaData = true;
+                HasGachaData = _cachedCharacterLogs.Count + _cachedWeaponLogs.Count +
+                    _cachedChronicledLogs.Count + _cachedNoviceLogs.Count + _cachedStandardLogs.Count > 0;
+                if (HasGachaData) RefreshUIFromCache();
+                else ClearCollections();
                 IsDataLoaded = true;
-                CrawlerStatus = metadataCount > 0 ? "已加载本地数据和图片资源缓存" : "已加载本地历史记录";
+                CrawlerStatus = HasGachaData
+                    ? metadataCount > 0 ? "已加载本地数据和图片资源缓存" : "已加载本地历史记录"
+                    : "该角色暂无抽卡记录";
             });
 
             if (!HasPoolMetadataCache())
@@ -143,6 +156,7 @@ public partial class GachaAnalysisModel
         {
             if (!dict.ContainsKey(item.Id)) dict[item.Id] = item;
         }
+
         return dict.Values.OrderBy(x => x.Id).ToList();
     }
 

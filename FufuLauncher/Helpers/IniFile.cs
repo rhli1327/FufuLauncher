@@ -2,6 +2,7 @@
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
+
 using System.Text;
 
 namespace FufuLauncher.Helpers;
@@ -15,16 +16,17 @@ public class IniFile
         _path = path;
     }
 
-    public Dictionary<string, Dictionary<string, string>> ReadAll()
+    public Dictionary<string, Dictionary<string, string>> ReadAll(CancellationToken cancellationToken = default)
     {
         var result = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
         if (!File.Exists(_path)) return result;
 
         var currentSection = string.Empty;
-        var lines = File.ReadAllLines(_path, Encoding.UTF8);
+        var lines = File.ReadLines(_path, Encoding.UTF8);
 
         foreach (var line in lines)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var trimmed = line.Trim();
             if (string.IsNullOrWhiteSpace(trimmed) || trimmed.StartsWith(";"))
                 continue;
@@ -36,6 +38,7 @@ public class IniFile
                 {
                     result[currentSection] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
                 }
+
                 continue;
             }
 
@@ -47,6 +50,7 @@ public class IniFile
                 result[currentSection][key] = value;
             }
         }
+
         return result;
     }
 
@@ -54,7 +58,7 @@ public class IniFile
     {
         if (!File.Exists(_path))
         {
-            throw new FileNotFoundException($"ÎÞ·¨±£´æÅäÖÃ£¬Î´ÕÒµ½Ä¿±êÎÄ¼þ: {_path}");
+            throw new FileNotFoundException($"ï¿½Þ·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã£ï¿½Î´ï¿½Òµï¿½Ä¿ï¿½ï¿½ï¿½Ä¼ï¿½: {_path}");
         }
 
         var lines = new List<string>(File.ReadAllLines(_path, Encoding.UTF8));
@@ -62,24 +66,60 @@ public class IniFile
         SaveToFile(lines);
     }
 
-    public void UpdateMultiple(Dictionary<string, Dictionary<string, string>> updates)
+    public void UpdateMultiple(Dictionary<string, Dictionary<string, string>> updates, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         if (!File.Exists(_path))
         {
-            throw new FileNotFoundException($"ÎÞ·¨±£´æÅäÖÃ£¬Î´ÕÒµ½Ä¿±êÎÄ¼þ: {_path}");
+            throw new FileNotFoundException($"Configuration file was not found: {_path}");
         }
 
-        var lines = new List<string>(File.ReadAllLines(_path, Encoding.UTF8));
+        var pending = updates.ToDictionary(section => section.Key,
+            section => new Dictionary<string, string>(section.Value, StringComparer.OrdinalIgnoreCase),
+            StringComparer.OrdinalIgnoreCase);
+        var output = new List<string>();
+        Dictionary<string, string>? currentUpdates = null;
 
-        foreach (var section in updates)
+        void AppendMissingValues()
         {
-            foreach (var kvp in section.Value)
+            if (currentUpdates == null)
             {
-                UpdateLinesForKeyValue(lines, section.Key, kvp.Key, kvp.Value);
+                return;
+            }
+            foreach (var value in currentUpdates)
+            {
+                output.Add($"{value.Key} = {value.Value}");
+            }
+            currentUpdates.Clear();
+        }
+
+        foreach (var line in File.ReadLines(_path, Encoding.UTF8))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var trimmed = line.Trim();
+            if (trimmed.StartsWith('[') && trimmed.EndsWith(']'))
+            {
+                AppendMissingValues();
+                pending.TryGetValue(trimmed[1..^1].Trim(), out currentUpdates);
+                output.Add(line);
+                continue;
+            }
+
+            var separator = trimmed.IndexOf('=');
+            if (currentUpdates != null && separator >= 0 &&
+                currentUpdates.Remove(trimmed[..separator].Trim(), out var value))
+            {
+                output.Add($"{trimmed[..separator].Trim()} = {value}");
+            }
+            else
+            {
+                output.Add(line);
             }
         }
 
-        SaveToFile(lines);
+        AppendMissingValues();
+        cancellationToken.ThrowIfCancellationRequested();
+        SaveToFile(output);
     }
 
     private void UpdateLinesForKeyValue(List<string> lines, string section, string key, string value)
@@ -99,6 +139,7 @@ public class IniFile
                     keyFound = true;
                     break;
                 }
+
                 inTargetSection = currentSection.Equals(section, StringComparison.OrdinalIgnoreCase);
                 continue;
             }

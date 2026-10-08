@@ -2,6 +2,7 @@
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
+
 using System.Diagnostics;
 using FufuLauncher.Models;
 using FufuLauncher.ViewModels;
@@ -12,8 +13,15 @@ namespace FufuLauncher.Views;
 
 public sealed partial class PanelPage : Page
 {
-    public ControlPanelModel ViewModel { get; }
-    public MainViewModel MainViewModel { get; }
+    public ControlPanelModel ViewModel
+    {
+        get;
+    }
+
+    public MainViewModel MainViewModel
+    {
+        get;
+    }
 
     public PanelPage()
     {
@@ -66,9 +74,9 @@ public sealed partial class PanelPage : Page
             DefaultButton = ContentDialogButton.Close,
             XamlRoot = XamlRoot
         };
-        
+
         ContentDialogResult result = await riskDialog.ShowAsync();
-        
+
         if (result == ContentDialogResult.Primary)
         {
             var bbsWindow = new BBSWindow();
@@ -86,6 +94,11 @@ public sealed partial class PanelPage : Page
     {
         var window = new CommunityWindow();
         window.Activate();
+    }
+
+    private void OnOpenMiyousheClick(object sender, RoutedEventArgs e)
+    {
+        MiyousheWindow.Show();
     }
 
     private async void PanelPage_Loaded(object sender, RoutedEventArgs e)

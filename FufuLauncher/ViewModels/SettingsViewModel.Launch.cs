@@ -2,6 +2,7 @@
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
+
 using System.Text.RegularExpressions;
 using FufuLauncher.Helpers;
 using FufuLauncher.Services;
@@ -16,6 +17,7 @@ public partial class SettingsViewModel
     {
         if (value == null) return;
         _postLaunchBehavior = value.Value;
+        if (_isInitializing) return;
         _ = _localSettingsService.SaveSettingAsync("PostLaunchBehavior", value.Value.ToString());
     }
 
@@ -41,10 +43,12 @@ public partial class SettingsViewModel
         foreach (var monitor in MonitorHelper.GetAll())
         {
             var tag = monitor.IsPrimary ? $" · {primaryTag}" : "";
-            AvailableMonitors.Add(new MonitorItem($"显示器 {monitor.Index}{tag} ({monitor.Width}x{monitor.Height})", monitor.Index));
+            AvailableMonitors.Add(new MonitorItem($"显示器 {monitor.Index}{tag} ({monitor.Width}x{monitor.Height})",
+                monitor.Index));
         }
 
-        SelectedMonitor = AvailableMonitors.FirstOrDefault(m => m.Index == LaunchArgsMonitorIndex) ?? AvailableMonitors.FirstOrDefault();
+        SelectedMonitor = AvailableMonitors.FirstOrDefault(m => m.Index == LaunchArgsMonitorIndex) ??
+                          AvailableMonitors.FirstOrDefault();
     }
 
     partial void OnLaunchArgsWidthChanged(string value) => ApplyPresetsToText();
@@ -59,6 +63,7 @@ public partial class SettingsViewModel
 
     partial void OnCustomGameExeNameChanged(string value)
     {
+        if (_isInitializing) return;
         _localSettingsService.SaveSettingAsync(GameExeManager.CustomExeNameKey, value);
     }
 
@@ -82,7 +87,7 @@ public partial class SettingsViewModel
             {
                 LaunchArgsWindowMode = WindowModeType.Normal;
             }
-            
+
             var monitorMatch = Regex.Match(args, @"-monitor\s+(\d+)");
             if (monitorMatch.Success && int.TryParse(monitorMatch.Groups[1].Value, out int mIndex))
             {
@@ -113,7 +118,7 @@ public partial class SettingsViewModel
         if (_isLoadingLaunchParams) return;
 
         var currentArgs = CustomLaunchParameters ?? "";
-        
+
         currentArgs = Regex.Replace(currentArgs, @"-screen-width\s+\S+", "");
         currentArgs = Regex.Replace(currentArgs, @"-screen-height\s+\S+", "");
         currentArgs = Regex.Replace(currentArgs, @"-popupwindow", "");
@@ -124,10 +129,12 @@ public partial class SettingsViewModel
         {
             sb.Append($" -screen-width {LaunchArgsWidth} -screen-height {LaunchArgsHeight}");
         }
+
         if (LaunchArgsWindowMode == WindowModeType.Popup)
         {
             sb.Append(" -popupwindow");
         }
+
         if (LaunchArgsMonitorIndex > 0)
         {
             sb.Append($" -monitor {LaunchArgsMonitorIndex}");
@@ -142,6 +149,7 @@ public partial class SettingsViewModel
 
     partial void OnCustomLaunchParametersChanged(string value)
     {
+        if (_isInitializing) return;
         _localSettingsService.SaveSettingAsync("CustomLaunchParameters", value);
     }
 

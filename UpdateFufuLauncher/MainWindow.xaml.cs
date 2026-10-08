@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
@@ -47,7 +47,7 @@ namespace Updater
             public int AnimationId;
         }
         
-        private const string AppVersion = "1.7.0.3";
+        private const string AppVersion = "1.7.1.0";
 
         private static readonly HttpClient _httpClient = new(new HttpClientHandler())
         { 

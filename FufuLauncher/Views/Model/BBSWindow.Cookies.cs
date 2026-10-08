@@ -2,6 +2,7 @@
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
+
 using FufuLauncher.Services;
 
 namespace FufuLauncher.Views;
@@ -18,23 +19,11 @@ public sealed partial class BBSWindow
     {
         try
         {
-            var accountManager = App.GetService<AccountManager>();
-            var activeId = accountManager.ActiveAccountId;
-            if (string.IsNullOrEmpty(activeId))
-            {
-                System.Diagnostics.Debug.WriteLine("[BBSWindow] 无活跃账号，跳过指纹获取");
-                return;
-            }
-
-            var cookies = await accountManager.LoadCookiesAsync(activeId);
-            if (cookies == null || cookies.Count == 0)
-            {
-                System.Diagnostics.Debug.WriteLine("[BBSWindow] 无可用 Cookies，跳过指纹获取");
-                return;
-            }
-
-            _activeDeviceFp = await _fingerprintService.GetOrRegisterFingerprintAsync(activeId, cookies);
-            System.Diagnostics.Debug.WriteLine($"[BBSWindow] 活跃账号指纹已获取: {_activeDeviceFp}");
+            // 设备身份与账号无关：无活跃账号时同样可以取用。
+            var identity = await _deviceFpService.GetOrRegisterAsync();
+            _deviceId = identity.BbsDeviceId;
+            _activeDeviceFp = identity.DeviceFp;
+            System.Diagnostics.Debug.WriteLine($"[BBSWindow] 设备身份已获取: device_fp={_activeDeviceFp}");
 
             if (!string.IsNullOrEmpty(_activeDeviceFp))
             {
@@ -64,6 +53,7 @@ public sealed partial class BBSWindow
             var cookie = manager.CreateCookie(kv.Key, kv.Value, ".mihoyo.com", "/");
             manager.AddOrUpdateCookie(cookie);
         }
+
         System.Diagnostics.Debug.WriteLine($"[BBSWindow] Added {cookieDic.Count} cookies to WebView2");
         BBSWebView.CoreWebView2.Navigate(url);
     }

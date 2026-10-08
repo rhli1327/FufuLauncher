@@ -2,6 +2,7 @@
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
+
 using System.Diagnostics;
 
 namespace FufuLauncher.ViewModels;
@@ -33,7 +34,6 @@ public partial class SettingsViewModel
     {
         try
         {
-
             await _localSettingsService.SaveSettingAsync<string>("StartupSoundPath", null);
             StartupSoundPath = null;
             HasCustomStartupSound = false;
@@ -46,6 +46,7 @@ public partial class SettingsViewModel
 
     partial void OnIsStartupSoundEnabledChanged(bool value)
     {
+        if (_isInitializing) return;
         Debug.WriteLine($"SettingsViewModel: 保存启动语音开关 {value}");
         _ = _localSettingsService.SaveSettingAsync("IsStartupSoundEnabled", value);
     }

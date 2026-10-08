@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -889,13 +889,13 @@
     <value>修改日期: </value>
   </data>
   <data name="FunctionsMenuBtn" xml:space="preserve">
-    <value>功能(Download/Repair)</value>
+    <value>功能</value>
   </data>
   <data name="DownloadPluginBtn" xml:space="preserve">
-    <value>下载插件(Download)</value>
+    <value>下载插件</value>
   </data>
   <data name="RepairFpsPluginBtn" xml:space="preserve">
-    <value>修复FPS显示插件(Repair)</value>
+    <value>修复FPS显示插件</value>
   </data>
   <data name="MainPluginEnabledLabel" xml:space="preserve">
     <value>主插件启用</value>
@@ -914,6 +914,12 @@
   </data>
   <data name="Fps_HashMismatch_Content" xml:space="preserve">
     <value>帧数显示插件哈希不匹配，可能已被篡改或损坏，请重新安装启动器</value>
+  </data>
+  <data name="Fps_Missing_Content" xml:space="preserve">
+    <value>未找到FPS插件DLL文件，插件可能未安装、被误删或被杀毒软件拦截。请点击功能菜单中的“修复FPS显示插件”后重试。</value>
+  </data>
+  <data name="Fps_Missing_Title" xml:space="preserve">
+    <value>FPS插件缺失</value>
   </data>
   <data name="Fps_Repair_Fail_Title" xml:space="preserve">
     <value>修复失败</value>
@@ -949,7 +955,7 @@
     <value>提交PR</value>
   </data>
   <data name="EnableInjectionParenLabel" xml:space="preserve">
-    <value>启用注入(Injection)</value>
+    <value>启用注入</value>
   </data>
   <data name="ConfigPresetLabel" xml:space="preserve">
     <value>配置预设:</value>
@@ -1180,7 +1186,7 @@
     <value>未找到文件，请确认启动器文件完整</value>
   </data>
   <data name="Plugin_MainMissing_Content" xml:space="preserve">
-    <value>未找到主插件 DLL 文件，插件可能未安装、被误删或被杀毒软件拦截。请重新下载插件，或将启动器目录加入杀毒软件白名单后再试。</value>
+    <value>未找到主插件DLL文件，插件可能未安装、被误删或被杀毒软件拦截。请重新下载插件，或将启动器目录加入杀毒软件白名单后再试。</value>
   </data>
   <data name="Plugin_MainMissing_Title" xml:space="preserve">
     <value>主插件缺失</value>
@@ -1332,6 +1338,12 @@
   </data>
   <data name="FileName_ShortcutName" xml:space="preserve">
     <value>快捷启动原神.lnk</value>
+  </data>
+  <data name="Label_ShortcutName" xml:space="preserve">
+    <value>快捷方式名称</value>
+  </data>
+  <data name="Placeholder_ShortcutName" xml:space="preserve">
+    <value>自定义名称(不含 .lnk,留空用默认)</value>
   </data>
   <data name="Desc_ShortcutDescription" xml:space="preserve">
     <value>通过 FufuLauncher 注入启动原神</value>
@@ -2270,6 +2282,9 @@
   </data>
   <data name="Announcement_Loading" xml:space="preserve">
     <value>正在加载公告...</value>
+  </data>
+  <data name="Announcement_OpenInEdge" xml:space="preserve">
+    <value>在 Edge 中打开</value>
   </data>
   <data name="CommunityPage_Back" xml:space="preserve">
     <value>后退</value>
@@ -3351,6 +3366,33 @@
   </data>
   <data name="GachaAnalysis_GetViaMiyoushe" xml:space="preserve">
     <value>通过米游社账号获取</value>
+  </data>
+  <data name="GachaAnalysis_GetViaGame" xml:space="preserve">
+    <value>从游戏获取</value>
+  </data>
+  <data name="GachaAnalysis_GameDesc" xml:space="preserve">
+    <value>进入游戏并打开祈愿历史
+支持 B 服，无需登录米游社</value>
+  </data>
+  <data name="GachaAnalysis_CacheInstructions" xml:space="preserve">
+    <value>请先进入要导出的游戏账号，打开“祈愿历史记录”，等待记录加载完成，再点击“开始获取”。
+
+支持天空岛、世界树和国际服，无需登录米游社。请确认游戏中的账号是本次希望导出的账号。</value>
+  </data>
+  <data name="GachaAnalysis_CacheStart" xml:space="preserve">
+    <value>开始获取</value>
+  </data>
+  <data name="GachaAnalysis_CacheReading" xml:space="preserve">
+    <value>正在读取游戏中的祈愿链接...</value>
+  </data>
+  <data name="GachaAnalysis_CacheMissingPath" xml:space="preserve">
+    <value>请先在启动器中设置正确的游戏路径，再进入游戏打开祈愿历史记录。</value>
+  </data>
+  <data name="GachaAnalysis_CacheNoLink" xml:space="preserve">
+    <value>未找到祈愿链接。请进入目标游戏账号，打开祈愿历史记录并等待加载完成后重试。</value>
+  </data>
+  <data name="GachaAnalysis_CacheReadFailed" xml:space="preserve">
+    <value>无法读取游戏中的祈愿链接，请重新打开祈愿历史记录后重试。</value>
   </data>
   <data name="GachaAnalysis_GetViaUrl" xml:space="preserve">
     <value>通过 URL 获取</value>
@@ -4463,10 +4505,10 @@ UIGF v4.x/3.0/2.x</value>
     <value>人机验证</value>
   </data>
   <data name="Launcher_DllNotFound" xml:space="preserve">
-    <value>Launcher.dll 文件缺失，注入功能不可用。请确保编译时已从 FufuLauncher.UnlockerIsland 生成该文件。</value>
+    <value>注入挂起模块缺失，注入功能不可用。请重新安装启动器。</value>
   </data>
   <data name="Launcher_DllNotLoaded" xml:space="preserve">
-    <value>由于系统缺少 C++ 运行库或核心文件被杀毒软件拦截，Launcher.dll 未加载成功，无法启动。</value>
+    <value>由于系统缺少C++运行库或核心文件被杀毒软件拦截，注入挂起模块未加载成功，无法启动。</value>
   </data>
   <data name="Screenshot_Saved" xml:space="preserve">
     <value>截图已保存</value>
@@ -5810,6 +5852,12 @@ UIGF v4.x/3.0/2.x</value>
   <data name="PreviewUpdateAnnouncementCaption" xml:space="preserve">
     <value>开启后，检测到新预览版时自动弹出更新公告窗口</value>
   </data>
+  <data name="SuppressAnnouncementInGameTitle" xml:space="preserve">
+    <value>游戏中暂停启动器公告</value>
+  </data>
+  <data name="SuppressAnnouncementInGameCaption" xml:space="preserve">
+    <value>开启后，游戏运行期间不会自动弹出启动器公告；退出游戏或重启启动器后将恢复正常弹出</value>
+  </data>
   <data name="UpdateNotification_PreviewBanner" xml:space="preserve">
     <value>这是预览版（Pre-release）更新，可能存在不稳定问题，请谨慎更新</value>
   </data>
@@ -6177,4 +6225,815 @@ UIGF v4.x/3.0/2.x</value>
   <data name="BrowseOfficialBgCaption" xml:space="preserve">
     <value>浏览游戏官方下发的全部背景资源，支持预览与保存到本地，静态背景可直接设为启动器背景。</value>
   </data>
+  <data name="LightweightMode_StandardTooltip" xml:space="preserve">
+    <value>标准模式（主插件）</value>
+  </data>
+  <data name="LightweightMode_LiteTooltip" xml:space="preserve">
+    <value>轻量模式（YuanShen-UnlockerLite）</value>
+  </data>
+  <data name="LightweightMode_PluginComboLabel" xml:space="preserve">
+    <value>YuanShen-UnlockerLite (轻量插件)</value>
+  </data>
+  <data name="LightweightMode_LiteEnabledLabel" xml:space="preserve">
+    <value>轻量插件启用</value>
+  </data>
+  <data name="LightweightMode_ReinstallBtn" xml:space="preserve">
+    <value>重新安装轻量插件</value>
+  </data>
+  <data name="LightweightMode_EnterTitle" xml:space="preserve">
+    <value>切换到轻量模式</value>
+  </data>
+  <data name="LightweightMode_EnterContent" xml:space="preserve">
+    <value>切换后将自动禁用主插件，并下载安装最新的 YuanShen-UnlockerLite 轻量插件，本页配置将改为轻量插件的配置。</value>
+  </data>
+  <data name="LightweightMode_EnterConfirm" xml:space="preserve">
+    <value>切换</value>
+  </data>
+  <data name="LightweightMode_ExitTitle" xml:space="preserve">
+    <value>切换回标准模式</value>
+  </data>
+  <data name="LightweightMode_ExitContent" xml:space="preserve">
+    <value>切换后将删除轻量插件并重新启用主插件。</value>
+  </data>
+  <data name="LightweightMode_ExitConfirm" xml:space="preserve">
+    <value>切换</value>
+  </data>
+  <data name="LightweightMode_EnterSuccess" xml:space="preserve">
+    <value>已切换到轻量模式</value>
+  </data>
+  <data name="LightweightMode_ExitSuccess" xml:space="preserve">
+    <value>已切换回标准模式</value>
+  </data>
+  <data name="LightweightMode_ExitSuccessNoMain" xml:space="preserve">
+    <value>已切换回标准模式，但未检测到主插件，请先下载安装主插件</value>
+  </data>
+  <data name="LightweightMode_InstallTitle" xml:space="preserve">
+    <value>正在安装轻量插件</value>
+  </data>
+  <data name="LightweightMode_ReinstallTitle" xml:space="preserve">
+    <value>正在重新安装轻量插件</value>
+  </data>
+  <data name="LightweightMode_StatusResolving" xml:space="preserve">
+    <value>正在获取最新版本...</value>
+  </data>
+  <data name="LightweightMode_StatusDownloading" xml:space="preserve">
+    <value>正在下载...</value>
+  </data>
+  <data name="LightweightMode_StatusInstalling" xml:space="preserve">
+    <value>正在安装...</value>
+  </data>
+  <data name="LightweightMode_DownloadFailed" xml:space="preserve">
+    <value>下载轻量插件失败：{0}</value>
+  </data>
+  <data name="LightweightMode_InvalidPackage" xml:space="preserve">
+    <value>插件包内容不正确，未找到 YuanShen-UnlockerLite.dll</value>
+  </data>
+  <data name="LightweightMode_InstallFailed" xml:space="preserve">
+    <value>安装轻量插件失败：{0} 请检查网络后重试。</value>
+  </data>
+  <data name="LightweightMode_ReinstallSuccess" xml:space="preserve">
+    <value>轻量插件已覆盖安装</value>
+  </data>
+  <data name="LightweightMode_BlockMainInstall" xml:space="preserve">
+    <value>轻量模式下已禁用主插件的安装与启用，如需恢复请切换回标准模式。</value>
+  </data>
+  <data name="LightweightMode_BlockLiteInstall" xml:space="preserve">
+    <value>未切换到轻量模式，无法安装或启用轻量插件。</value>
+  </data>
+  <data name="LightweightMode_LiteDisabledOverlay" xml:space="preserve">
+    <value>轻量插件已被禁用或未安装，请在功能菜单中重新安装轻量插件</value>
+  </data>
+  <data name="LightweightMode_LiteNotInstalled" xml:space="preserve">
+    <value>未安装 YuanShen-UnlockerLite</value>
+  </data>
+  <data name="LightweightMode_LiteMissing_Title" xml:space="preserve">
+    <value>轻量插件缺失</value>
+  </data>
+  <data name="LightweightMode_LiteMissing_Content" xml:space="preserve">
+    <value>未找到轻量插件DLL文件，插件可能未安装、被误删或被杀毒软件拦截。请在功能菜单中重新安装轻量插件。</value>
+  </data>
+  <data name="Constraint_BlockedTitle" xml:space="preserve">
+    <value>操作已受限</value>
+  </data>
+  <data name="Constraint_BlockedDefault" xml:space="preserve">
+    <value>当前状态下无法启用主插件，请使用轻量模式。</value>
+  </data>
+  <data name="Constraint_AutoApplied" xml:space="preserve">
+    <value>已根据服务端策略自动禁用主插件并切换到轻量模式。</value>
+  </data>
+  <data name="Settings_IgnoreConstraint_Title" xml:space="preserve">
+    <value>忽略使用限制</value>
+  </data>
+  <data name="Settings_IgnoreConstraint_Caption" xml:space="preserve">
+    <value>取消此项限制会对软件更新时的使用限制策略产生影响，请谨慎操作。</value>
+  </data>
+  <data name="Constraint_ModeSwitchExplanation" xml:space="preserve">
+    <value>为什么要这样做：游戏更新时旧的主插件可能会遇到各类奇怪的问题，甚至是存在安全风险，轻量级插件全版本通用，因此在游戏更新时我们将暂时将你切换到轻量级模式保障最基础的使用，待主插件适配完成后将会自动切换回去。</value>
+  </data>
+  <data name="PinSettingTooltip" xml:space="preserve">
+    <value>收藏该项并置顶显示</value>
+  </data>
+  <data name="UnpinSettingTooltip" xml:space="preserve">
+    <value>取消收藏</value>
+  </data>
+  <data name="BatchActions_SelectedCount" xml:space="preserve">
+    <value>已选择 {0} 项</value>
+  </data>
+  <data name="BatchActions_Enable" xml:space="preserve">
+    <value>批量开启</value>
+  </data>
+  <data name="BatchActions_Disable" xml:space="preserve">
+    <value>批量关闭</value>
+  </data>
+  <data name="BatchActions_Pin" xml:space="preserve">
+    <value>批量收藏</value>
+  </data>
+  <data name="BatchActions_Unpin" xml:space="preserve">
+    <value>批量取消收藏</value>
+  </data>
+  <data name="BatchActions_ClearSelection" xml:space="preserve">
+    <value>取消选择</value>
+  </data>
+  <data name="Plugin_FileLocked_Title" xml:space="preserve">
+    <value>插件文件被占用</value>
+  </data>
+  <data name="Plugin_FileLocked_Content" xml:space="preserve">
+    <value>插件文件“{0}”正被其它程序占用，操作未能完成。请先关闭游戏或占用该文件的程序后重试；若反复出现，可能是杀毒软件正在扫描，请稍后再试。</value>
+  </data>
+  <data name="PluginPage_FreeCamHelpTitle" xml:space="preserve">
+    <value>自由视角使用说明</value>
+  </data>
+  <data name="PluginPage_FileNotFoundTitle" xml:space="preserve">
+    <value>文件未找到</value>
+  </data>
+  <data name="PluginPage_FreeCamImageMissing" xml:space="preserve">
+    <value>未能在 Assets 文件夹中找到 freecam.png</value>
+  </data>
+  <data name="PluginPage_DuplicateTitle" xml:space="preserve">
+    <value>插件冲突警告</value>
+  </data>
+  <data name="PluginPage_OpenPluginFolderBtn" xml:space="preserve">
+    <value>打开插件目录</value>
+  </data>
+  <data name="PluginPage_IgnoreBtn" xml:space="preserve">
+    <value>忽略</value>
+  </data>
+  <data name="PluginPage_GetPluginsTitle" xml:space="preserve">
+    <value>获取插件</value>
+  </data>
+  <data name="PluginPage_DownloadLatestOption" xml:space="preserve">
+    <value>下载/更新插件</value>
+  </data>
+  <data name="PluginPage_DownloadCustomOption" xml:space="preserve">
+    <value>自定义插件链接</value>
+  </data>
+  <data name="PluginPage_DownloadCustomPlaceholder" xml:space="preserve">
+    <value>请输入下载直链</value>
+  </data>
+  <data name="PluginPage_DownloadNotice" xml:space="preserve">
+    <value>注意：游戏已内置手柄热切换</value>
+  </data>
+  <data name="PluginPage_DownloadChooseHint" xml:space="preserve">
+    <value>请选择要下载并安装的插件包：</value>
+  </data>
+  <data name="PluginPage_DownloadProxyHint" xml:space="preserve">
+    <value>默认使用代理加速，若失败将自动切换至GitHub直连</value>
+  </data>
+  <data name="PluginPage_DownloadAndInstallBtn" xml:space="preserve">
+    <value>下载并安装</value>
+  </data>
+  <data name="PluginPage_InputErrorTitle" xml:space="preserve">
+    <value>输入错误</value>
+  </data>
+  <data name="PluginPage_InvalidUrlMessage" xml:space="preserve">
+    <value>请输入有效的插件下载链接。</value>
+  </data>
+  <data name="PluginPage_FetchingFormat" xml:space="preserve">
+    <value>正在获取 {0}</value>
+  </data>
+  <data name="PluginPage_StatusConnecting" xml:space="preserve">
+    <value>正在连接...</value>
+  </data>
+  <data name="PluginPage_StatusSwitchingLine" xml:space="preserve">
+    <value>连接失败，正在尝试备用线路...</value>
+  </data>
+  <data name="PluginPage_DownloadHttpFailedFormat" xml:space="preserve">
+    <value>下载失败 (HTTP {0})</value>
+  </data>
+  <data name="PluginPage_LineBackup" xml:space="preserve">
+    <value>备用线路</value>
+  </data>
+  <data name="PluginPage_LineMain" xml:space="preserve">
+    <value>主线路</value>
+  </data>
+  <data name="PluginPage_StatusDownloadingFormat" xml:space="preserve">
+    <value>{0}下载中... {1}%</value>
+  </data>
+  <data name="PluginPage_StatusExtracting" xml:space="preserve">
+    <value>正在解压...</value>
+  </data>
+  <data name="PluginPage_StatusInstalling" xml:space="preserve">
+    <value>正在安装...</value>
+  </data>
+  <data name="PluginPage_DownloadErrorTitle" xml:space="preserve">
+    <value>下载/安装错误</value>
+  </data>
+  <data name="PluginPage_DownloadErrorContentFormat" xml:space="preserve">
+    <value>自动下载失败：{0}&#10;&#10;建议点击下方按钮打开浏览器手动下载。</value>
+  </data>
+  <data name="PluginPage_ManualDownloadBtn" xml:space="preserve">
+    <value>手动下载</value>
+  </data>
+  <data name="PluginPage_SecurityWarningContent" xml:space="preserve">
+    <value>安全软件会阻塞该程序的正常注入运行，如无法使用或者插件消失，请关闭你电脑的安全中心！</value>
+  </data>
+  <data name="PluginPage_RenameFolderTitle" xml:space="preserve">
+    <value>重命名插件文件夹</value>
+  </data>
+  <data name="PluginPage_DuplicateDetectedHeader" xml:space="preserve">
+    <value>检测到以下重复插件：</value>
+  </data>
+  <data name="PluginPage_DuplicatePluginNameFormat" xml:space="preserve">
+    <value>插件名称：{0}</value>
+  </data>
+  <data name="PluginPage_DuplicateConflictsHeader" xml:space="preserve">
+    <value>冲突文件夹：</value>
+  </data>
+  <data name="PluginPage_DuplicateFolderItemFormat" xml:space="preserve">
+    <value>   - {0}</value>
+  </data>
+  <data name="PluginPage_DuplicateHint" xml:space="preserve">
+    <value>建议手动删除旧版本插件</value>
+  </data>
+  <data name="Settings_PluginSignature_Title" xml:space="preserve">
+    <value>校验插件签名</value>
+  </data>
+  <data name="Settings_PluginSignature_Caption" xml:space="preserve">
+    <value>检测已安装插件DLL的数字签名，并查看签名详情</value>
+  </data>
+  <data name="Settings_PluginSignature_Btn" xml:space="preserve">
+    <value>开始校验</value>
+  </data>
+  <data name="PluginSignature_DialogTitle" xml:space="preserve">
+    <value>插件签名校验结果</value>
+  </data>
+  <data name="PluginSignature_Checking" xml:space="preserve">
+    <value>正在校验插件签名...</value>
+  </data>
+  <data name="PluginSignature_NoPlugins" xml:space="preserve">
+    <value>未在 Plugins 目录中找到任何插件 DLL</value>
+  </data>
+  <data name="PluginSignature_Failed" xml:space="preserve">
+    <value>校验失败：{0}</value>
+  </data>
+  <data name="PluginSignature_Signed" xml:space="preserve">
+    <value>已签名</value>
+  </data>
+  <data name="PluginSignature_Unsigned" xml:space="preserve">
+    <value>未签名</value>
+  </data>
+  <data name="PluginSignature_File" xml:space="preserve">
+    <value>文件</value>
+  </data>
+  <data name="PluginSignature_Signer" xml:space="preserve">
+    <value>签名者</value>
+  </data>
+  <data name="PluginSignature_Issuer" xml:space="preserve">
+    <value>颁发者</value>
+  </data>
+  <data name="PluginSignature_SerialNumber" xml:space="preserve">
+    <value>序列号</value>
+  </data>
+  <data name="PluginSignature_Thumbprint" xml:space="preserve">
+    <value>指纹</value>
+  </data>
+  <data name="PluginSignature_ValidFrom" xml:space="preserve">
+    <value>有效期起</value>
+  </data>
+  <data name="PluginSignature_ValidTo" xml:space="preserve">
+    <value>有效期至</value>
+  </data>
+  <data name="PluginSignature_SignatureAlgorithm" xml:space="preserve">
+    <value>签名算法</value>
+  </data>
+  <data name="PluginSignature_PublicKey" xml:space="preserve">
+    <value>公钥算法</value>
+  </data>
+  <data name="PluginSignature_TrustStatus" xml:space="preserve">
+    <value>信任状态</value>
+  </data>
+  <data name="PluginSignature_TrustValid" xml:space="preserve">
+    <value>签名有效且受信任</value>
+  </data>
+  <data name="PluginSignature_TrustNotSigned" xml:space="preserve">
+    <value>文件没有数字签名</value>
+  </data>
+  <data name="PluginSignature_TrustBadDigest" xml:space="preserve">
+    <value>签名校验失败：文件内容可能已被修改</value>
+  </data>
+  <data name="PluginSignature_TrustSubjectNotTrusted" xml:space="preserve">
+    <value>签名主体不受信任</value>
+  </data>
+  <data name="PluginSignature_TrustExpired" xml:space="preserve">
+    <value>签名证书已过期</value>
+  </data>
+  <data name="PluginSignature_TrustRevoked" xml:space="preserve">
+    <value>签名证书已被吊销</value>
+  </data>
+  <data name="PluginSignature_TrustUntrustedRoot" xml:space="preserve">
+    <value>签名不受信任：证书链或根证书不在受信任列表</value>
+  </data>
+  <data name="PluginSignature_TrustWrongUsage" xml:space="preserve">
+    <value>证书用途与代码签名不匹配</value>
+  </data>
+  <data name="PluginSignature_TrustUnknown" xml:space="preserve">
+    <value>未知状态（0x{0}）</value>
+  </data>
+  <data name="Plugin_StopSwitchBtn" xml:space="preserve">
+    <value>停止切换</value>
+  </data>
+  <data name="Plugin_StopRequested" xml:space="preserve">
+    <value>正在停止...</value>
+  </data>
+  <data name="Plugin_SwitchStopped_Title" xml:space="preserve">
+    <value>已停止</value>
+  </data>
+  <data name="Plugin_SwitchStopped_Content" xml:space="preserve">
+    <value>已停止切换，未做任何更改。</value>
+  </data>
+  <data name="DailyNote_NoIdentityService" xml:space="preserve">
+    <value>未能获取游戏身份服务，无法读取便签数据</value>
+  </data>
+  <data name="OfficialBgApiTitle" xml:space="preserve">
+    <value>官方背景 API</value>
+  </data>
+  <data name="PluginStoreAccessDenied" xml:space="preserve">
+    <value>访问被拒绝</value>
+  </data>
+  <data name="PluginStoreCancelling" xml:space="preserve">
+    <value>正在取消...</value>
+  </data>
+  <data name="PluginStoreCaptchaCancelled" xml:space="preserve">
+    <value>已取消验证码校验</value>
+  </data>
+  <data name="PluginStoreCaptchaFailed" xml:space="preserve">
+    <value>验证码校验失败</value>
+  </data>
+  <data name="PluginStoreCaptchaRequired" xml:space="preserve">
+    <value>需要完成验证码校验</value>
+  </data>
+  <data name="PluginStoreCaptchaRetryExhausted" xml:space="preserve">
+    <value>验证码校验重试次数已用尽，请稍后再试</value>
+  </data>
+  <data name="PluginStoreExtracting" xml:space="preserve">
+    <value>正在解压...</value>
+  </data>
+  <data name="PluginStoreHttpError" xml:space="preserve">
+    <value>请求失败（HTTP {0}）：{1}</value>
+  </data>
+  <data name="PluginStorePrivateAccessCancelled" xml:space="preserve">
+    <value>已取消私密插件访问验证</value>
+  </data>
+  <data name="PluginStorePrivateAccessDenied" xml:space="preserve">
+    <value>私密插件访问被拒绝</value>
+  </data>
+  <data name="PluginStorePrivateAccessRequired" xml:space="preserve">
+    <value>需要私密插件访问授权</value>
+  </data>
+  <data name="PluginStoreRetrying" xml:space="preserve">
+    <value>正在重试...</value>
+  </data>
+  <data name="PluginStoreWritingConfig" xml:space="preserve">
+    <value>正在写入配置...</value>
+  </data>
+  <data name="EnableCaptchaNotice" xml:space="preserve">
+    <value>显示验证码弹窗说明</value>
+  </data>
+  <data name="EnableCaptchaNoticeCaption" xml:space="preserve">
+    <value>在米游社风控验证码弹窗中显示来源说明；关闭后仅隐藏文字，验证功能不受影响。</value>
+  </data>
+  <data name="CaptchaNoticeWatermark" xml:space="preserve">
+    <value>米游社便签 · 人机验证</value>
+  </data>
+  <data name="CaptchaNoticeTitle" xml:space="preserve">
+    <value>此验证来自米游社便签</value>
+  </data>
+  <data name="CaptchaNoticeLine1" xml:space="preserve">
+    <value>该弹窗由米游社风控触发，仅用于「便签」数据的查询验证，并非启动器自身的人机验证。</value>
+  </data>
+  <data name="CaptchaNoticeLine2" xml:space="preserve">
+    <value>完成验证后即可查看便签；不想看到此提示，可在「设置 → 高级选项」中关闭。</value>
+  </data>
+  <data name="DeviceInfo_Title" xml:space="preserve">
+    <value>米游社设备信息</value>
+  </data>
+  <data name="DeviceInfo_Caption" xml:space="preserve">
+    <value>查看并修改当前账号的设备指纹、设备标识与设备画像数据</value>
+  </data>
+  <data name="DeviceInfo_Account" xml:space="preserve">
+    <value>账号</value>
+  </data>
+  <data name="DeviceInfo_Device" xml:space="preserve">
+    <value>设备</value>
+  </data>
+  <data name="DeviceInfo_FingerprintSection" xml:space="preserve">
+    <value>设备指纹</value>
+  </data>
+  <data name="DeviceInfo_FingerprintCaption" xml:space="preserve">
+    <value>用于米游社接口鉴权的设备标识，保存后立即对该账号生效</value>
+  </data>
+  <data name="DeviceInfo_ExtSection" xml:space="preserve">
+    <value>设备画像（ext_fields）</value>
+  </data>
+  <data name="DeviceInfo_ExtCaption" xml:space="preserve">
+    <value>随设备指纹上报的设备特征参数，可按需逐项修改</value>
+  </data>
+  <data name="DeviceInfo_Randomize" xml:space="preserve">
+    <value>随机生成标识</value>
+  </data>
+  <data name="DeviceInfo_Reload" xml:space="preserve">
+    <value>重新载入</value>
+  </data>
+  <data name="DeviceInfo_RestoreDefaults" xml:space="preserve">
+    <value>恢复默认</value>
+  </data>
+  <data name="DeviceInfo_Save" xml:space="preserve">
+    <value>保存</value>
+  </data>
+  <data name="DeviceInfo_FilterPlaceholder" xml:space="preserve">
+    <value>筛选字段</value>
+  </data>
+  <data name="DeviceInfo_NoAccount" xml:space="preserve">
+    <value>当前没有可用账号</value>
+  </data>
+  <data name="DeviceInfo_NoFingerprint" xml:space="preserve">
+    <value>该账号尚未生成设备指纹，登录并加载一次数据后即可编辑</value>
+  </data>
+  <data name="DeviceInfo_Saved" xml:space="preserve">
+    <value>保存成功</value>
+  </data>
+  <data name="DeviceInfo_SaveFailed" xml:space="preserve">
+    <value>保存失败</value>
+  </data>
+  <data name="DeviceInfo_InvalidJson" xml:space="preserve">
+    <value>ext_fields 不是有效的 JSON</value>
+  </data>
+  <data name="DeviceInfo_Randomized" xml:space="preserve">
+    <value>已生成随机设备标识，保存后生效</value>
+  </data>
+  <data name="DeviceInfo_DefaultsRestored" xml:space="preserve">
+    <value>已恢复默认设备画像，保存后生效</value>
+  </data>
+  <data name="DeviceInfo_DeviceIdRequired" xml:space="preserve">
+    <value>device_id 不能为空</value>
+  </data>
+  <data name="DeviceInfo_SeedIdInvalid" xml:space="preserve">
+    <value>seed_id 必须是有效的 GUID</value>
+  </data>
+  <data name="DeviceInfo_SeedTimeInvalid" xml:space="preserve">
+    <value>seed_time 必须是有效的 Unix 毫秒时间戳</value>
+  </data>
+  <data name="DeviceInfo_ResetToDefaults" xml:space="preserve">
+    <value>一键重置</value>
+  </data>
+  <data name="DeviceInfo_Resetting" xml:space="preserve">
+    <value>正在重置为默认配置…</value>
+  </data>
+  <data name="DeviceInfo_ResetDone" xml:space="preserve">
+    <value>已重置为默认配置</value>
+  </data>
+  <data name="DeviceInfo_ResetFailed" xml:space="preserve">
+    <value>重置失败，请检查网络后重试</value>
+  </data>
+  <data name="Miyoushe_Title" xml:space="preserve"><value>米游社</value></data>
+  <data name="Miyoushe_CardHint" xml:space="preserve"><value>浏览官方资讯、社区帖子与关注动态</value></data>
+  <data name="Miyoushe_Explore" xml:space="preserve"><value>探索</value></data>
+  <data name="Miyoushe_Forum" xml:space="preserve"><value>社区主页</value></data>
+  <data name="Miyoushe_News" xml:space="preserve"><value>官方资讯</value></data>
+  <data name="Miyoushe_Following" xml:space="preserve"><value>关注动态</value></data>
+  <data name="Miyoushe_Favorites" xml:space="preserve"><value>米游社收藏</value></data>
+  <data name="Miyoushe_Library" xml:space="preserve"><value>我的内容</value></data>
+  <data name="Miyoushe_Bookmarks" xml:space="preserve"><value>本地收藏</value></data>
+  <data name="Miyoushe_History" xml:space="preserve"><value>浏览历史</value></data>
+  <data name="Miyoushe_MyProfile" xml:space="preserve"><value>我的主页</value></data>
+  <data name="Miyoushe_User" xml:space="preserve"><value>作者主页</value></data>
+  <data name="Miyoushe_Topic" xml:space="preserve"><value>话题</value></data>
+  <data name="Miyoushe_Collection" xml:space="preserve"><value>合集</value></data>
+  <data name="Miyoushe_Search" xml:space="preserve"><value>搜索结果</value></data>
+  <data name="Miyoushe_SearchHint" xml:space="preserve"><value>搜索帖子或粘贴帖子ID / 米游社链接</value></data>
+  <data name="Miyoushe_Guest" xml:space="preserve"><value>游客浏览</value></data>
+  <data name="Miyoushe_GuestHint" xml:space="preserve"><value>公开内容无需登录。个人动态与收藏需选择启动器中的国服账号。</value></data>
+  <data name="Miyoushe_AccountHint" xml:space="preserve"><value>切换仅影响此窗口</value></data>
+  <data name="Miyoushe_LoginHint" xml:space="preserve"><value>请在启动器账号管理中登录米游社国服账号，再选择该账号。登录过期时请重新登录。</value></data>
+  <data name="Miyoushe_IdentityError" xml:space="preserve"><value>账号的设备指纹不可用，已切换为游客。请在账号管理中重新登录后重试。</value></data>
+  <data name="Miyoushe_Refresh" xml:space="preserve"><value>刷新</value></data>
+  <data name="Miyoushe_RefreshHint" xml:space="preserve"><value>刷新当前页面 (F5)</value></data>
+  <data name="Miyoushe_Refreshed" xml:space="preserve"><value>已刷新（{0}）</value></data>
+  <data name="Miyoushe_Empty" xml:space="preserve"><value>这里还没有帖子</value></data>
+  <data name="Miyoushe_More" xml:space="preserve"><value>加载更多</value></data>
+  <data name="Miyoushe_SelectPost" xml:space="preserve"><value>选择一篇帖子，开始阅读</value></data>
+  <data name="Miyoushe_Save" xml:space="preserve"><value>本地收藏</value></data>
+  <data name="Miyoushe_CopyLink" xml:space="preserve"><value>复制链接</value></data>
+  <data name="Miyoushe_Original" xml:space="preserve"><value>打开原帖</value></data>
+  <data name="Miyoushe_Article" xml:space="preserve"><value>正文</value></data>
+  <data name="Miyoushe_Comments" xml:space="preserve"><value>评论</value></data>
+  <data name="Miyoushe_HotReplies" xml:space="preserve"><value>热门评论</value></data>
+  <data name="Miyoushe_LatestReplies" xml:space="preserve"><value>最新评论</value></data>
+  <data name="Miyoushe_OldestReplies" xml:space="preserve"><value>最早评论</value></data>
+  <data name="Miyoushe_OnlyAuthor" xml:space="preserve"><value>只看楼主</value></data>
+  <data name="Miyoushe_Hot" xml:space="preserve"><value>热门</value></data>
+  <data name="Miyoushe_Latest" xml:space="preserve"><value>最新发布</value></data>
+  <data name="Miyoushe_Featured" xml:space="preserve"><value>精选</value></data>
+  <data name="Miyoushe_Notices" xml:space="preserve"><value>公告</value></data>
+  <data name="Miyoushe_Events" xml:space="preserve"><value>活动</value></data>
+  <data name="Miyoushe_NoComments" xml:space="preserve"><value>暂无评论</value></data>
+  <data name="Miyoushe_SubReplies" xml:space="preserve"><value>查看 {0} 条楼中楼回复</value></data>
+  <data name="Miyoushe_Close" xml:space="preserve"><value>关闭</value></data>
+  <data name="Miyoushe_Image" xml:space="preserve"><value>查看图片</value></data>
+  <data name="Miyoushe_OpenImage" xml:space="preserve"><value>打开原图</value></data>
+  <data name="Miyoushe_LinkCopied" xml:space="preserve"><value>已复制帖子链接</value></data>
+  <data name="Miyoushe_SearchTooLong" xml:space="preserve"><value>搜索内容最多 200 个字符</value></data>
+  <data name="Miyoushe_Retry" xml:space="preserve"><value>重试</value></data>
+  <data name="Miyoushe_Timeout" xml:space="preserve"><value>请求超时，请稍后重试</value></data>
+  <data name="Miyoushe_Verify" xml:space="preserve"><value>完成安全验证</value></data>
+  <data name="Miyoushe_RiskHint" xml:space="preserve"><value>米游社要求安全验证，已暂停后续请求。完成官方验证码后，将重试刚才的操作。</value></data>
+  <data name="Miyoushe_VerifyHint" xml:space="preserve"><value>请完成米游社提供的官方验证码。关闭此窗口可取消验证。</value></data>
+  <data name="Miyoushe_VerifyLoadError" xml:space="preserve"><value>验证码加载失败，请检查网络后重试，或在米游社官方页面验证。</value></data>
+  <data name="Miyoushe_VerifyCancelled" xml:space="preserve"><value>已取消验证，浏览请求仍处于暂停状态。点击重试可再次验证。</value></data>
+  <data name="Miyoushe_LibraryError" xml:space="preserve"><value>本地收藏或历史记录读取失败，已有文件会保留。</value></data>
+  <data name="Miyoushe_Back" xml:space="preserve"><value>返回上一级</value></data>
+  <data name="Miyoushe_RightComments" xml:space="preserve"><value>右侧评论</value></data>
+  <data name="Miyoushe_CommentsLayoutHint" xml:space="preserve"><value>开启后评论显示在右侧栏；关闭后接在正文下方</value></data>
+  <data name="Miyoushe_LoadingComments" xml:space="preserve"><value>正在加载评论…</value></data>
+  <data name="Miyoushe_CommentsUnavailable" xml:space="preserve"><value>评论暂未加载，请使用上方提示重试</value></data>
+  <data name="Miyoushe_Like" xml:space="preserve"><value>点赞</value></data>
+  <data name="Miyoushe_Liked" xml:space="preserve"><value>已赞</value></data>
+  <data name="Miyoushe_PublishComment" xml:space="preserve"><value>评论</value></data>
+  <data name="Miyoushe_Reply" xml:space="preserve"><value>回复</value></data>
+  <data name="Miyoushe_ReplyTo" xml:space="preserve"><value>回复 @{0}</value></data>
+  <data name="Miyoushe_CommentHint" xml:space="preserve"><value>写下你的评论（最多 1000 字）</value></data>
+  <data name="Miyoushe_SendComment" xml:space="preserve"><value>发布到米游社</value></data>
+  <data name="Miyoushe_Cancel" xml:space="preserve"><value>取消</value></data>
+  <data name="Miyoushe_VerifyAndSend" xml:space="preserve"><value>验证并发布</value></data>
+  <data name="Miyoushe_Resubmit" xml:space="preserve"><value>重新发布</value></data>
+  <data name="Miyoushe_CommentSent" xml:space="preserve"><value>评论已提交，已切换至最新评论</value></data>
+  <data name="Miyoushe_SubmissionUncertain" xml:space="preserve"><value>提交结果无法确认，草稿已保留。请先打开原帖检查，确认没有发布成功后再重新发布。</value></data>
+  <data name="Miyoushe_CommentRiskHint" xml:space="preserve"><value>米游社要求安全验证。点击“验证并发布”完成官方验证码后提交本次评论。</value></data>
+    <data name="ModTrust_Title" xml:space="preserve">
+    <value>代码签名信任（FufuLauncher CA）</value>
+  </data>
+    <data name="ModTrust_Loading" xml:space="preserve">
+    <value>正在读取信任状态…</value>
+  </data>
+    <data name="ModTrust_RefreshBtn" xml:space="preserve">
+    <value>刷新</value>
+  </data>
+    <data name="ModTrust_PackageMissing" xml:space="preserve">
+    <value>尚未部署信任包：请在 Assets\Trust 放置证书与清单文件，或点击「立即更新」从官方端点同步。</value>
+  </data>
+    <data name="ModTrust_StatusFormat" xml:space="preserve">
+    <value>当前状态：{0}</value>
+    <value>同步端点：{1}</value>
+  </data>
+    <data name="ModTrust_InstalledUser" xml:space="preserve">
+    <value>已安装（当前用户）</value>
+  </data>
+    <data name="ModTrust_InstalledMachine" xml:space="preserve">
+    <value>已安装（本机）</value>
+  </data>
+    <data name="ModTrust_NotInstalled" xml:space="preserve">
+    <value>未安装</value>
+  </data>
+    <data name="ModTrust_InstallTitle" xml:space="preserve">
+    <value>证书安装 / 卸载</value>
+  </data>
+        <data name="ModTrust_InstallCaption" xml:space="preserve">
+    <value>安装后，我们签发的代码签名会被系统与本启动器识别；可随时卸载，不影响其它证书。</value>
+  </data>
+    <data name="ModTrust_InstallUserBtn" xml:space="preserve">
+    <value>安装（当前用户）</value>
+  </data>
+    <data name="ModTrust_UninstallUserBtn" xml:space="preserve">
+    <value>卸载（当前用户）</value>
+  </data>
+        <data name="ModTrust_InstallMachineBtn" xml:space="preserve">
+    <value>安装（本机，需管理员）</value>
+  </data>
+        <data name="ModTrust_UninstallMachineBtn" xml:space="preserve">
+    <value>卸载（本机，需管理员）</value>
+  </data>
+    <data name="ModTrust_ScopeUser" xml:space="preserve">
+    <value>当前用户</value>
+  </data>
+    <data name="ModTrust_ScopeMachine" xml:space="preserve">
+    <value>本机</value>
+  </data>
+        <data name="ModTrust_InstallConfirm" xml:space="preserve">
+    <value>即将为「{0}」安装平台证书，安装后可识别我们签发的代码签名。是否继续？</value>
+  </data>
+        <data name="ModTrust_UninstallConfirm" xml:space="preserve">
+    <value>即将为「{0}」卸载平台证书，卸载后将不再信任我们签发的代码签名。是否继续？</value>
+  </data>
+        <data name="ModTrust_SyncTitle" xml:space="preserve">
+    <value>信任信息更新</value>
+  </data>
+        <data name="ModTrust_SyncCaption" xml:space="preserve">
+    <value>从官方端点更新代码签名信任信息。</value>
+  </data>
+    <data name="ModTrust_SyncBtn" xml:space="preserve">
+    <value>立即更新</value>
+  </data>
+        <data name="ModTrust_SyncConfirm" xml:space="preserve">
+    <value>将从官方端点下载并校验信任信息，校验不通过不会应用。是否继续？</value>
+  </data>
+                <data name="ModTrust_StrictTitle" xml:space="preserve">
+    <value>启用拦截</value>
+  </data>
+        <data name="ModTrust_StrictConfirm" xml:space="preserve">
+    <value>启用后，未通过签名校验的文件将停止加载，可能影响你正在使用的第三方插件。是否继续？</value>
+  </data>
+    <data name="ModTrust_BlockedTitle" xml:space="preserve">
+    <value>代码签名校验未通过</value>
+  </data>
+        <data name="ModTrust_BlockedMsg" xml:space="preserve">
+    <value>该文件未通过签名校验，已阻止加载：</value>
+    <value></value>
+    <value>{0}</value>
+    <value></value>
+    <value>可在「设置 → 安全认证 → 代码签名信任」中查看详情。</value>
+  </data>
+    <data name="ModTrust_WarnTitle" xml:space="preserve">
+    <value>代码签名提示</value>
+  </data>
+    <data name="ModTrust_InstalledMachineEffective" xml:space="preserve">
+    <value>已安装（本机，对所有用户生效）</value>
+  </data>
+    <data name="ModTrust_InstalledBoth" xml:space="preserve">
+    <value>已安装（当前用户 + 本机）</value>
+  </data>
+    <data name="ModTrust_MachineHint" xml:space="preserve">
+    <value>当前用户范围由本机安装提供；安装与卸载请在本机范围操作。</value>
+  </data>
+  <data name="SectionStartup" xml:space="preserve">
+    <value>启动设置</value>
+  </data>
+  <data name="RunAtStartupTitle" xml:space="preserve">
+    <value>开机自启动</value>
+  </data>
+  <data name="RunAtStartupCaption" xml:space="preserve">
+    <value>登录Windows后自动启动芙芙启动器</value>
+  </data>
+  <data name="RunAtStartupFailedTitle" xml:space="preserve">
+    <value>无法开启开机自启</value>
+  </data>
+  <data name="RunAtStartupFailedMessage" xml:space="preserve">
+    <value>写入开机启动项失败，请检查系统权限或安全软件设置。</value>
+  </data>
+  <data name="PluginDllConflict_Title" xml:space="preserve">
+    <value>插件 DLL 冲突</value>
+  </data>
+  <data name="PluginDllConflict_Message" xml:space="preserve">
+    <value>我们发现多个插件里存在同名的 DLL，已停止注入。如果继续注入，可能会加载到旧版本的插件，造成游戏或插件无法正常运行。</value>
+  </data>
+  <data name="PluginDllConflict_DllNameFormat" xml:space="preserve">
+    <value>DLL 名称：{0}</value>
+  </data>
+  <data name="PluginDllConflict_NewestBadge" xml:space="preserve">
+    <value>最新</value>
+  </data>
+  <data name="PluginDllConflict_OlderBadge" xml:space="preserve">
+    <value>旧版本</value>
+  </data>
+  <data name="PluginDllConflict_LocateBtn" xml:space="preserve">
+    <value>定位文件</value>
+  </data>
+  <data name="PluginDllConflict_Hint" xml:space="preserve">
+    <value>请只保留最新版本的插件，并把其他插件里的同名 DLL 删除或重命名；如果不清楚该保留哪一个，建议删除全部插件后重新安装。</value>
+  </data>
+  <data name="PluginConflictCheckTitle" xml:space="preserve">
+    <value>插件冲突检测</value>
+  </data>
+  <data name="PluginConflictCheckCaption" xml:space="preserve">
+    <value>启动注入前会检查同名插件 DLL，发现冲突时停止注入并提示处理</value>
+  </data>
+  <data name="PluginConflictMainOnlyTitle" xml:space="preserve">
+    <value>仅检测主插件</value>
+  </data>
+  <data name="PluginConflictMainOnlyCaption" xml:space="preserve">
+    <value>只检查 FufuLauncher.UnlockerIsland.dll；关闭后检查所有插件 DLL</value>
+  </data>
+  <data name="ModTrust_ModeTitle" xml:space="preserve">
+    <value>签名无效时的处理</value>
+  </data>
+  <data name="ModTrust_ModeCaption" xml:space="preserve">
+    <value>选择对未通过签名校验的文件执行的操作：不操作（照常加载）、仅提示（加载并提醒）、拦截（停止加载）</value>
+  </data>
+  <data name="ModTrust_ModeOff" xml:space="preserve">
+    <value>不操作</value>
+  </data>
+  <data name="ModTrust_ModeWarn" xml:space="preserve">
+    <value>仅提示</value>
+  </data>
+  <data name="ModTrust_ModeEnforce" xml:space="preserve">
+    <value>拦截</value>
+  </data>
+  <data name="PluginDllConflict_DeleteBtn" xml:space="preserve">
+    <value>删除</value>
+  </data>
+  <data name="PluginDllConflict_ConfirmDeleteBtn" xml:space="preserve">
+    <value>确认删除</value>
+  </data>
+  <data name="PluginDllConflict_DeleteConfirm" xml:space="preserve">
+    <value>将删除该 DLL 及其同目录下的 config.ini，删除后无法恢复。是否继续？</value>
+  </data>
+  <data name="PluginDllConflict_DeleteFailedFormat" xml:space="preserve">
+    <value>删除失败：{0}</value>
+  </data>
+  <data name="PluginDllConflict_Resolved" xml:space="preserve">
+    <value>同名 DLL 冲突已处理完毕，可以重新启动游戏了。</value>
+  </data>
+  <data name="BanCheck_KilledTitle" xml:space="preserve">
+    <value>拒绝访问</value>
+  </data>
+  <data name="BanCheck_KilledMessage" xml:space="preserve">
+    <value>此设备已被禁止使用芙芙启动器。{0}{0}UID：{1}{0}原因：{2}{0}{0}如果你认为这是误判，可以前往以下地址提交申诉（若 UID 显示为“-”，申诉时可不填）：{0}{3}{0}{0}是否立即打开申诉页面？选择“否”将直接关闭启动器。</value>
+  </data>
+  <data name="BanCheck_RevokedReason" xml:space="preserve">
+    <value>访问已被服务端撤销</value>
+  </data>
+  <data name="BanCheck_BannedReason" xml:space="preserve">
+    <value>该 UID 位于服务端封禁名单中</value>
+  </data>
+  <data name="GachaAnalysis_ReadingBoundRoles" xml:space="preserve"><value>正在查询米游社绑定的游戏角色...</value></data>
+  <data name="GachaAnalysis_SelectRole" xml:space="preserve"><value>选择游戏角色</value></data>
+  <data name="GachaAnalysis_SelectRoleHint" xml:space="preserve"><value>请选择本次要获取祈愿记录的角色。B服角色显示为“世界树”。未看到目标角色时请取消，检查米游社绑定，或使用“从游戏获取”。</value></data>
+  <data name="GachaAnalysis_SkyIsland" xml:space="preserve"><value>天空岛（官服）</value></data>
+  <data name="GachaAnalysis_WorldTree" xml:space="preserve"><value>世界树（B服）</value></data>
+  <data name="GachaAnalysis_SkyIslandShort" xml:space="preserve"><value>天空岛</value></data>
+  <data name="GachaAnalysis_WorldTreeShort" xml:space="preserve"><value>世界树</value></data>
+  <data name="GameRole_Select" xml:space="preserve"><value>切换游戏角色</value></data>
+  <data name="GameRole_Hint" xml:space="preserve"><value>绑定角色页设置默认角色；各功能可独立切换服务器，互不影响。</value></data>
+  <data name="GameRole_Refresh" xml:space="preserve"><value>刷新绑定角色</value></data>
+  <data name="GameRole_Unavailable" xml:space="preserve"><value>所选角色不在绑定列表中，请重新选择角色或刷新。</value></data>
+  <data name="GameRole_WidgetMismatch" xml:space="preserve"><value>备用便签接口未确认所选角色，已停止显示。请开启该角色的便签权限后重试。</value></data>
+  <data name="GameRole_SkyIsland" xml:space="preserve"><value>天空岛</value></data>
+  <data name="GameRole_WorldTree" xml:space="preserve"><value>世界树</value></data>
+  <data name="MiyousheQr_Title" xml:space="preserve"><value>识屏扫码</value></data>
+  <data name="MiyousheQr_Instructions" xml:space="preserve"><value>「普通扫码」仅读取选中区域一次；「持续扫码」反复读取选中区域内的新二维码。识别后将使用当前米游社账号登录。Esc或右键取消框选。</value></data>
+  <data name="MiyousheQr_CurrentAccount" xml:space="preserve"><value>当前米游社账号</value></data>
+  <data name="MiyousheQr_Target" xml:space="preserve"><value>登录目标</value></data>
+  <data name="MiyousheQr_ConfirmHint" xml:space="preserve"><value>确认后，显示该二维码的设备将登录上方账号。</value></data>
+  <data name="MiyousheQr_Capture" xml:space="preserve"><value>普通扫码</value></data>
+  <data name="MiyousheQr_Confirm" xml:space="preserve"><value>确认登录</value></data>
+  <data name="MiyousheQr_SelectionHint" xml:space="preserve"><value>拖动鼠标框选二维码 · Esc 或鼠标右键取消</value></data>
+  <data name="MiyousheQr_Genshin" xml:space="preserve"><value>原神</value></data>
+  <data name="MiyousheQr_StarRail" xml:space="preserve"><value>崩坏：星穹铁道</value></data>
+  <data name="MiyousheQr_Zzz" xml:space="preserve"><value>绝区零</value></data>
+  <data name="MiyousheQr_Honkai3" xml:space="preserve"><value>崩坏3</value></data>
+  <data name="MiyousheQr_Passport" xml:space="preserve"><value>米哈游通行证</value></data>
+  <data name="MiyousheQr_NoAccount" xml:space="preserve"><value>请先在启动器中登录米游社账号。</value></data>
+  <data name="MiyousheQr_CnOnly" xml:space="preserve"><value>请切换到米游社国服账号后扫码。</value></data>
+  <data name="MiyousheQr_CredentialsMissing" xml:space="preserve"><value>当前账号缺少扫码所需的凭证，请使用米游社 APP 重新扫码登录启动器。</value></data>
+  <data name="MiyousheQr_AccountChanged" xml:space="preserve"><value>当前米游社账号已改变，请重新框选二维码。</value></data>
+  <data name="MiyousheQr_Expired" xml:space="preserve"><value>二维码已过期，请在目标设备上刷新后重新框选。</value></data>
+  <data name="MiyousheQr_Unsupported" xml:space="preserve"><value>这不是支持的米哈游登录二维码。支持通行证及原神、星穹铁道、绝区零、崩坏3国服的登录二维码。</value></data>
+  <data name="MiyousheQr_NotFound" xml:space="preserve"><value>选中区域内未识别到二维码，请完整框选二维码并留出四周空白。</value></data>
+  <data name="MiyousheQr_Multiple" xml:space="preserve"><value>识别到多个二维码，请点击选择需要登录的一个。</value></data>
+  <data name="MiyousheQr_Cancelled" xml:space="preserve"><value>已取消框选。</value></data>
+  <data name="MiyousheQr_Recognizing" xml:space="preserve"><value>正在识别二维码…</value></data>
+  <data name="MiyousheQr_Ready" xml:space="preserve"><value>已识别二维码，请核对账号和登录目标后确认。</value></data>
+  <data name="MiyousheQr_Confirming" xml:space="preserve"><value>正在确认登录…</value></data>
+  <data name="MiyousheQr_Success" xml:space="preserve"><value>已确认登录，请查看目标设备。</value></data>
+  <data name="MiyousheQr_ResultUnknown" xml:space="preserve"><value>未能确定登录结果，请先查看目标设备。若未登录，请刷新二维码后重新框选。</value></data>
+  <data name="MiyousheQr_CaptureFailed" xml:space="preserve"><value>屏幕框选或二维码读取失败，请重试。</value></data>
+  <data name="MiyousheQr_HttpError" xml:space="preserve"><value>扫码服务网络请求失败，请刷新二维码后重试。</value></data>
+  <data name="MiyousheQr_ResponseError" xml:space="preserve"><value>扫码服务返回了无法识别的结果，请刷新二维码后重试。</value></data>
+  <data name="MiyousheQr_Rejected" xml:space="preserve"><value>扫码请求被拒绝，二维码可能已过期或凭证已失效。请刷新二维码；仍失败时重新登录米游社账号。</value></data>
+  <data name="MiyousheQr_Continuous" xml:space="preserve"><value>持续扫码</value></data>
+  <data name="MiyousheQr_Stop" xml:space="preserve"><value>停止扫描</value></data>
+  <data name="MiyousheQr_AutoConfirm" xml:space="preserve"><value>自动确认登录</value></data>
+  <data name="MiyousheQr_AutoConfirmHint" xml:space="preserve"><value>扫描前勾选后，识别到支持的新二维码会立即用当前米游社账号确认登录。</value></data>
+  <data name="MiyousheQr_Scanning" xml:space="preserve"><value>正在等待区域内的新二维码，已确认 {0} 次。可点击「停止扫描」结束。</value></data>
+  <data name="MiyousheQr_StopAfterLogin" xml:space="preserve"><value>登录成功后停止扫描</value></data>
+  <data name="MiyousheQr_StopAfterLoginHint" xml:space="preserve"><value>勾选后，登录成功会停止持续扫描并移除扫描范围。取消勾选可继续扫描后续二维码。</value></data>
+  <data name="MiyousheQr_Stopped" xml:space="preserve"><value>已停止扫描。</value></data>
+  <data name="MiyousheQr_RegionUnavailable" xml:space="preserve"><value>选中区域已不可用，请重新框选二维码区域。</value></data>
+  <data name="MiyousheQr_SessionLimit" xml:space="preserve"><value>本次持续扫描已达到上限，请重新开始扫描。</value></data>
+  <data name="PluginConfigPage_AutoSaveHint" xml:space="preserve"><value>修改将自动保存</value></data>
+  <data name="PluginConfigPage_Saving" xml:space="preserve"><value>正在保存…</value></data>
+  <data name="PluginConfigPage_SaveFailed" xml:space="preserve"><value>配置保存失败</value></data>
+  <data name="PluginConfigPage_SaveFailedMessage" xml:space="preserve"><value>无法写入配置文件，请检查文件权限后重试。错误详情：{0}</value></data>
+  <data name="PluginConfigPage_LoadFailed" xml:space="preserve"><value>配置加载失败</value></data>
+  <data name="PluginConfigPage_LoadFailedMessage" xml:space="preserve"><value>无法读取插件配置文件。错误详情：{0}</value></data>
+  <data name="PluginConfigPage_LoadFailedHint" xml:space="preserve"><value>请确认配置文件存在且可读取，然后重新加载。</value></data>
+  <data name="PluginConfigPage_MissingFile" xml:space="preserve"><value>配置文件不存在：{0}</value></data>
+  <data name="PluginConfigPage_NoOptions" xml:space="preserve"><value>暂无可配置的参数</value></data>
+  <data name="PluginConfigPage_NoOptionsHint" xml:space="preserve"><value>此插件尚未提供可调整的配置参数。</value></data>
+  <data name="PluginConfigPage_NoResults" xml:space="preserve"><value>未找到匹配的配置项</value></data>
+  <data name="PluginConfigPage_NoResultsHint" xml:space="preserve"><value>请尝试其他关键词，或清空搜索条件。</value></data>
+  <data name="PluginConfigPage_ClearSearch" xml:space="preserve"><value>清空搜索</value></data>
+  <data name="PluginConfigPage_OptionCount" xml:space="preserve"><value>{0} 个配置项</value></data>
+  <data name="PluginConfigPage_FilteredOptionCount" xml:space="preserve"><value>{0} / {1} 个配置项</value></data>
+  <data name="PluginConfigPage_ConfigFile" xml:space="preserve"><value>配置文件</value></data>
+  <data name="PluginConfigPage_ValuePlaceholder" xml:space="preserve"><value>请输入配置值…</value></data>
 </root>

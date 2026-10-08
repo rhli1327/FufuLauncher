@@ -2,6 +2,7 @@
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
+
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Windows.Input;
@@ -25,6 +26,7 @@ public enum WindowBackdropType
     Acrylic = 1,
     Mica = 2
 }
+
 public enum NotificationPosition
 {
     BottomRight = 0,
@@ -32,6 +34,7 @@ public enum NotificationPosition
     TopLeft = 2,
     BottomLeft = 3
 }
+
 public enum WindowModeType
 {
     Normal,
@@ -56,9 +59,11 @@ public partial class SettingsViewModel : ObservableRecipient
     private readonly INavigationService _navigationService;
     private readonly IGameLauncherService _gameLauncherService;
     private readonly IFilePickerService _filePickerService;
+    private readonly INotificationService _notificationService;
     private readonly AccountManager _accountManager;
     private readonly Services.AuthTicket.IAuthTicketService _authTicketService;
     private readonly DispatcherQueue _dispatcherQueue;
+
     public record MonitorItem(string DisplayName, int Index);
 
     [ObservableProperty] private ElementTheme _elementTheme;
@@ -69,6 +74,7 @@ public partial class SettingsViewModel : ObservableRecipient
     [ObservableProperty] private bool _isBackgroundEnabled = true;
     [ObservableProperty] private AppLanguage _selectedLanguage;
     [ObservableProperty] private bool _minimizeToTray;
+    [ObservableProperty] private bool _isStartupEnabled;
     [ObservableProperty] private string _customLaunchParameters = "";
     [ObservableProperty] private WindowModeType _launchArgsWindowMode = WindowModeType.Normal;
     [ObservableProperty] private string _launchArgsWidth = "";
@@ -91,18 +97,20 @@ public partial class SettingsViewModel : ObservableRecipient
     [ObservableProperty] private bool _isBetterGICloseOnExitEnabled;
 
     private double _betterGIStartupDelaySeconds = 0.0;
+
     public double BetterGIStartupDelaySeconds
     {
         get => _betterGIStartupDelaySeconds;
         set
         {
             var clampedValue = double.IsNaN(value) ? 0.0 : Math.Clamp(value, 0.0, 60.0);
-            if (SetProperty(ref _betterGIStartupDelaySeconds, clampedValue))
+            if (SetProperty(ref _betterGIStartupDelaySeconds, clampedValue) && !_isInitializing)
             {
                 _ = _localSettingsService.SaveSettingAsync("BetterGIStartupDelaySeconds", clampedValue);
             }
         }
     }
+
     [ObservableProperty] private double _globalBackgroundOverlayOpacity = 0.0;
     [ObservableProperty] private double _contentFrameBackgroundOpacity = 0.5;
     [ObservableProperty] private bool _isSaveWindowSizeEnabled;
@@ -175,17 +183,38 @@ public partial class SettingsViewModel : ObservableRecipient
 
     [ObservableProperty] private bool _isPluginMirrorAccelerationEnabled = true;
 
+    [ObservableProperty] private bool _isPluginConflictCheckEnabled = true;
+    [ObservableProperty] private bool _isPluginConflictMainDllOnly = true;
+
+    [ObservableProperty] private bool _ignoreConstraintRestrictions;
+
     [ObservableProperty] private bool _isCaptchaPopupDisabled;
 
-    public IAsyncRelayCommand SelectScreenshotFolderCommand { get; }
-    public IAsyncRelayCommand ClearScreenshotFolderCommand { get; }
-    public IAsyncRelayCommand OpenScreenshotFolderCommand { get; }
+    [ObservableProperty] private bool _isCaptchaNoticeEnabled = true;
+
+    public IAsyncRelayCommand SelectScreenshotFolderCommand
+    {
+        get;
+    }
+
+    public IAsyncRelayCommand ClearScreenshotFolderCommand
+    {
+        get;
+    }
+
+    public IAsyncRelayCommand OpenScreenshotFolderCommand
+    {
+        get;
+    }
 
     [ObservableProperty] private PostLaunchBehavior _postLaunchBehavior;
 
     public record PostLaunchBehaviorItem(string DisplayName, PostLaunchBehavior Value);
 
-    public List<PostLaunchBehaviorItem> PostLaunchBehaviorItems { get; } = new()
+    public List<PostLaunchBehaviorItem> PostLaunchBehaviorItems
+    {
+        get;
+    } = new()
     {
         new("不变", Models.PostLaunchBehavior.None),
         new("最小化到托盘", Models.PostLaunchBehavior.MinimizeToTray),
@@ -194,7 +223,10 @@ public partial class SettingsViewModel : ObservableRecipient
 
     [ObservableProperty] private PostLaunchBehaviorItem _selectedPostLaunchBehaviorItem = null!;
 
-    public ObservableCollection<NavItemConfig> NavItems { get; } = new();
+    public ObservableCollection<NavItemConfig> NavItems
+    {
+        get;
+    } = new();
 
     [ObservableProperty] private bool _isGameCheckinEnabled = true;
     [ObservableProperty] private bool _isBatchCheckinEnabled;
@@ -206,21 +238,31 @@ public partial class SettingsViewModel : ObservableRecipient
     [ObservableProperty] private ObservableCollection<CheckinAccountItem> _checkinAccounts = new();
     [ObservableProperty] private bool _isLoadingCheckinAccounts;
 
-    public IAsyncRelayCommand ResetGameExeNameCommand { get; }
+    public IAsyncRelayCommand ResetGameExeNameCommand
+    {
+        get;
+    }
 
-    public IAsyncRelayCommand ClearWebView2CacheCommand { get; }
+    public IAsyncRelayCommand ClearWebView2CacheCommand
+    {
+        get;
+    }
+
     public ICommand SwitchThemeCommand
     {
         get;
     }
+
     public ICommand SwitchLanguageCommand
     {
         get;
     }
+
     public ICommand SetResolutionPresetCommand
     {
         get;
     }
+
     public IAsyncRelayCommand SelectCustomBackgroundCommand
     {
         get;
@@ -261,6 +303,7 @@ public partial class SettingsViewModel : ObservableRecipient
     {
         get;
     }
+
     public IAsyncRelayCommand ClearStartupSoundCommand
     {
         get;
@@ -271,9 +314,20 @@ public partial class SettingsViewModel : ObservableRecipient
         get;
     }
 
-    public IAsyncRelayCommand ResetBackgroundApiCommand { get; }
-    public IAsyncRelayCommand ResetLaunchButtonOverlayColorCommand { get; }
-    public IAsyncRelayCommand ResetCpuUsageWarningSettingsCommand { get; }
+    public IAsyncRelayCommand ResetBackgroundApiCommand
+    {
+        get;
+    }
+
+    public IAsyncRelayCommand ResetLaunchButtonOverlayColorCommand
+    {
+        get;
+    }
+
+    public IAsyncRelayCommand ResetCpuUsageWarningSettingsCommand
+    {
+        get;
+    }
 
     private static string? _cachedWebView2CacheSize;
 
@@ -293,6 +347,7 @@ public partial class SettingsViewModel : ObservableRecipient
         INavigationService navigationService,
         IGameLauncherService gameLauncherService,
         IFilePickerService filePickerService,
+        INotificationService notificationService,
         AccountManager accountManager,
         Services.AuthTicket.IAuthTicketService authTicketService)
     {
@@ -303,9 +358,12 @@ public partial class SettingsViewModel : ObservableRecipient
         _navigationService = navigationService;
         _gameLauncherService = gameLauncherService;
         _filePickerService = filePickerService;
+        _notificationService = notificationService;
         _accountManager = accountManager;
         _authTicketService = authTicketService;
         _dispatcherQueue = App.MainWindow.DispatcherQueue;
+
+        RegisterSettingSections();
 
         InitializeDefaultResolution();
 
@@ -337,8 +395,7 @@ public partial class SettingsViewModel : ObservableRecipient
             }
         });
 
-        SwitchThemeCommand = new RelayCommand<ElementTheme>(
-            async (param) =>
+        SwitchThemeCommand = new RelayCommand<ElementTheme>(async (param) =>
             {
                 if (ElementTheme != param)
                 {
@@ -347,15 +404,15 @@ public partial class SettingsViewModel : ObservableRecipient
                 }
             });
 
-        SwitchLanguageCommand = new RelayCommand<object>(
-            async (param) =>
+        SwitchLanguageCommand = new RelayCommand<object>(async (param) =>
             {
                 try
                 {
                     int languageCode = Convert.ToInt32(param);
                     var language = (AppLanguage)languageCode;
 
-                    Debug.WriteLine($"[SettingsVM] SwitchLanguageCommand: param={param}, language={language}, current SelectedLanguage={SelectedLanguage}");
+                Debug.WriteLine(
+                    $"[SettingsVM] SwitchLanguageCommand: param={param}, language={language}, current SelectedLanguage={SelectedLanguage}");
 
                     // Always apply - the TwoWay binding on IsChecked may have already
                     // updated SelectedLanguage, so the old guard was incorrectly
@@ -369,8 +426,7 @@ public partial class SettingsViewModel : ObservableRecipient
                 }
             });
 
-        SetResolutionPresetCommand = new RelayCommand<string>(
-            (param) =>
+        SetResolutionPresetCommand = new RelayCommand<string>((param) =>
             {
                 var parts = param.Split(' ');
                 if (parts.Length == 2)

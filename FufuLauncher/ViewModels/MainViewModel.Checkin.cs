@@ -2,6 +2,7 @@
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
+
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using FufuLauncher.Helpers;
@@ -14,8 +15,10 @@ namespace FufuLauncher.ViewModels;
 public partial class MainViewModel
 {
     #region 游戏签到
+
     private bool _hasAttemptedAutoCheckin = false;
     private bool _isInternationalAccount = false;
+    private int _checkinStatusVersion;
 
     [ObservableProperty] private string _checkinStatusText = "Checkin_LoadingStatus".GetLocalized();
     [ObservableProperty] private bool _isCheckinButtonEnabled = true;
@@ -56,19 +59,21 @@ public partial class MainViewModel
     private async Task LoadCheckinStatusAsync()
     {
         if (_localSettingsService == null) return;
+        var version = ++_checkinStatusVersion;
+        CheckinStatusText = "Checkin_LoadingStatus".GetLocalized();
+        CheckinSummary = "";
+        CheckinStateGlyph = "\uE730";
+        CheckinStateBrush = new SolidColorBrush(Microsoft.UI.Colors.Gray);
 
         var isIntlRaw = await _localSettingsService.ReadSettingAsync("IsInternationalAccount");
         _isInternationalAccount = isIntlRaw != null && isIntlRaw.ToString().ToLower() == "true";
 
         try
         {
-            var targetUidObj = await _localSettingsService.ReadSettingAsync("CustomCheckinUid");
-            string targetUid = targetUidObj?.ToString();
-
-
-            var accountManager = App.GetService<AccountManager>();
-            var activeId = accountManager.ActiveAccountId;
-            if (activeId == null)
+            var roleService = App.GetService<GameRoleService>();
+            var selected = await roleService.GetCurrentAsync();
+            if (version != _checkinStatusVersion) return;
+            if (selected == null)
             {
                 CheckinStatusText = "Checkin_NotLoggedIn".GetLocalized();
                 CheckinSummary = "Checkin_PleaseLogin".GetLocalized();
@@ -76,19 +81,9 @@ public partial class MainViewModel
                 return;
             }
 
-            var cookies = await accountManager.LoadCookiesAsync(activeId);
-            var entry = accountManager.GetActiveAccountEntry();
-            if (cookies == null || entry == null)
-            {
-                CheckinStatusText = "Checkin_CredentialFailed".GetLocalized();
-                CheckinSummary = "Checkin_CredentialUnavailable".GetLocalized();
-                UpdateCheckinIconState("Fail");
-                return;
-            }
-
-            string serverType = entry.ServerType;
-
-            var (status, summary) = await _checkinService.GetCheckinStatusAsync(targetUid, cookies, serverType);
+            var (status, summary) = await _checkinService.GetCheckinStatusAsync(
+                selected.Role.game_uid, selected.Cookies, selected.ServerType);
+            if (version != _checkinStatusVersion || !roleService.IsCurrent(selected)) return;
 
             CheckinStatusText = status;
             CheckinSummary = summary;
@@ -100,7 +95,8 @@ public partial class MainViewModel
                 bool isAutoCheckinEnabled = autoCheckinObj != null && Convert.ToBoolean(autoCheckinObj);
                 bool isSigned = !string.IsNullOrEmpty(status) && (status.Contains("成功") || status.Contains("已"));
 
-                if (isAutoCheckinEnabled && !isSigned)
+                if (version == _checkinStatusVersion && roleService.IsCurrent(selected) && isAutoCheckinEnabled &&
+                    !isSigned)
                 {
                     _hasAttemptedAutoCheckin = true;
                     await ExecuteCheckinAsync();
@@ -109,6 +105,7 @@ public partial class MainViewModel
         }
         catch (Exception ex)
         {
+            if (version != _checkinStatusVersion) return;
             CheckinStatusText = "Checkin_LoadFailed".GetLocalized();
             CheckinSummary = ex.Message;
             UpdateCheckinIconState("Fail");
@@ -137,7 +134,9 @@ public partial class MainViewModel
 
             var unifiedResult = await _unifiedCheckinService.ExecuteAllCheckinsAsync(progress);
 
-            CheckinStatusText = unifiedResult.OverallSuccess ? "Checkin_Complete".GetLocalized() : "Checkin_PartialFailed".GetLocalized();
+            CheckinStatusText = unifiedResult.OverallSuccess
+                ? "Checkin_Complete".GetLocalized()
+                : "Checkin_PartialFailed".GetLocalized();
             CheckinSummary = unifiedResult.SummaryMessage;
             UpdateCheckinIconState(unifiedResult.OverallSuccess ? "已签到" : "Fail");
 
@@ -147,14 +146,16 @@ public partial class MainViewModel
                 NotificationType.Warning => "Checkin_PartialFailed".GetLocalized(),
                 _ => "Account_CheckinFailed".GetLocalized()
             };
-            _notificationService.Show(notificationTitle, unifiedResult.GetDetailedSummary(), unifiedResult.NotificationType, 5000);
+            _notificationService.Show(notificationTitle, unifiedResult.GetDetailedSummary(),
+                unifiedResult.NotificationType, 5000);
         }
         catch (Exception ex)
         {
             CheckinStatusText = "Checkin_ExecuteFailed".GetLocalized();
             CheckinSummary = ex.Message;
             UpdateCheckinIconState("Fail");
-            _notificationService.Show("Account_CheckinException".GetLocalized(), ex.Message, NotificationType.Error, 3000);
+            _notificationService.Show("Account_CheckinException".GetLocalized(), ex.Message, NotificationType.Error,
+                3000);
         }
         finally
         {
@@ -162,5 +163,6 @@ public partial class MainViewModel
             await LoadCheckinStatusAsync();
         }
     }
+
     #endregion
 }

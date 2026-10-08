@@ -2,6 +2,7 @@
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
+
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text.Json;
@@ -20,7 +21,6 @@ namespace FufuLauncher.Services
     /// <item>同时在后台线程全量加载，填充快照；</item>
     /// <item>快照就绪前的读取按需单键查库（懒加载），命中后并入快照。</item>
     /// </list>
-
     /// </summary>
     public class LocalSettingsService : ILocalSettingsService
     {
@@ -60,11 +60,14 @@ namespace FufuLauncher.Services
 
         public const string BackgroundServerKey = "BackgroundServer";
         public const string IsBackgroundEnabledKey = "IsBackgroundEnabled";
+        public const string IsStartupEnabledKey = "IsStartupEnabled";
         public const string LastAnnouncedVersionKey = "LastAnnouncedVersion";
 
         public const string LastAnnouncedPreviewVersionKey = "LastAnnouncedPreviewVersion";
 
         public const string LastAnnouncementUrlKey = "LastAnnouncementUrl";
+
+        public const string SuppressAnnouncementInGameKey = "IsSuppressAnnouncementInGameEnabled";
 
         public const string HasShownSecurityWarningKey = "HasShownSecurityWarning";
 
@@ -174,6 +177,7 @@ namespace FufuLauncher.Services
                         4000
                     ));
                 }
+
                 return;
             }
 
@@ -204,6 +208,7 @@ namespace FufuLauncher.Services
                             kept++;
                             SettingsLog.Write($"LocalSettingsService: '{key}' 内存值与快照不一致，保留内存值");
                         }
+
                         continue;
                     }
 
@@ -217,9 +222,9 @@ namespace FufuLauncher.Services
                 _lastLoadFailureUtc = null;
             }
 
-            Debug.WriteLine($"LocalSettingsService: 全量加载完成，共 {all.Count} 项（新增 {added}，保留内存值 {kept}，跳过已删除 {skippedRemoved}）");
+            Debug.WriteLine(
+                $"LocalSettingsService: 全量加载完成，共 {all.Count} 项（新增 {added}，保留内存值 {kept}，跳过已删除 {skippedRemoved}）");
         }
-
 
 
         public async Task<bool> InvalidateAndReloadAsync()

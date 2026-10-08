@@ -2,6 +2,7 @@
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
+
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Text.Json;
@@ -22,31 +23,66 @@ public partial class SettingsViewModel
         _ = _localSettingsService.SaveSettingAsync("IsCaptchaPopupDisabled", value);
     }
 
+    partial void OnIsCaptchaNoticeEnabledChanged(bool value)
+    {
+        if (_isInitializing) return;
+        _ = _localSettingsService.SaveSettingAsync("IsCaptchaNoticeEnabled", value);
+    }
+
     partial void OnIsRedeemCodeNotificationEnabledChanged(bool value)
     {
+        if (_isInitializing) return;
         _ = _localSettingsService.SaveSettingAsync("IsRedeemCodeNotificationEnabled", value);
     }
 
     partial void OnIsAutoCheckinEnabledChanged(bool value)
     {
+        if (_isInitializing) return;
         Debug.WriteLine($"SettingsViewModel: 自动签到设置变更为 {value}");
         _ = _localSettingsService.SaveSettingAsync("IsAutoCheckinEnabled", value);
     }
 
     partial void OnIsGameCheckinEnabledChanged(bool value)
-        => _ = _localSettingsService.SaveSettingAsync("IsGameCheckinEnabled", value);
+    {
+        if (_isInitializing) return;
+        _ = _localSettingsService.SaveSettingAsync("IsGameCheckinEnabled", value);
+    }
+
     partial void OnIsCommunityCheckinEnabledChanged(bool value)
-        => _ = _localSettingsService.SaveSettingAsync("IsCommunityCheckinEnabled", value);
+    {
+        if (_isInitializing) return;
+        _ = _localSettingsService.SaveSettingAsync("IsCommunityCheckinEnabled", value);
+    }
+
     partial void OnIsCommunityLikeEnabledChanged(bool value)
-        => _ = _localSettingsService.SaveSettingAsync("IsCommunityLikeEnabled", value);
+    {
+        if (_isInitializing) return;
+        _ = _localSettingsService.SaveSettingAsync("IsCommunityLikeEnabled", value);
+    }
+
     partial void OnIsCommunityReadEnabledChanged(bool value)
-        => _ = _localSettingsService.SaveSettingAsync("IsCommunityReadEnabled", value);
+    {
+        if (_isInitializing) return;
+        _ = _localSettingsService.SaveSettingAsync("IsCommunityReadEnabled", value);
+    }
+
     partial void OnIsCommunityShareEnabledChanged(bool value)
-        => _ = _localSettingsService.SaveSettingAsync("IsCommunityShareEnabled", value);
+    {
+        if (_isInitializing) return;
+        _ = _localSettingsService.SaveSettingAsync("IsCommunityShareEnabled", value);
+    }
+
     partial void OnIsCloudGameCheckinEnabledChanged(bool value)
-        => _ = _localSettingsService.SaveSettingAsync("IsCloudGameCheckinEnabled", value);
+    {
+        if (_isInitializing) return;
+        _ = _localSettingsService.SaveSettingAsync("IsCloudGameCheckinEnabled", value);
+    }
+
     partial void OnIsBatchCheckinEnabledChanged(bool value)
-        => _ = _localSettingsService.SaveSettingAsync("IsBatchCheckinEnabled", value);
+    {
+        if (_isInitializing) return;
+        _ = _localSettingsService.SaveSettingAsync("IsBatchCheckinEnabled", value);
+    }
 
     private async Task LoadCheckinAccountsAsync()
     {
@@ -61,7 +97,9 @@ public partial class SettingsViewModel
                     var list = JsonSerializer.Deserialize<List<string>>(disabledUidsJson.ToString() ?? "[]");
                     if (list != null) disabledUids = new HashSet<string>(list);
                 }
-                catch { }
+                catch
+                {
+                }
             }
 
             var accounts = new ObservableCollection<CheckinAccountItem>();

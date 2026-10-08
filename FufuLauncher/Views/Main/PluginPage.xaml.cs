@@ -2,6 +2,9 @@
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
+
+using CommunityToolkit.Mvvm.Messaging;
+using FufuLauncher.Messages;
 using FufuLauncher.ViewModels;
 using Microsoft.UI.Xaml.Controls;
 
@@ -18,6 +21,7 @@ public sealed partial class PluginPage : Page
     {
         get;
     }
+
     public ControlPanelModel ControlPanelViewModel
     {
         get;
@@ -32,5 +36,14 @@ public sealed partial class PluginPage : Page
         InitializeComponent();
 
         ViewModel.DuplicateDetected += ViewModel_DuplicateDetected;
+
+        WeakReferenceMessenger.Default.Register<ConstraintStateChangedMessage>(this, (_, _) =>
+        {
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                if (!IsLoaded) return;
+                ViewModel.LoadPlugins();
+            });
+        });
     }
 }

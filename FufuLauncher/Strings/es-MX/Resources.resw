@@ -54,6 +54,12 @@
   <data name="Fps_HashMismatch_Content" xml:space="preserve">
     <value>El hash del plugin de visualización de FPS no coincide. Es posible que haya sido manipulado o dañado. Vuelve a instalar el launcher.</value>
   </data>
+  <data name="Fps_Missing_Content" xml:space="preserve">
+    <value>No se encontró el archivo DLL del plugin de visualización de FPS. Puede que no esté instalado, se haya eliminado por error o esté bloqueado por el antivirus. Usa «Reparar plugin de visualización de FPS» en el menú Funciones e inténtalo de nuevo.</value>
+  </data>
+  <data name="Fps_Missing_Title" xml:space="preserve">
+    <value>Plugin de FPS no encontrado</value>
+  </data>
   <data name="Fps_Repair_Fail_Title" xml:space="preserve">
     <value>Error al reparar</value>
   </data>
@@ -2116,6 +2122,9 @@ Por favor, confirma que seleccionaste el directorio de instalación que contiene
   </data>
   <data name="Announcement_Loading" xml:space="preserve">
     <value>Cargando anuncio...</value>
+  </data>
+  <data name="Announcement_OpenInEdge" xml:space="preserve">
+    <value>Abrir en Edge</value>
   </data>
   <data name="CommunityPage_Back" xml:space="preserve">
     <value>Atrás</value>
@@ -5545,6 +5554,12 @@ Puedes reintentar con otro nodo o usar la fuente oficial directa.</value>
   <data name="PreviewUpdateAnnouncementCaption" xml:space="preserve">
     <value>When enabled, an update announcement window pops up automatically when a new pre-release build is detected.</value>
   </data>
+  <data name="SuppressAnnouncementInGameTitle" xml:space="preserve">
+    <value>Pausar los anuncios del lanzador durante el juego</value>
+  </data>
+  <data name="SuppressAnnouncementInGameCaption" xml:space="preserve">
+    <value>Cuando está activado, los anuncios del lanzador no aparecen automáticamente mientras el juego está en ejecución. Volverán a aparecer con normalidad al salir del juego o reiniciar el lanzador.</value>
+  </data>
   <data name="UpdateNotification_PreviewBanner" xml:space="preserve">
     <value>This is a pre-release update and may be unstable. Please update with caution.</value>
   </data>
@@ -5650,4 +5665,552 @@ Puedes reintentar con otro nodo o usar la fuente oficial directa.</value>
   <data name="BrowseOfficialBgCaption" xml:space="preserve">
     <value>Explora todos los fondos publicados por el juego, previsualízalos y guárdalos localmente; las imágenes estáticas se pueden establecer directamente como fondo del launcher.</value>
   </data>
+  <data name="LightweightMode_StandardTooltip" xml:space="preserve">
+    <value>Standard mode (main plugin)</value>
+  </data>
+  <data name="LightweightMode_LiteTooltip" xml:space="preserve">
+    <value>Lightweight mode (YuanShen-UnlockerLite)</value>
+  </data>
+  <data name="LightweightMode_PluginComboLabel" xml:space="preserve">
+    <value>YuanShen-UnlockerLite (Lite Plugin)</value>
+  </data>
+  <data name="LightweightMode_LiteEnabledLabel" xml:space="preserve">
+    <value>Lite Plugin Enabled</value>
+  </data>
+  <data name="LightweightMode_ReinstallBtn" xml:space="preserve">
+    <value>Reinstall Lite Plugin</value>
+  </data>
+  <data name="LightweightMode_EnterTitle" xml:space="preserve">
+    <value>Switch to Lightweight Mode</value>
+  </data>
+  <data name="LightweightMode_EnterContent" xml:space="preserve">
+    <value>The main plugin will be disabled, the latest YuanShen-UnlockerLite will be downloaded and installed, and this page will show the lite plugin configuration instead.</value>
+  </data>
+  <data name="LightweightMode_EnterConfirm" xml:space="preserve">
+    <value>Switch</value>
+  </data>
+  <data name="LightweightMode_ExitTitle" xml:space="preserve">
+    <value>Switch Back to Standard Mode</value>
+  </data>
+  <data name="LightweightMode_ExitContent" xml:space="preserve">
+    <value>The lite plugin will be removed and the main plugin will be enabled again.</value>
+  </data>
+  <data name="LightweightMode_ExitConfirm" xml:space="preserve">
+    <value>Switch</value>
+  </data>
+  <data name="LightweightMode_EnterSuccess" xml:space="preserve">
+    <value>Switched to lightweight mode</value>
+  </data>
+  <data name="LightweightMode_ExitSuccess" xml:space="preserve">
+    <value>Switched back to standard mode</value>
+  </data>
+  <data name="LightweightMode_ExitSuccessNoMain" xml:space="preserve">
+    <value>Switched back to standard mode, but the main plugin was not found. Please download it first.</value>
+  </data>
+  <data name="LightweightMode_InstallTitle" xml:space="preserve">
+    <value>Installing Lite Plugin</value>
+  </data>
+  <data name="LightweightMode_ReinstallTitle" xml:space="preserve">
+    <value>Reinstalling Lite Plugin</value>
+  </data>
+  <data name="LightweightMode_StatusResolving" xml:space="preserve">
+    <value>Resolving the latest release...</value>
+  </data>
+  <data name="LightweightMode_StatusDownloading" xml:space="preserve">
+    <value>Downloading...</value>
+  </data>
+  <data name="LightweightMode_StatusInstalling" xml:space="preserve">
+    <value>Installing...</value>
+  </data>
+  <data name="LightweightMode_DownloadFailed" xml:space="preserve">
+    <value>Failed to download the lightweight plugin: {0}</value>
+  </data>
+  <data name="LightweightMode_InvalidPackage" xml:space="preserve">
+    <value>Invalid package content: YuanShen-UnlockerLite.dll was not found.</value>
+  </data>
+  <data name="LightweightMode_InstallFailed" xml:space="preserve">
+    <value>Failed to install the lightweight plugin: {0} Please check your network and try again.</value>
+  </data>
+  <data name="LightweightMode_ReinstallSuccess" xml:space="preserve">
+    <value>The lightweight plugin was reinstalled.</value>
+  </data>
+  <data name="LightweightMode_BlockMainInstall" xml:space="preserve">
+    <value>Installing or enabling the main plugin is disabled in lightweight mode. Switch back to standard mode to restore it.</value>
+  </data>
+  <data name="LightweightMode_BlockLiteInstall" xml:space="preserve">
+    <value>The lightweight plugin can only be installed or enabled in lightweight mode.</value>
+  </data>
+  <data name="LightweightMode_LiteDisabledOverlay" xml:space="preserve">
+    <value>The lite plugin is disabled or not installed. Reinstall it from the Functions menu.</value>
+  </data>
+  <data name="LightweightMode_LiteNotInstalled" xml:space="preserve">
+    <value>YuanShen-UnlockerLite is not installed</value>
+  </data>
+  <data name="LightweightMode_LiteMissing_Title" xml:space="preserve">
+    <value>Lightweight Plugin Missing</value>
+  </data>
+  <data name="LightweightMode_LiteMissing_Content" xml:space="preserve">
+    <value>Lightweight plugin DLL file not found. It may not be installed, was accidentally deleted, or was blocked by antivirus software. Please reinstall it from the Functions menu.</value>
+  </data>
+  <data name="Constraint_BlockedTitle" xml:space="preserve">
+    <value>Action Restricted</value>
+  </data>
+  <data name="Constraint_BlockedDefault" xml:space="preserve">
+    <value>The main plugin cannot be enabled in the current state. Please use lightweight mode.</value>
+  </data>
+  <data name="Constraint_AutoApplied" xml:space="preserve">
+    <value>The main plugin was disabled and lightweight mode was enabled automatically by the server policy.</value>
+  </data>
+  <data name="Settings_IgnoreConstraint_Title" xml:space="preserve">
+    <value>Ignore Usage Restrictions</value>
+  </data>
+  <data name="Settings_IgnoreConstraint_Caption" xml:space="preserve">
+    <value>Disabling this restriction affects the usage restriction policy applied during software updates. Proceed with caution.</value>
+  </data>
+  <data name="Constraint_ModeSwitchExplanation" xml:space="preserve">
+    <value>Why we do this: when the game updates, the old main plugin may run into various unexpected issues or even security risks. The lightweight plugin works across all game versions, so we temporarily switch you to lightweight mode during game updates to keep the basic features working, and will switch back automatically once the main plugin is adapted.</value>
+  </data>
+  <data name="PinSettingTooltip" xml:space="preserve">
+    <value>Pin this item to the top</value>
+  </data>
+  <data name="UnpinSettingTooltip" xml:space="preserve">
+    <value>Unpin this item</value>
+  </data>
+  <data name="BatchActions_SelectedCount" xml:space="preserve">
+    <value>Selected: {0}</value>
+  </data>
+  <data name="BatchActions_Enable" xml:space="preserve">
+    <value>Enable Selected</value>
+  </data>
+  <data name="BatchActions_Disable" xml:space="preserve">
+    <value>Disable Selected</value>
+  </data>
+  <data name="BatchActions_Pin" xml:space="preserve">
+    <value>Pin Selected</value>
+  </data>
+  <data name="BatchActions_Unpin" xml:space="preserve">
+    <value>Unpin Selected</value>
+  </data>
+  <data name="BatchActions_ClearSelection" xml:space="preserve">
+    <value>Clear Selection</value>
+  </data>
+  <data name="Plugin_FileLocked_Title" xml:space="preserve">
+    <value>Plugin File In Use</value>
+  </data>
+  <data name="Plugin_FileLocked_Content" xml:space="preserve">
+    <value>The plugin file "{0}" is in use by another program, so the operation could not be completed. Please close the game or the program using the file and try again. If this keeps happening, antivirus scanning may be the cause - wait a moment and retry.</value>
+  </data>
+  <data name="PluginPage_FreeCamHelpTitle" xml:space="preserve">
+    <value>Free Camera Instructions</value>
+  </data>
+  <data name="PluginPage_FileNotFoundTitle" xml:space="preserve">
+    <value>File Not Found</value>
+  </data>
+  <data name="PluginPage_FreeCamImageMissing" xml:space="preserve">
+    <value>freecam.png was not found in the Assets folder.</value>
+  </data>
+  <data name="PluginPage_DuplicateTitle" xml:space="preserve">
+    <value>Plugin Conflict Warning</value>
+  </data>
+  <data name="PluginPage_OpenPluginFolderBtn" xml:space="preserve">
+    <value>Open Plugin Folder</value>
+  </data>
+  <data name="PluginPage_IgnoreBtn" xml:space="preserve">
+    <value>Ignore</value>
+  </data>
+  <data name="PluginPage_GetPluginsTitle" xml:space="preserve">
+    <value>Get Plugins</value>
+  </data>
+  <data name="PluginPage_DownloadLatestOption" xml:space="preserve">
+    <value>Download / Update Plugin</value>
+  </data>
+  <data name="PluginPage_DownloadCustomOption" xml:space="preserve">
+    <value>Custom Plugin URL</value>
+  </data>
+  <data name="PluginPage_DownloadCustomPlaceholder" xml:space="preserve">
+    <value>Enter a direct download URL</value>
+  </data>
+  <data name="PluginPage_DownloadNotice" xml:space="preserve">
+    <value>Note: the game already includes gamepad hot-switching.</value>
+  </data>
+  <data name="PluginPage_DownloadChooseHint" xml:space="preserve">
+    <value>Choose the plugin package to download and install:</value>
+  </data>
+  <data name="PluginPage_DownloadProxyHint" xml:space="preserve">
+    <value>A proxy is used by default; if it fails, the launcher switches to a direct GitHub connection.</value>
+  </data>
+  <data name="PluginPage_DownloadAndInstallBtn" xml:space="preserve">
+    <value>Download and Install</value>
+  </data>
+  <data name="PluginPage_InputErrorTitle" xml:space="preserve">
+    <value>Invalid Input</value>
+  </data>
+  <data name="PluginPage_InvalidUrlMessage" xml:space="preserve">
+    <value>Please enter a valid plugin download URL.</value>
+  </data>
+  <data name="PluginPage_FetchingFormat" xml:space="preserve">
+    <value>Fetching {0}</value>
+  </data>
+  <data name="PluginPage_StatusConnecting" xml:space="preserve">
+    <value>Connecting...</value>
+  </data>
+  <data name="PluginPage_StatusSwitchingLine" xml:space="preserve">
+    <value>Connection failed, trying the backup route...</value>
+  </data>
+  <data name="PluginPage_DownloadHttpFailedFormat" xml:space="preserve">
+    <value>Download failed (HTTP {0})</value>
+  </data>
+  <data name="PluginPage_LineBackup" xml:space="preserve">
+    <value>backup route</value>
+  </data>
+  <data name="PluginPage_LineMain" xml:space="preserve">
+    <value>primary route</value>
+  </data>
+  <data name="PluginPage_StatusDownloadingFormat" xml:space="preserve">
+    <value>Downloading via {0}... {1}%</value>
+  </data>
+  <data name="PluginPage_StatusExtracting" xml:space="preserve">
+    <value>Extracting...</value>
+  </data>
+  <data name="PluginPage_StatusInstalling" xml:space="preserve">
+    <value>Installing...</value>
+  </data>
+  <data name="PluginPage_DownloadErrorTitle" xml:space="preserve">
+    <value>Download / Install Error</value>
+  </data>
+  <data name="PluginPage_DownloadErrorContentFormat" xml:space="preserve">
+    <value>Automatic download failed: {0}&#10;&#10;Click the button below to open your browser and download manually.</value>
+  </data>
+  <data name="PluginPage_ManualDownloadBtn" xml:space="preserve">
+    <value>Manual Download</value>
+  </data>
+  <data name="PluginPage_SecurityWarningContent" xml:space="preserve">
+    <value>Security software can block this program's injection. If it stops working or plugins disappear, please turn off your security center.</value>
+  </data>
+  <data name="PluginPage_RenameFolderTitle" xml:space="preserve">
+    <value>Rename Plugin Folder</value>
+  </data>
+  <data name="PluginPage_DuplicateDetectedHeader" xml:space="preserve">
+    <value>Duplicate plugins detected:</value>
+  </data>
+  <data name="PluginPage_DuplicatePluginNameFormat" xml:space="preserve">
+    <value>Plugin name: {0}</value>
+  </data>
+  <data name="PluginPage_DuplicateConflictsHeader" xml:space="preserve">
+    <value>Conflicting folders:</value>
+  </data>
+  <data name="PluginPage_DuplicateFolderItemFormat" xml:space="preserve">
+    <value>   - {0}</value>
+  </data>
+  <data name="PluginPage_DuplicateHint" xml:space="preserve">
+    <value>It is recommended to delete the older plugin version manually.</value>
+  </data>
+  <data name="Settings_PluginSignature_Title" xml:space="preserve">
+    <value>Verify Plugin Signatures</value>
+  </data>
+  <data name="Settings_PluginSignature_Caption" xml:space="preserve">
+    <value>Check the digital signature of installed plugin DLLs and inspect the signature details.</value>
+  </data>
+  <data name="Settings_PluginSignature_Btn" xml:space="preserve">
+    <value>Verify</value>
+  </data>
+  <data name="PluginSignature_DialogTitle" xml:space="preserve">
+    <value>Plugin Signature Results</value>
+  </data>
+  <data name="PluginSignature_Checking" xml:space="preserve">
+    <value>Verifying plugin signatures...</value>
+  </data>
+  <data name="PluginSignature_NoPlugins" xml:space="preserve">
+    <value>No plugin DLLs were found in the Plugins folder.</value>
+  </data>
+  <data name="PluginSignature_Failed" xml:space="preserve">
+    <value>Verification failed: {0}</value>
+  </data>
+  <data name="PluginSignature_Signed" xml:space="preserve">
+    <value>Signed</value>
+  </data>
+  <data name="PluginSignature_Unsigned" xml:space="preserve">
+    <value>Not signed</value>
+  </data>
+  <data name="PluginSignature_File" xml:space="preserve">
+    <value>File</value>
+  </data>
+  <data name="PluginSignature_Signer" xml:space="preserve">
+    <value>Signer</value>
+  </data>
+  <data name="PluginSignature_Issuer" xml:space="preserve">
+    <value>Issuer</value>
+  </data>
+  <data name="PluginSignature_SerialNumber" xml:space="preserve">
+    <value>Serial number</value>
+  </data>
+  <data name="PluginSignature_Thumbprint" xml:space="preserve">
+    <value>Thumbprint</value>
+  </data>
+  <data name="PluginSignature_ValidFrom" xml:space="preserve">
+    <value>Valid from</value>
+  </data>
+  <data name="PluginSignature_ValidTo" xml:space="preserve">
+    <value>Valid to</value>
+  </data>
+  <data name="PluginSignature_SignatureAlgorithm" xml:space="preserve">
+    <value>Signature algorithm</value>
+  </data>
+  <data name="PluginSignature_PublicKey" xml:space="preserve">
+    <value>Public key algorithm</value>
+  </data>
+  <data name="PluginSignature_TrustStatus" xml:space="preserve">
+    <value>Trust status</value>
+  </data>
+  <data name="PluginSignature_TrustValid" xml:space="preserve">
+    <value>Signature is valid and trusted.</value>
+  </data>
+  <data name="PluginSignature_TrustNotSigned" xml:space="preserve">
+    <value>The file has no digital signature.</value>
+  </data>
+  <data name="PluginSignature_TrustBadDigest" xml:space="preserve">
+    <value>Signature verification failed: the file may have been modified.</value>
+  </data>
+  <data name="PluginSignature_TrustSubjectNotTrusted" xml:space="preserve">
+    <value>The signing identity is not trusted.</value>
+  </data>
+  <data name="PluginSignature_TrustExpired" xml:space="preserve">
+    <value>The signing certificate has expired.</value>
+  </data>
+  <data name="PluginSignature_TrustRevoked" xml:space="preserve">
+    <value>The signing certificate has been revoked.</value>
+  </data>
+  <data name="PluginSignature_TrustUntrustedRoot" xml:space="preserve">
+    <value>Signature is not trusted: the certificate chain or root certificate is not trusted.</value>
+  </data>
+  <data name="PluginSignature_TrustWrongUsage" xml:space="preserve">
+    <value>The certificate usage does not match code signing.</value>
+  </data>
+  <data name="PluginSignature_TrustUnknown" xml:space="preserve">
+    <value>Unknown status (0x{0})</value>
+  </data>
+  <data name="Plugin_StopSwitchBtn" xml:space="preserve">
+    <value>Stop</value>
+  </data>
+  <data name="Plugin_StopRequested" xml:space="preserve">
+    <value>Stopping...</value>
+  </data>
+  <data name="Plugin_SwitchStopped_Title" xml:space="preserve">
+    <value>Stopped</value>
+  </data>
+  <data name="Plugin_SwitchStopped_Content" xml:space="preserve">
+    <value>The switch was stopped and nothing was changed.</value>
+  </data>
+  <data name="DailyNote_NoIdentityService" xml:space="preserve">
+    <value>The account identity service is unavailable, so daily note data cannot be read.</value>
+  </data>
+  <data name="PluginStoreAccessDenied" xml:space="preserve">
+    <value>Access denied.</value>
+  </data>
+  <data name="PluginStoreCancelling" xml:space="preserve">
+    <value>Cancelling...</value>
+  </data>
+  <data name="PluginStoreCaptchaCancelled" xml:space="preserve">
+    <value>Captcha verification was cancelled.</value>
+  </data>
+  <data name="PluginStoreCaptchaFailed" xml:space="preserve">
+    <value>Captcha verification failed.</value>
+  </data>
+  <data name="PluginStoreCaptchaRequired" xml:space="preserve">
+    <value>Captcha verification is required.</value>
+  </data>
+  <data name="PluginStoreCaptchaRetryExhausted" xml:space="preserve">
+    <value>Captcha retry limit reached. Please try again later.</value>
+  </data>
+  <data name="PluginStoreExtracting" xml:space="preserve">
+    <value>Extracting...</value>
+  </data>
+  <data name="PluginStoreHttpError" xml:space="preserve">
+    <value>Request failed (HTTP {0}): {1}</value>
+  </data>
+  <data name="PluginStorePrivateAccessCancelled" xml:space="preserve">
+    <value>Private plugin access verification was cancelled.</value>
+  </data>
+  <data name="PluginStorePrivateAccessDenied" xml:space="preserve">
+    <value>Private plugin access was denied.</value>
+  </data>
+  <data name="PluginStorePrivateAccessRequired" xml:space="preserve">
+    <value>Private plugin access authorization is required.</value>
+  </data>
+  <data name="PluginStoreRetrying" xml:space="preserve">
+    <value>Retrying...</value>
+  </data>
+  <data name="PluginStoreWritingConfig" xml:space="preserve">
+    <value>Writing configuration...</value>
+  </data>
+  <data name="EnableCaptchaNotice" xml:space="preserve">
+    <value>Mostrar aviso en la ventana de captcha</value>
+  </data>
+  <data name="EnableCaptchaNoticeCaption" xml:space="preserve">
+    <value>Muestra un aviso en la ventana de captcha del control de riesgos indicando su origen. Desactivarlo solo oculta el texto; la verificación sigue funcionando.</value>
+  </data>
+  <data name="CaptchaNoticeWatermark" xml:space="preserve">
+    <value>MIYOUSHE · NOTAS · CAPTCHA</value>
+  </data>
+  <data name="CaptchaNoticeTitle" xml:space="preserve">
+    <value>Esta verificación proviene de las notas de Miyoushe</value>
+  </data>
+  <data name="CaptchaNoticeLine1" xml:space="preserve">
+    <value>Esta ventana la activa el control de riesgos de miHoYo y solo se usa para consultar las «notas». No es el captcha del launcher.</value>
+  </data>
+  <data name="CaptchaNoticeLine2" xml:space="preserve">
+    <value>Al completar la verificación podrás ver tus notas. Para ocultar este aviso, desactívalo en «Ajustes → Opciones avanzadas».</value>
+  </data>
+  <data name="DeviceInfo_Title" xml:space="preserve">
+    <value>Información del dispositivo de Miyoushe</value>
+  </data>
+  <data name="DeviceInfo_Caption" xml:space="preserve">
+    <value>Consulta y edita la huella, los identificadores y el perfil del dispositivo de la cuenta seleccionada</value>
+  </data>
+  <data name="DeviceInfo_Account" xml:space="preserve">
+    <value>Cuenta</value>
+  </data>
+  <data name="DeviceInfo_FingerprintSection" xml:space="preserve">
+    <value>Huella del dispositivo</value>
+  </data>
+  <data name="DeviceInfo_FingerprintCaption" xml:space="preserve">
+    <value>Identificadores usados para la autenticación de la API de Miyoushe. Los cambios se aplican a esta cuenta al guardar.</value>
+  </data>
+  <data name="DeviceInfo_ExtSection" xml:space="preserve">
+    <value>Perfil del dispositivo (ext_fields)</value>
+  </data>
+  <data name="DeviceInfo_ExtCaption" xml:space="preserve">
+    <value>Características enviadas junto con la huella. Cada campo se puede editar por separado.</value>
+  </data>
+  <data name="DeviceInfo_Randomize" xml:space="preserve">
+    <value>Generar identificadores</value>
+  </data>
+  <data name="DeviceInfo_Reload" xml:space="preserve">
+    <value>Recargar</value>
+  </data>
+  <data name="DeviceInfo_RestoreDefaults" xml:space="preserve">
+    <value>Restaurar valores predeterminados</value>
+  </data>
+  <data name="DeviceInfo_Save" xml:space="preserve">
+    <value>Guardar</value>
+  </data>
+  <data name="DeviceInfo_FilterPlaceholder" xml:space="preserve">
+    <value>Filtrar campos</value>
+  </data>
+  <data name="DeviceInfo_NoAccount" xml:space="preserve">
+    <value>No hay ninguna cuenta disponible</value>
+  </data>
+  <data name="DeviceInfo_NoFingerprint" xml:space="preserve">
+    <value>Esta cuenta aún no tiene huella de dispositivo. Inicia sesión y carga los datos una vez para poder editarla.</value>
+  </data>
+  <data name="DeviceInfo_Saved" xml:space="preserve">
+    <value>Guardado</value>
+  </data>
+  <data name="DeviceInfo_SaveFailed" xml:space="preserve">
+    <value>Error al guardar</value>
+  </data>
+  <data name="DeviceInfo_InvalidJson" xml:space="preserve">
+    <value>ext_fields no es un JSON válido</value>
+  </data>
+  <data name="DeviceInfo_Randomized" xml:space="preserve">
+    <value>Identificadores aleatorios generados. Guarda para aplicar.</value>
+  </data>
+  <data name="DeviceInfo_DefaultsRestored" xml:space="preserve">
+    <value>Perfil de dispositivo predeterminado restaurado. Guarda para aplicar.</value>
+  </data>
+  <data name="DeviceInfo_DeviceIdRequired" xml:space="preserve">
+    <value>device_id no puede estar vacío</value>
+  </data>
+  <data name="DeviceInfo_ResetToDefaults" xml:space="preserve">
+    <value>Restablecer</value>
+  </data>
+  <data name="DeviceInfo_Resetting" xml:space="preserve">
+    <value>Restableciendo la configuración predeterminada...</value>
+  </data>
+  <data name="DeviceInfo_ResetDone" xml:space="preserve">
+    <value>Configuración predeterminada restablecida</value>
+  </data>
+  <data name="DeviceInfo_ResetFailed" xml:space="preserve">
+    <value>Error al restablecer. Comprueba la red e inténtalo de nuevo.</value>
+  </data>
+  <data name="SectionStartup" xml:space="preserve">
+    <value>Inicio</value>
+  </data>
+  <data name="RunAtStartupTitle" xml:space="preserve">
+    <value>Iniciar al arrancar</value>
+  </data>
+  <data name="RunAtStartupCaption" xml:space="preserve">
+    <value>Iniciar FufuLauncher automáticamente al iniciar sesión en Windows</value>
+  </data>
+  <data name="RunAtStartupFailedTitle" xml:space="preserve">
+    <value>No se pudo activar el inicio automático</value>
+  </data>
+  <data name="RunAtStartupFailedMessage" xml:space="preserve">
+    <value>No se pudo escribir la entrada de inicio. Comprueba los permisos del sistema o la configuración del software de seguridad.</value>
+  </data>
+  <data name="PluginDllConflict_Title" xml:space="preserve">
+    <value>Conflicto de DLL de plugin</value>
+  </data>
+  <data name="PluginDllConflict_Message" xml:space="preserve">
+    <value>Encontramos DLL con el mismo nombre en varios plugins, por lo que se detuvo la inyección. Si continúa, podría cargarse una versión antigua del plugin y el juego o los plugins podrían dejar de funcionar correctamente.</value>
+  </data>
+  <data name="PluginDllConflict_DllNameFormat" xml:space="preserve">
+    <value>Nombre de la DLL: {0}</value>
+  </data>
+  <data name="PluginDllConflict_NewestBadge" xml:space="preserve">
+    <value>Más reciente</value>
+  </data>
+  <data name="PluginDllConflict_OlderBadge" xml:space="preserve">
+    <value>Antigua</value>
+  </data>
+  <data name="PluginDllConflict_LocateBtn" xml:space="preserve">
+    <value>Ubicar archivo</value>
+  </data>
+  <data name="PluginDllConflict_Hint" xml:space="preserve">
+    <value>Conserva solo el plugin más reciente y elimina o cambia el nombre de las DLL duplicadas de los demás plugins. Si no sabes cuál conservar, elimina todos los plugins y vuelve a instalarlos.</value>
+  </data>
+  <data name="PluginConflictCheckTitle" xml:space="preserve">
+    <value>Comprobación de conflictos de plugins</value>
+  </data>
+  <data name="PluginConflictCheckCaption" xml:space="preserve">
+    <value>Revisa si hay DLL de plugin con el mismo nombre antes de la inyección y la detiene para que resuelvas el conflicto</value>
+  </data>
+  <data name="PluginConflictMainOnlyTitle" xml:space="preserve">
+    <value>Solo el plugin principal</value>
+  </data>
+  <data name="PluginConflictMainOnlyCaption" xml:space="preserve">
+    <value>Solo revisa FufuLauncher.UnlockerIsland.dll; desactívalo para revisar todas las DLL de plugin</value>
+  </data>
+  <data name="PluginDllConflict_DeleteBtn" xml:space="preserve">
+    <value>Eliminar</value>
+  </data>
+  <data name="PluginDllConflict_ConfirmDeleteBtn" xml:space="preserve">
+    <value>Confirmar eliminación</value>
+  </data>
+  <data name="PluginDllConflict_DeleteConfirm" xml:space="preserve">
+    <value>Se eliminarán la DLL y el config.ini de la misma carpeta. Esta acción no se puede deshacer. ¿Continuar?</value>
+  </data>
+  <data name="PluginDllConflict_DeleteFailedFormat" xml:space="preserve">
+    <value>Error al eliminar: {0}</value>
+  </data>
+  <data name="PluginDllConflict_Resolved" xml:space="preserve">
+    <value>El conflicto de DLL duplicadas se ha resuelto. Ya puedes reiniciar el juego.</value>
+  </data>
+  <data name="PluginConfigPage_AutoSaveHint" xml:space="preserve"><value>Los cambios se guardan automáticamente</value></data>
+  <data name="PluginConfigPage_Saving" xml:space="preserve"><value>Guardando…</value></data>
+  <data name="PluginConfigPage_SaveFailed" xml:space="preserve"><value>No se pudo guardar la configuración</value></data>
+  <data name="PluginConfigPage_SaveFailedMessage" xml:space="preserve"><value>No se pudo escribir el archivo de configuración. Revisa los permisos del archivo e inténtalo de nuevo. Detalles: {0}</value></data>
+  <data name="PluginConfigPage_LoadFailed" xml:space="preserve"><value>No se pudo cargar la configuración</value></data>
+  <data name="PluginConfigPage_LoadFailedMessage" xml:space="preserve"><value>No se pudo leer el archivo de configuración del complemento. Detalles: {0}</value></data>
+  <data name="PluginConfigPage_LoadFailedHint" xml:space="preserve"><value>Verifica que el archivo de configuración exista y se pueda leer, y vuelve a cargarlo.</value></data>
+  <data name="PluginConfigPage_MissingFile" xml:space="preserve"><value>El archivo de configuración no existe: {0}</value></data>
+  <data name="PluginConfigPage_NoOptions" xml:space="preserve"><value>No hay ajustes configurables</value></data>
+  <data name="PluginConfigPage_NoOptionsHint" xml:space="preserve"><value>Este complemento no ofrece ajustes modificables.</value></data>
+  <data name="PluginConfigPage_NoResults" xml:space="preserve"><value>No hay ajustes coincidentes</value></data>
+  <data name="PluginConfigPage_NoResultsHint" xml:space="preserve"><value>Prueba otra palabra clave o borra la búsqueda.</value></data>
+  <data name="PluginConfigPage_ClearSearch" xml:space="preserve"><value>Borrar búsqueda</value></data>
+  <data name="PluginConfigPage_OptionCount" xml:space="preserve"><value>{0} ajustes</value></data>
+  <data name="PluginConfigPage_FilteredOptionCount" xml:space="preserve"><value>{0} / {1} ajustes</value></data>
+  <data name="PluginConfigPage_ConfigFile" xml:space="preserve"><value>Archivo de configuración</value></data>
+  <data name="PluginConfigPage_ValuePlaceholder" xml:space="preserve"><value>Ingresa un valor…</value></data>
 </root>

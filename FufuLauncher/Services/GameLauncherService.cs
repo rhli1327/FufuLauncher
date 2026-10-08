@@ -1,7 +1,8 @@
-﻿/*
+/*
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
+
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -21,14 +22,33 @@ namespace FufuLauncher.Services
     {
         public bool Success
         {
-            get; set;
+            get;
+            set;
         }
+
         public bool Cancelled
         {
-            get; set;
+            get;
+            set;
         }
-        public string ErrorMessage { get; set; } = string.Empty;
-        public string DetailLog { get; set; } = string.Empty;
+
+        public string ErrorMessage
+        {
+            get;
+            set;
+        } = string.Empty;
+
+        public string DetailLog
+        {
+            get;
+            set;
+        } = string.Empty;
+
+        public IReadOnlyList<PluginDllConflict> PluginDllConflicts
+        {
+            get;
+            set;
+        } = Array.Empty<PluginDllConflict>();
     }
 
     public class GameLauncherService : IGameLauncherService
@@ -44,10 +64,13 @@ namespace FufuLauncher.Services
         private const string UsingHoyolabAccountKey = "UsingHoyolabAccount";
         public const string GenshinHDRConfigKey = "IsGenshinHDRForcedEnabled";
         private readonly IPluginUpdateService _pluginUpdateService;
+        private readonly LightweightPluginService _lightweightPluginService;
+        private readonly ConstraintService _constraintService;
         private readonly IScreenshotService _screenshotService;
         private readonly IAuthTicketService _authTicketService;
         private readonly AccountManager _accountManager;
         private readonly GameRegistrySnapshot _registrySnapshot = new();
+        private readonly CodeSigning.ModTrustGate _modTrustGate;
 
         private bool _lastUseInjection;
 
@@ -60,7 +83,10 @@ namespace FufuLauncher.Services
             IScreenshotService screenshotService,
             IAuthTicketService authTicketService,
             AccountManager accountManager,
-            GameServerConfigurationService gameServerConfigurationService)
+            GameServerConfigurationService gameServerConfigurationService,
+            LightweightPluginService lightweightPluginService,
+            ConstraintService constraintService,
+            CodeSigning.ModTrustGate modTrustGate)
         {
             _localSettingsService = localSettingsService;
             _gameConfigService = gameConfigService;
@@ -70,6 +96,9 @@ namespace FufuLauncher.Services
             _authTicketService = authTicketService;
             _accountManager = accountManager;
             _gameServerConfigurationService = gameServerConfigurationService;
+            _lightweightPluginService = lightweightPluginService;
+            _constraintService = constraintService;
+            _modTrustGate = modTrustGate;
         }
 
         [DllImport("user32.dll")]
@@ -209,6 +238,7 @@ namespace FufuLauncher.Services
                     Trace.WriteLine("[启动流程] 等待游戏进程期间用户取消启动");
                     return 0;
                 }
+
                 elapsedMs += delayMs;
                 
                 var processes = Process.GetProcesses();
@@ -225,6 +255,7 @@ namespace FufuLauncher.Services
                             Trace.WriteLine("[启动流程] 等待游戏进程期间用户取消启动");
                             return 0;
                         }
+
                         return process.Id;
                     }
                 }
@@ -236,7 +267,8 @@ namespace FufuLauncher.Services
 
         public async Task<LaunchResult> LaunchGameAsync(CancellationToken cancellationToken = default)
         {
-            var result = new LaunchResult { Success = false, ErrorMessage = "LaunchErr_UnknownError".GetLocalized(), DetailLog = "" };
+            var result = new LaunchResult
+                { Success = false, ErrorMessage = "LaunchErr_UnknownError".GetLocalized(), DetailLog = "" };
             var logBuilder = new StringBuilder();
             string gamePath = null;
             List<string> processNames = null;
@@ -262,7 +294,8 @@ namespace FufuLauncher.Services
 
                 if (foundExes.Count == 0)
                 {
-                    result.ErrorMessage = string.Format("LaunchErr_ExeNotFound".GetLocalized(), string.Join("\n", exeNames));
+                    result.ErrorMessage =
+                        string.Format("LaunchErr_ExeNotFound".GetLocalized(), string.Join("\n", exeNames));
                     logBuilder.AppendLine($"[启动流程] 错误: {result.ErrorMessage}");
                     result.DetailLog = logBuilder.ToString();
                     return result;
@@ -312,12 +345,16 @@ namespace FufuLauncher.Services
                             if (File.Exists(configIniPath))
                             {
                                 var configContent = await File.ReadAllTextAsync(configIniPath);
-                                isBilibili = configContent.Contains("channel=14") || configContent.Contains("cps=bilibili");
+                                isBilibili = configContent.Contains("channel=14") ||
+                                             configContent.Contains("cps=bilibili");
                             }
                         }
-                        catch { }
+                        catch
+                        {
+                        }
                         
-                        bool isGameOversea = _gameServerConfigurationService.TryDetectCurrentScheme(gamePath)?.IsOversea == true;
+                        bool isGameOversea =
+                            _gameServerConfigurationService.TryDetectCurrentScheme(gamePath)?.IsOversea == true;
                         
                         if (isBilibili)
                         {
@@ -377,8 +414,31 @@ namespace FufuLauncher.Services
                 var arguments = BuildLaunchArguments(config, authTicket).ToString();
                 logBuilder.AppendLine($"[启动流程] 启动参数: {arguments}");
 
+                _constraintService.TriggerBackgroundRefresh();
+
+                if (_constraintService.IsRestricted)
+                {
+                    LightweightPluginService.DisableMainPluginIfPresent();
+                    logBuilder.AppendLine("[启动流程] 策略限制生效，已静默禁用主插件");
+                }
+
+                if (_lightweightPluginService.EnforceModeAtLaunch(_lightweightPluginService.IsLightweightMode))
+                {
+                    logBuilder.AppendLine("[启动流程] 已按当前模式同步主插件/轻量插件启用状态");
+                }
+
                 var useInjection = await GetUseInjectionAsync();
                 logBuilder.AppendLine($"[启动流程] 注入模式: {(useInjection ? "启用" : "禁用")}");
+
+                if (useInjection)
+                {
+                    var conflictResult = BlockInjectionForPluginDllConflicts(logBuilder);
+                    if (conflictResult != null)
+                    {
+                        Debug.WriteLine(conflictResult.DetailLog);
+                        return conflictResult;
+                    }
+                }
 
                 if (cancellationToken.IsCancellationRequested)
                 {
@@ -406,29 +466,14 @@ namespace FufuLauncher.Services
 
                     logBuilder.AppendLine($"[启动流程] 配置掩码: {configMask}");
 
-                    string? targetDllPath = null;
-                    var defaultDllPath = _launcherService.GetDefaultDllPath();
+                        var candidate = _lightweightPluginService.IsLightweightMode
+                            ? LauncherService.GetBundledLitePluginDllPath()
+                            : _launcherService.GetDefaultDllPath();
+                        string? targetDllPath = LauncherService.IsAllowedPluginDllPath(candidate) ? candidate : null;
+                        logBuilder.AppendLine(targetDllPath == null
+                            ? "[启动流程] 插件缺失或完整性校验失败，拒绝注入"
+                            : $"[启动流程] 插件已通过路径和完整性校验: {targetDllPath}");
 
-                    if (LauncherService.IsAllowedPluginDllPath(defaultDllPath))
-                    {
-                        targetDllPath = defaultDllPath;
-                        logBuilder.AppendLine($"[启动流程] 默认主插件已通过路径和 SHA-256 校验: {targetDllPath}");
-                    }
-                    else
-                    {
-                        var knownPluginPath = Path.Combine(
-                            AppContext.BaseDirectory, "Plugins", "FuFuPlugin", "FufuLauncher.UnlockerIsland.dll");
-                        if (LauncherService.IsAllowedPluginDllPath(knownPluginPath))
-                        {
-                            targetDllPath = knownPluginPath;
-                            logBuilder.AppendLine($"[启动流程] 固定主插件已通过 SHA-256 校验: {targetDllPath}");
-                        }
-                        else
-                        {
-                            logBuilder.AppendLine("[启动流程] 主插件缺失或校验失败；拒绝扫描并注入其他 DLL");
-                        }
-                    }
-                    
                     if (!string.IsNullOrEmpty(targetDllPath) && File.Exists(targetDllPath))
                     {
                         try
@@ -449,8 +494,64 @@ namespace FufuLauncher.Services
                             logBuilder.AppendLine($"[启动流程] 检查插件大小失败: {ex.Message}");
                         }
 
+                            // 平台代码签名信任闸门：严格模式下拒绝未由平台签发（或已被吊销）的 DLL 注入。
+                            try
+                            {
+                                var trustDecision = _modTrustGate.EvaluateForLoading(targetDllPath);
+                                logBuilder.AppendLine(
+                                    $"[启动流程] 签名信任判定：{trustDecision.Result.Status} - {trustDecision.Reason}");
+
+                                if (!trustDecision.Allowed)
+                                {
+                                    logBuilder.AppendLine("[启动流程] 严格信任模式已拦截该 DLL，取消注入");
+                                    WeakReferenceMessenger.Default.Send(new NotificationMessage(
+                                        "ModTrust_BlockedTitle".GetLocalized(),
+                                        string.Format("ModTrust_BlockedMsg".GetLocalized(), trustDecision.Reason),
+                                        NotificationType.Warning,
+                                        8000));
+
+                                    if (_registrySnapshot.HasSnapshot)
+                                    {
+                                        try
+                                        {
+                                            _registrySnapshot.RestoreSnapshot();
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            logBuilder.AppendLine($"[启动流程] 恢复注册表快照失败: {ex.Message}");
+                                        }
+                                    }
+
+                                    var blockedMessage = string.Format("ModTrust_BlockedMsg".GetLocalized(),
+                                        trustDecision.Reason);
+                                    var blockedResult = new LaunchResult
+                                    {
+                                        Success = false,
+                                        Cancelled = false,
+                                        ErrorMessage = blockedMessage,
+                                        DetailLog = logBuilder.ToString()
+                                    };
+                                    Debug.WriteLine(blockedResult.DetailLog);
+                                    return blockedResult;
+                                }
+
+                                if (trustDecision.ShouldNotify)
+                                {
+                                    WeakReferenceMessenger.Default.Send(new NotificationMessage(
+                                        "ModTrust_WarnTitle".GetLocalized(),
+                                        trustDecision.Reason,
+                                        NotificationType.Warning,
+                                        6000));
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                logBuilder.AppendLine($"[启动流程] 签名信任校验异常（不影响启动）: {ex.Message}");
+                            }
+
                         logBuilder.AppendLine($"[启动流程] 准备注入 DLL: {targetDllPath}");
-                        gameStarted = await LaunchViaElevatedProcessAsync(gameExePath, targetDllPath, configMask, arguments, logBuilder, cancellationToken);
+                            gameStarted = await LaunchViaElevatedProcessAsync(gameExePath, targetDllPath, configMask,
+                                arguments, logBuilder, cancellationToken);
                     }
                     else
                     {
@@ -498,7 +599,9 @@ namespace FufuLauncher.Services
                                     var proc = Process.GetProcessById(gamePid);
                                     await proc.WaitForExitAsync();
                                 }
-                                catch { }
+                                catch
+                                {
+                                }
                                 finally
                                 {
                                     _registrySnapshot.RestoreSnapshot();
@@ -528,6 +631,7 @@ namespace FufuLauncher.Services
                     logBuilder.AppendLine("[启动流程] 用户取消启动，清理已启动的游戏进程...");
                     KillGameProcesses(processNames, gamePath);
                 }
+
                 return BuildCancelledResult(logBuilder);
             }
             catch (Exception ex)
@@ -537,6 +641,49 @@ namespace FufuLauncher.Services
                 Debug.WriteLine(result.DetailLog);
                 return result;
             }
+        }
+
+        private LaunchResult? BlockInjectionForPluginDllConflicts(StringBuilder logBuilder)
+        {
+            foreach (var quarantined in PluginInjectionGuard.QuarantineRootStrayFiles())
+            {
+                logBuilder.AppendLine($"[启动流程] 已重命名插件根目录残留文件: {Path.GetFileName(quarantined)}");
+            }
+
+            var conflicts = PluginInjectionGuard.FindDuplicateDllNames(PluginConflictSettings.Read());
+            if (conflicts.Count == 0) return null;
+
+            logBuilder.AppendLine($"[启动流程] 发现 {conflicts.Count} 组同名插件 DLL，注入已终止");
+            foreach (var conflict in conflicts)
+            {
+                logBuilder.AppendLine($"[启动流程]   {conflict.DllName}");
+                foreach (var candidate in conflict.Candidates)
+                {
+                    logBuilder.AppendLine(
+                        $"[启动流程]     {candidate.FilePath} ({candidate.LastWriteTime:yyyy-MM-dd HH:mm:ss})");
+                }
+            }
+
+            if (_registrySnapshot.HasSnapshot)
+            {
+                try
+                {
+                    _registrySnapshot.RestoreSnapshot();
+                    logBuilder.AppendLine("[启动流程] 已恢复注册表快照");
+                }
+                catch (Exception ex)
+                {
+                    logBuilder.AppendLine($"[启动流程] 恢复注册表快照失败: {ex.Message}");
+                }
+            }
+
+            return new LaunchResult
+            {
+                Success = false,
+                ErrorMessage = "PluginDllConflict_Message".GetLocalized(),
+                DetailLog = logBuilder.ToString(),
+                PluginDllConflicts = conflicts
+            };
         }
 
         private LaunchResult BuildCancelledResult(StringBuilder logBuilder)
@@ -598,7 +745,10 @@ namespace FufuLauncher.Services
                             {
                                 // ignored
                             }
-                            catch (InvalidOperationException) { continue; }
+                            catch (InvalidOperationException)
+                            {
+                                continue;
+                            }
                         }
 
                         process.Kill();
@@ -770,7 +920,8 @@ namespace FufuLauncher.Services
             }
         }
 
-        private async Task<bool> LaunchViaElevatedProcessAsync(string gameExePath, string dllPath, int configMask, string arguments, StringBuilder log, CancellationToken cancellationToken)
+        private async Task<bool> LaunchViaElevatedProcessAsync(string gameExePath, string dllPath, int configMask,
+            string arguments, StringBuilder log, CancellationToken cancellationToken)
         {
             try
             {
@@ -817,6 +968,7 @@ namespace FufuLauncher.Services
                     {
                         log.AppendLine($"[启动流程] 终止管理员注入进程失败: {killEx.Message}");
                     }
+
                     return false;
                 }
 
@@ -846,7 +998,8 @@ namespace FufuLauncher.Services
         {
             if (string.IsNullOrEmpty(argument)) return "\"\"";
             if (!forceQuotes &&
-                !argument.Contains(' ') && !argument.Contains('\t') && !argument.Contains('\n') && !argument.Contains('\v') && !argument.Contains('\"'))
+                !argument.Contains(' ') && !argument.Contains('\t') && !argument.Contains('\n') &&
+                !argument.Contains('\v') && !argument.Contains('\"'))
             {
                 return argument;
             }
@@ -936,7 +1089,9 @@ namespace FufuLauncher.Services
                 if (enabled != null && Convert.ToBoolean(enabled))
                 {
                     var delaySetting = await _localSettingsService.ReadSettingAsync("BetterGIStartupDelaySeconds");
-                    var delaySeconds = delaySetting != null ? Math.Clamp(Convert.ToDouble(delaySetting), 0.0, 60.0) : 0.0;
+                    var delaySeconds = delaySetting != null
+                        ? Math.Clamp(Convert.ToDouble(delaySetting), 0.0, 60.0)
+                        : 0.0;
 
                     Debug.WriteLine($"[BetterGI] 配置已启用，将在 {delaySeconds:0.#} 秒后通过URL Scheme启动 bettergi://start");
 
@@ -982,7 +1137,8 @@ namespace FufuLauncher.Services
             {
                 var enabled = await _localSettingsService.ReadSettingAsync("IsBetterGIIntegrationEnabled");
                 var closeOnExit = await _localSettingsService.ReadSettingAsync("IsBetterGICloseOnExitEnabled");
-                if (enabled == null || !Convert.ToBoolean(enabled) || closeOnExit == null || !Convert.ToBoolean(closeOnExit)) return;
+                if (enabled == null || !Convert.ToBoolean(enabled) || closeOnExit == null ||
+                    !Convert.ToBoolean(closeOnExit)) return;
 
                 var processes = Process.GetProcessesByName("BetterGI");
                 if (processes.Length > 0)
@@ -1000,6 +1156,7 @@ namespace FufuLauncher.Services
                             Debug.WriteLine($"[BetterGI] 终止进程失败: {ex.Message}");
                         }
                     }
+
                     return;
                 }
 

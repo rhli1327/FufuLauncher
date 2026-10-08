@@ -2,6 +2,7 @@
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
+
 using FufuLauncher.Activation;
 using FufuLauncher.Contracts.Services;
 using FufuLauncher.Data.Repositories;
@@ -84,8 +85,7 @@ public partial class App
                 services.AddSingleton<ICloudGameCheckinService, CloudGameCheckinService>();
                 services.AddSingleton<IHoyolabRoleResolverService, HoyolabRoleResolverService>();
                 services.AddSingleton<IUnifiedCheckinService, UnifiedCheckinService>();
-                services.AddSingleton<DailyNoteCardService>();
-                services.AddSingleton<IDeviceFingerprintService, Services.MiHoYo.DeviceFingerprintService>();
+                services.AddSingleton<Services.MiHoYo.DailyNote.DailyNoteCardService>();
                 services.AddSingleton<BlankViewModel>();
                 services.AddTransient<BlankPage>();
                 services.AddSingleton<ILauncherService, LauncherService>();
@@ -103,8 +103,12 @@ public partial class App
                 services.AddTransient<PanelPage>();
                 services.AddSingleton<IUserInfoService, UserInfoService>();
                 services.AddSingleton<IUidLookupService, Services.UID.UidLookupService>();
+                services.AddSingleton<Services.UID.BanCheckService>();
 
                 services.AddSingleton<AccountManager>();
+                services.AddSingleton<GameRoleService>();
+                services.AddSingleton<Services.Device.MobileDeviceService>();
+                services.AddSingleton<Services.MiHoYo.MiHoYoDeviceStore>();
                 services.AddSingleton<Services.MiHoYo.Fingerprint.DeviceFpService>();
                 services.AddSingleton<Services.MiHoYo.AccountIdentityService>();
                 services.AddSingleton<IBbsRequestBuilder, Services.MiHoYo.Transport.BbsRequestBuilder>();
@@ -140,6 +144,8 @@ public partial class App
                 services.AddTransient<IPluginUpdateService, PluginUpdateService>();
                 services.AddTransient<GachaAnalysisModel>();
                 services.AddSingleton<PluginStoreService>();
+                services.AddSingleton<LightweightPluginService>();
+                services.AddSingleton<ConstraintService>();
                 services.AddSingleton<LuaPluginInstaller>();
                 services.AddSingleton<Services.PluginMirror.MirrorSiteProvider>();
                 services.AddSingleton<Services.PluginMirror.PluginMirrorDownloadService>();
@@ -156,8 +162,11 @@ public partial class App
                 services.AddSingleton<Services.GameServer.GameUpdateService>();
 
                 services.AddSingleton<DeveloperAuthorizationService>();
+                services.AddSingleton<Services.CodeSigning.CodeSigningTrustService>();
+                services.AddSingleton<Services.CodeSigning.ModTrustGate>();
 
-                services.Configure<LocalSettingsOptions>(context.Configuration.GetSection(nameof(LocalSettingsOptions)));
+                services.Configure<LocalSettingsOptions>(
+                    context.Configuration.GetSection(nameof(LocalSettingsOptions)));
             })
             .Build();
     }

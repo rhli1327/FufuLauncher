@@ -2,6 +2,7 @@
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
+
 using FufuLauncher.ViewModels;
 using Microsoft.UI.Xaml;
 
@@ -13,6 +14,7 @@ public sealed partial class GenshinDataWindow : WindowEx
     {
         get;
     }
+
     private bool _isFirstActivation = true;
 
     public GenshinDataWindow()
@@ -27,6 +29,7 @@ public sealed partial class GenshinDataWindow : WindowEx
         this.CenterOnScreen();
 
         this.Activated += GenshinDataWindow_Activated;
+        Closed += (_, _) => ViewModel.Dispose();
     }
 
     private async void GenshinDataWindow_Activated(object sender, WindowActivatedEventArgs args)

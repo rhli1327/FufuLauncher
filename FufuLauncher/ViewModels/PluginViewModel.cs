@@ -2,6 +2,7 @@
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
+
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -9,6 +10,9 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
+using FufuLauncher.Helpers;
+using FufuLauncher.Messages;
 using FufuLauncher.Models;
 using FufuLauncher.Services;
 using Windows.Storage.Pickers;
@@ -29,7 +33,8 @@ public class PluginViewModel : INotifyPropertyChanged
         get => _plugins;
         set
         {
-            _plugins = value; OnPropertyChanged();
+            _plugins = value;
+            OnPropertyChanged();
         }
     }
 
@@ -38,7 +43,8 @@ public class PluginViewModel : INotifyPropertyChanged
         get => _statusMessage;
         set
         {
-            _statusMessage = value; OnPropertyChanged();
+            _statusMessage = value;
+            OnPropertyChanged();
         }
     }
 
@@ -47,7 +53,8 @@ public class PluginViewModel : INotifyPropertyChanged
         get => _isLoading;
         set
         {
-            _isLoading = value; OnPropertyChanged();
+            _isLoading = value;
+            OnPropertyChanged();
         }
     }
 
@@ -56,7 +63,8 @@ public class PluginViewModel : INotifyPropertyChanged
         get => _isEmpty;
         set
         {
-            _isEmpty = value; OnPropertyChanged();
+            _isEmpty = value;
+            OnPropertyChanged();
         }
     }
 
@@ -64,22 +72,27 @@ public class PluginViewModel : INotifyPropertyChanged
     {
         get;
     }
+
     public ICommand AddPluginCommand
     {
         get;
     }
+
     public ICommand TogglePluginCommand
     {
         get;
     }
+
     public ICommand DeletePluginCommand
     {
         get;
     }
+
     public ICommand SortCommand
     {
         get;
     }
+
     public ICommand OpenFolderCommand
     {
         get;
@@ -150,7 +163,10 @@ public class PluginViewModel : INotifyPropertyChanged
                 }
             }
         }
-        catch { }
+        catch
+        {
+        }
+
         return (name, dev, desc);
     }
 
@@ -165,7 +181,7 @@ public class PluginViewModel : INotifyPropertyChanged
             var rootDir = new DirectoryInfo(_pluginsPath);
             var subDirs = rootDir.GetDirectories();
             var nameConflictTracker = new Dictionary<string, List<string>>();
-            
+
             foreach (var dir in subDirs)
             {
                 var dllFile = dir.GetFiles("*.dll").FirstOrDefault();
@@ -178,11 +194,12 @@ public class PluginViewModel : INotifyPropertyChanged
 
                 var iniFile = dir.GetFiles("config.ini").FirstOrDefault()
                               ?? dir.GetFiles("*.ini").FirstOrDefault();
-                
+
                 if (iniFile == null)
                 {
                     string newConfigPath = Path.Combine(dir.FullName, "config.ini");
-                    string configContent = $"[General]\r\nFile = {targetFile.Name}\r\nName = {dir.Name}\r\nDescription = Auto-generated config\r\n";
+                    string configContent =
+                        $"[General]\r\nFile = {targetFile.Name}\r\nName = {dir.Name}\r\nDescription = Auto-generated config\r\n";
                     File.WriteAllText(newConfigPath, configContent, Encoding.UTF8);
                     iniFile = new FileInfo(newConfigPath);
                 }
@@ -198,10 +215,12 @@ public class PluginViewModel : INotifyPropertyChanged
                     if (!string.IsNullOrEmpty(info.Developer)) developer = info.Developer;
                     if (!string.IsNullOrEmpty(info.Description)) description = info.Description;
                 }
+
                 if (!nameConflictTracker.ContainsKey(displayName))
                 {
                     nameConflictTracker[displayName] = new List<string>();
                 }
+
                 nameConflictTracker[displayName].Add(dir.Name);
 
                 Plugins.Add(new PluginItem
@@ -218,6 +237,7 @@ public class PluginViewModel : INotifyPropertyChanged
                     DateModified = targetFile.LastWriteTime
                 });
             }
+
             StatusMessage = $"加载完成，共 {Plugins.Count} 个插件";
             CheckForDuplicates(nameConflictTracker);
         }
@@ -240,20 +260,23 @@ public class PluginViewModel : INotifyPropertyChanged
         if (duplicates.Any())
         {
             StringBuilder sb = new();
-            sb.AppendLine("检测到以下重复插件：\n");
+            sb.AppendLine("PluginPage_DuplicateDetectedHeader".GetLocalized());
+            sb.AppendLine();
 
             foreach (var item in duplicates)
             {
-                sb.AppendLine($"插件名称：{item.Key}");
-                sb.AppendLine($"   冲突文件夹：");
+                sb.AppendLine(string.Format("PluginPage_DuplicatePluginNameFormat".GetLocalized(), item.Key));
+                sb.AppendLine("PluginPage_DuplicateConflictsHeader".GetLocalized());
                 foreach (var folder in item.Value)
                 {
-                    sb.AppendLine($"    - {folder}");
+                    sb.AppendLine(string.Format("PluginPage_DuplicateFolderItemFormat".GetLocalized(), folder));
                 }
+
                 sb.AppendLine();
             }
-            sb.AppendLine("建议手动删除旧版本插件");
-            
+
+            sb.AppendLine("PluginPage_DuplicateHint".GetLocalized());
+
             DuplicateDetected?.Invoke(this, sb.ToString());
         }
     }
@@ -275,6 +298,15 @@ public class PluginViewModel : INotifyPropertyChanged
                 var folderName = Path.GetFileNameWithoutExtension(fileName);
                 var destFolderPath = Path.Combine(_pluginsPath, folderName);
 
+                var blockReason = App.GetService<LightweightPluginService>()
+                    .GetInstallBlockReason(folderName, fileName);
+                if (blockReason != null)
+                {
+                    StatusMessage = blockReason;
+                    NotifyPluginOperationBlocked(blockReason);
+                    return;
+                }
+
                 if (!Directory.Exists(destFolderPath))
                 {
                     Directory.CreateDirectory(destFolderPath);
@@ -282,11 +314,12 @@ public class PluginViewModel : INotifyPropertyChanged
 
                 var destPath = Path.Combine(destFolderPath, fileName);
                 File.Copy(path, destPath, true);
-                
+
                 var configPath = Path.Combine(destFolderPath, "config.ini");
                 if (!File.Exists(configPath))
                 {
-                    string configContent = $"[General]\r\nFile = {fileName}\r\nName = {folderName}\r\nDescription = Auto-generated config\r\n";
+                    string configContent =
+                        $"[General]\r\nFile = {fileName}\r\nName = {folderName}\r\nDescription = Auto-generated config\r\n";
                     File.WriteAllText(configPath, configContent, Encoding.UTF8);
                 }
 
@@ -304,9 +337,36 @@ public class PluginViewModel : INotifyPropertyChanged
     {
         if (item == null || !File.Exists(item.FullPath)) return;
 
+        bool enabling = item.FullPath.EndsWith(".disabled", StringComparison.OrdinalIgnoreCase);
+
+        if (enabling)
+        {
+            var constraint = App.GetService<ConstraintService>();
+            if (constraint.IsRestricted &&
+                LightweightPluginService.IsMainPluginPackage(Path.GetFileName(item.DirectoryPath),
+                    Path.GetFileName(item.FullPath)))
+            {
+                StatusMessage = constraint.BlockMessage;
+                NotifyPluginOperationBlocked(constraint.BlockMessage);
+                item.RefreshState();
+                return;
+            }
+
+            var blockReason = App.GetService<LightweightPluginService>()
+                .GetInstallBlockReason(null, Path.GetFileName(item.FullPath));
+            if (blockReason != null)
+            {
+                StatusMessage = blockReason;
+                NotifyPluginOperationBlocked(blockReason);
+                item.RefreshState();
+                return;
+            }
+        }
+
+        string newPath = string.Empty;
+
         try
         {
-            string newPath;
             bool targetState;
 
             if (item.FullPath.EndsWith(".disabled", StringComparison.OrdinalIgnoreCase))
@@ -321,6 +381,7 @@ public class PluginViewModel : INotifyPropertyChanged
                     StatusMessage = "无法识别的文件类型";
                     return;
                 }
+
                 newPath = item.FullPath + ".disabled";
                 targetState = false;
             }
@@ -341,14 +402,53 @@ public class PluginViewModel : INotifyPropertyChanged
         }
         catch (Exception ex)
         {
+            var lockedFile = FileLockHelper.FindLockedFile(item.FullPath, newPath);
+            if (lockedFile != null)
+            {
+                StatusMessage = FileLockHelper.GetLockedFileMessage(lockedFile);
+                NotifyPluginLockedFile(lockedFile);
+                item.RefreshState();
+                return;
+            }
+
             StatusMessage = $"切换状态失败: {ex.Message}";
             item.RefreshState();
         }
     }
 
+    private static void NotifyPluginLockedFile(string lockedFilePath)
+    {
+        WeakReferenceMessenger.Default.Send(new NotificationMessage(
+            FileLockHelper.GetLockedFileTitle(),
+            FileLockHelper.GetLockedFileMessage(lockedFilePath),
+            NotificationType.Error,
+            8000));
+    }
+
+    private static void NotifyPluginOperationBlocked(string message)
+    {
+        WeakReferenceMessenger.Default.Send(new NotificationMessage(
+            "AdminWarningTitle".GetLocalized(),
+            message,
+            NotificationType.Warning,
+            5000));
+    }
+
     private void DeletePlugin(PluginItem? item)
     {
         if (item == null) return;
+
+        if (Directory.Exists(item.DirectoryPath))
+        {
+            var lockedFile = FileLockHelper.FindLockedFileInDirectory(item.DirectoryPath);
+            if (lockedFile != null)
+            {
+                StatusMessage = FileLockHelper.GetLockedFileMessage(lockedFile);
+                NotifyPluginLockedFile(lockedFile);
+                return;
+            }
+        }
+
         try
         {
             if (Directory.Exists(item.DirectoryPath))
@@ -361,6 +461,14 @@ public class PluginViewModel : INotifyPropertyChanged
         }
         catch (Exception ex)
         {
+            var lockedFile = FileLockHelper.FindLockedFileInDirectory(item.DirectoryPath);
+            if (lockedFile != null)
+            {
+                StatusMessage = FileLockHelper.GetLockedFileMessage(lockedFile);
+                NotifyPluginLockedFile(lockedFile);
+                return;
+            }
+
             StatusMessage = $"删除失败: {ex.Message}";
         }
     }
@@ -399,6 +507,14 @@ public class PluginViewModel : INotifyPropertyChanged
         }
         catch (Exception ex)
         {
+            var lockedFile = FileLockHelper.FindLockedFileInDirectory(item.DirectoryPath);
+            if (lockedFile != null)
+            {
+                StatusMessage = FileLockHelper.GetLockedFileMessage(lockedFile);
+                NotifyPluginLockedFile(lockedFile);
+                return;
+            }
+
             StatusMessage = $"重命名失败: {ex.Message}";
         }
     }
@@ -435,10 +551,13 @@ public class PluginViewModel : INotifyPropertyChanged
                 Verb = "open"
             });
         }
-        catch { }
+        catch
+        {
+        }
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
+
     protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));

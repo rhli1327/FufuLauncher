@@ -1,7 +1,8 @@
-﻿/*
+/*
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
+
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Diagnostics;
@@ -15,8 +16,12 @@ namespace FufuLauncher.Services
     {
         bool ValidateGamePath(string gamePath);
         bool ValidateDllPath(string dllPath);
-        int LaunchGameAndInject(string gamePath, string dllPath, string commandLineArgs, out string errorMessage, out int processId);
+
+        int LaunchGameAndInject(string gamePath, string dllPath, string commandLineArgs, out string errorMessage,
+            out int processId);
+
         string GetDefaultDllPath();
+
         void UpdateConfig(string gamePath, bool hideQuestBanner, bool disableDamageText, bool useTouchScreen,
                          bool disableEventCameraMove, bool removeTeamProgress, bool redirectCombineEntry,
                          bool resin106, bool resin201, bool resin107009, bool resin107012, bool resin220007);
@@ -34,8 +39,17 @@ namespace FufuLauncher.Services
     {
         private const string DllName = "Launcher.dll";
         
-        public static bool IsLauncherDllLoaded { get; private set; } = false;
-        public static LauncherDllLoadError DllLoadError { get; private set; } = LauncherDllLoadError.None;
+        public static bool IsLauncherDllLoaded
+        {
+            get;
+            private set;
+        } = false;
+
+        public static LauncherDllLoadError DllLoadError
+        {
+            get;
+            private set;
+        } = LauncherDllLoadError.None;
 
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
         private static extern IntPtr LoadLibrary(string lpFileName);
@@ -114,18 +128,29 @@ namespace FufuLauncher.Services
             }
         }
 
+        public static string GetBundledLitePluginDllPath() =>
+            Path.Combine(AppContext.BaseDirectory, "Plugins", "YuanShen-UnlockerLite", "YuanShen-UnlockerLite.dll");
+
         public static bool IsAllowedPluginDllPath(string? dllPath, bool verifyHash = true)
         {
             if (string.IsNullOrWhiteSpace(dllPath)) return false;
 
             try
             {
+                var litePath = GetBundledLitePluginDllPath();
                 var expectedPath = GetBundledPluginDllPath();
                 var candidatePath = Path.GetFullPath(dllPath);
-                if (!candidatePath.Equals(expectedPath, StringComparison.OrdinalIgnoreCase) || !File.Exists(candidatePath))
+                bool isLite = candidatePath.Equals(litePath, StringComparison.OrdinalIgnoreCase);
+                if ((!isLite && !candidatePath.Equals(expectedPath, StringComparison.OrdinalIgnoreCase)) || !File.Exists(candidatePath))
                     return false;
 
                 if (!verifyHash) return true;
+                if (isLite)
+                {
+                    using var liteStream = File.OpenRead(candidatePath);
+                    return Convert.ToHexString(SHA256.HashData(liteStream))
+                        .Equals(ApiEndpoints.LitePluginDllSha256, StringComparison.OrdinalIgnoreCase);
+                }
 
                 var hashPath = Path.Combine(AppContext.BaseDirectory, "Assets", "Launcher", "hash.txt");
                 var hashLines = File.Exists(hashPath) ? File.ReadAllLines(hashPath) : [];
@@ -192,7 +217,8 @@ namespace FufuLauncher.Services
             return ValidateDllPathInternal(dllPath);
         }
 
-        public int LaunchGameAndInject(string gamePath, string dllPath, string commandLineArgs, out string errorMessage, out int processId)
+        public int LaunchGameAndInject(string gamePath, string dllPath, string commandLineArgs, out string errorMessage,
+            out int processId)
         {
             if (!IsLauncherDllLoaded)
             {
@@ -205,7 +231,8 @@ namespace FufuLauncher.Services
 
             var errorBuffer = new StringBuilder(1024);
 
-            int result = LaunchGameAndInject(gamePath, dllPath ?? "", commandLineArgs ?? "", errorBuffer, errorBuffer.Capacity);
+            int result = LaunchGameAndInject(gamePath, dllPath ?? "", commandLineArgs ?? "", errorBuffer,
+                errorBuffer.Capacity);
 
             errorMessage = errorBuffer.ToString();
 

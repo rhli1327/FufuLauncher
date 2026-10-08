@@ -2,6 +2,7 @@
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
+
 using System.Collections.ObjectModel;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -30,32 +31,33 @@ public partial class HelpViewModel : ObservableObject
     private const string ConfigUrl = "https://fu1.fun/api/docs-config";
     private const string ContentBaseUrl = "https://fu1.fun/api/docs/zh-CN";
 
-    public ObservableCollection<DocCategory> AllCategories { get; } = new();
+    public ObservableCollection<DocCategory> AllCategories
+    {
+        get;
+    } = new();
 
-    public ObservableCollection<DocSearchHit> SearchHits { get; } = new();
-    
+    public ObservableCollection<DocSearchHit> SearchHits
+    {
+        get;
+    } = new();
+
     public readonly Dictionary<DocItem, string> PreloadedContents = new();
 
     private static readonly Regex s_whitespaceCollapse = new(@"\s+", RegexOptions.Compiled);
-    
+
     private string _originalContent = string.Empty;
     private string _translatedContent = string.Empty;
     private CancellationTokenSource? _translationCts;
 
-    [ObservableProperty]
-    private bool _isTranslating;
+    [ObservableProperty] private bool _isTranslating;
 
-    [ObservableProperty]
-    private bool _isTranslated;
+    [ObservableProperty] private bool _isTranslated;
 
-    [ObservableProperty]
-    private string _translationProgress = string.Empty;
+    [ObservableProperty] private string _translationProgress = string.Empty;
 
-    [ObservableProperty]
-    private bool _showTranslateButton;
+    [ObservableProperty] private bool _showTranslateButton;
 
-    [ObservableProperty]
-    private string _translateButtonText = string.Empty;
+    [ObservableProperty] private string _translateButtonText = string.Empty;
 
     private static string CollapseForPreview(string text, int maxLen)
     {
@@ -85,7 +87,7 @@ public partial class HelpViewModel : ObservableObject
             collapsed += "…";
         return collapsed;
     }
-    
+
     public void UpdateSearchHits(string? filter)
     {
         SearchHits.Clear();
@@ -126,24 +128,20 @@ public partial class HelpViewModel : ObservableObject
         }
     }
 
-    [ObservableProperty]
-    private string _markdownContent = "从左侧目录选择一个项目以查看详细内容";
+    [ObservableProperty] private string _markdownContent = "从左侧目录选择一个项目以查看详细内容";
 
-    [ObservableProperty]
-    private string _currentTitle = "请选择文档";
+    [ObservableProperty] private string _currentTitle = "请选择文档";
 
-    [ObservableProperty]
-    private string _currentAuthor = "";
+    [ObservableProperty] private string _currentCategory = string.Empty;
 
-    [ObservableProperty]
-    private string _currentDate = "";
+    [ObservableProperty] private string _currentAuthor = string.Empty;
 
-    [ObservableProperty]
-    private bool _isLoading;
-    
-    [ObservableProperty]
-    private string _markdownUriPrefix = $"{ContentBaseUrl}/";
-    
+    [ObservableProperty] private string _currentDate = string.Empty;
+
+    [ObservableProperty] private bool _isLoading;
+
+    [ObservableProperty] private string _markdownUriPrefix = $"{ContentBaseUrl}/";
+
     private static string GetMarkdownDirectoryPrefix(string relativeFilePath)
     {
         var normalized = relativeFilePath.Replace('\\', '/').Trim('/');
@@ -158,7 +156,7 @@ public partial class HelpViewModel : ObservableObject
         var encoded = string.Join("/", dirPart.Split('/').Select(Uri.EscapeDataString));
         return $"{ContentBaseUrl}/{encoded}/";
     }
-    
+
     private static bool NeedsTranslation()
     {
         var culture = ResourceExtensions.CurrentCulture;
@@ -183,7 +181,7 @@ public partial class HelpViewModel : ObservableObject
         {
             var json = await _httpClient.GetStringAsync(ConfigUrl);
             var categories = JsonSerializer.Deserialize<List<DocCategory>>(json);
-            
+
             AllCategories.Clear();
             if (categories != null)
             {
@@ -193,6 +191,7 @@ public partial class HelpViewModel : ObservableObject
                     {
                         item.Category = category.CategoryName;
                     }
+
                     AllCategories.Add(category);
                 }
             }
@@ -221,7 +220,7 @@ public partial class HelpViewModel : ObservableObject
                     string filePart = string.Join("/", item.File.Split('/').Select(Uri.EscapeDataString));
                     string requestUrl = $"{ContentBaseUrl}/{filePart}";
                     var response = await _httpClient.GetAsync(requestUrl);
-                    
+
                     if (response.IsSuccessStatusCode)
                     {
                         var raw = await response.Content.ReadAsStringAsync();
@@ -245,8 +244,9 @@ public partial class HelpViewModel : ObservableObject
         IsLoading = true;
         MarkdownUriPrefix = GetMarkdownDirectoryPrefix(item.File);
         CurrentTitle = item.Title;
-        CurrentAuthor = $"作者: {item.Author}";
-        CurrentDate = "获取日期中...";
+        CurrentCategory = item.Category;
+        CurrentAuthor = item.Author;
+        CurrentDate = string.Empty;
         MarkdownContent = "加载中...";
 
         try
@@ -265,15 +265,15 @@ public partial class HelpViewModel : ObservableObject
 
                 if (response.Content.Headers.LastModified.HasValue)
                 {
-                    CurrentDate = $"最后修改: {response.Content.Headers.LastModified.Value.LocalDateTime:yyyy-MM-dd HH:mm}";
+                    CurrentDate = response.Content.Headers.LastModified.Value.LocalDateTime.ToString("yyyy-MM-dd HH:mm");
                 }
                 else
                 {
-                    CurrentDate = "最后修改: 未知";
+                    CurrentDate = string.Empty;
                 }
-                
+
                 UpdateTranslateButtonState();
-                
+
                 if (NeedsTranslation())
                 {
                     _ = TranslateDocumentAsync();
@@ -282,14 +282,14 @@ public partial class HelpViewModel : ObservableObject
             else
             {
                 MarkdownContent = $"无法获取文档内容 (HTTP {response.StatusCode})";
-                CurrentDate = "";
+                CurrentDate = string.Empty;
                 _originalContent = string.Empty;
             }
         }
         catch (Exception ex)
         {
             MarkdownContent = $"文档加载发生异常: {ex.Message}";
-            CurrentDate = "";
+            CurrentDate = string.Empty;
             _originalContent = string.Empty;
         }
         finally
@@ -297,7 +297,7 @@ public partial class HelpViewModel : ObservableObject
             IsLoading = false;
         }
     }
-    
+
     private async Task TranslateDocumentAsync()
     {
         if (string.IsNullOrEmpty(_originalContent))
@@ -351,7 +351,7 @@ public partial class HelpViewModel : ObservableObject
             IsTranslating = false;
         }
     }
-    
+
     [RelayCommand]
     private async Task ToggleTranslationAsync()
     {
@@ -386,7 +386,7 @@ public partial class HelpViewModel : ObservableObject
             }
         }
     }
-    
+
     private void CancelTranslation()
     {
         if (_translationCts != null)

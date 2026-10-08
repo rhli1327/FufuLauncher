@@ -2,6 +2,7 @@
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
+
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Messaging;
@@ -14,20 +15,86 @@ public class PluginSettingItem : ObservableObject
 {
     private readonly IniFile _iniFile;
     private readonly Action<string, string, string> _onValueChanged;
-    public string SectionKey { get; }
-    public string DisplayName { get; }
-    public string Type { get; }
-    public string HelpUrl { get; }
+    private readonly Func<bool>? _canChangeValue;
 
-    public Microsoft.UI.Xaml.Visibility HelpVisibility => !string.IsNullOrEmpty(HelpUrl) ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
-    public Microsoft.UI.Xaml.Visibility GifImageVisibility => !string.IsNullOrEmpty(HelpUrl) ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
+    public string SectionKey
+    {
+        get;
+    }
+
+    public string DisplayName
+    {
+        get;
+    }
+
+    public string Type
+    {
+        get;
+    }
+
+    public string HelpUrl
+    {
+        get;
+    }
+
+    public Microsoft.UI.Xaml.Visibility HelpVisibility => !string.IsNullOrEmpty(HelpUrl)
+        ? Microsoft.UI.Xaml.Visibility.Visible
+        : Microsoft.UI.Xaml.Visibility.Collapsed;
+
+    public Microsoft.UI.Xaml.Visibility GifImageVisibility => !string.IsNullOrEmpty(HelpUrl)
+        ? Microsoft.UI.Xaml.Visibility.Visible
+        : Microsoft.UI.Xaml.Visibility.Collapsed;
+
     public Microsoft.UI.Xaml.Visibility GifErrorVisibility => Microsoft.UI.Xaml.Visibility.Collapsed;
+
+    private bool _isPinned;
+
+    public bool IsPinned
+    {
+        get => _isPinned;
+        set
+        {
+            if (SetProperty(ref _isPinned, value))
+            {
+                OnPropertyChanged(nameof(PinGlyph));
+                OnPropertyChanged(nameof(PinOpacity));
+                OnPropertyChanged(nameof(PinTooltip));
+            }
+        }
+    }
+
+    public string PinGlyph => IsPinned ? "\uE735" : "\uE734";
+
+    public double PinOpacity => IsPinned ? 0.95 : 0.5;
+
+    public string PinTooltip => IsPinned ? "UnpinSettingTooltip".GetLocalized() : "PinSettingTooltip".GetLocalized();
+
+    private bool _isSelected;
+
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set
+        {
+            if (SetProperty(ref _isSelected, value))
+            {
+                OnPropertyChanged(nameof(SelectionMarkVisibility));
+            }
+        }
+    }
+
+    public Microsoft.UI.Xaml.Visibility SelectionMarkVisibility =>
+        IsSelected ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
+
     private string _rawValue;
-    private static readonly ObservableCollection<VirtualKeyOption> _availableKeys = new ObservableCollection<VirtualKeyOption>(GetAvailableKeys());
+
+    private static readonly ObservableCollection<VirtualKeyOption> _availableKeys =
+        new ObservableCollection<VirtualKeyOption>(GetAvailableKeys());
+
     private bool _useKeyListInput;
 
     public ObservableCollection<VirtualKeyOption> AvailableKeys => _availableKeys;
-    
+
     public Microsoft.UI.Xaml.Media.ImageSource HelpImageSource
     {
         get
@@ -40,6 +107,7 @@ public class PluginSettingItem : ObservableObject
                 {
                     resolvedPath = Path.Combine(AppContext.BaseDirectory, HelpUrl);
                 }
+
                 return new Microsoft.UI.Xaml.Media.Imaging.BitmapImage(new Uri(resolvedPath));
             }
             catch
@@ -48,8 +116,9 @@ public class PluginSettingItem : ObservableObject
             }
         }
     }
-    
-    public PluginSettingItem(IniFile iniFile, string sectionKey, string displayName, string type, string value, string helpUrl, Action<string, string, string> onValueChanged, bool useKeyListInput)
+
+    public PluginSettingItem(IniFile iniFile, string sectionKey, string displayName, string type, string value,
+        string helpUrl, Action<string, string, string> onValueChanged, bool useKeyListInput, Func<bool>? canChangeValue = null)
     {
         _iniFile = iniFile;
         SectionKey = sectionKey;
@@ -58,13 +127,15 @@ public class PluginSettingItem : ObservableObject
         _rawValue = value;
         HelpUrl = helpUrl;
         _onValueChanged = onValueChanged;
+        _canChangeValue = canChangeValue;
         _useKeyListInput = useKeyListInput;
-        if (string.Equals(Type, "key", StringComparison.OrdinalIgnoreCase) && int.TryParse(_rawValue, out var currentKey))
+        if (string.Equals(Type, "key", StringComparison.OrdinalIgnoreCase) &&
+            int.TryParse(_rawValue, out var currentKey))
         {
             EnsureKeyOption(currentKey);
         }
     }
-    
+
     private static List<VirtualKeyOption> GetAvailableKeys()
     {
         var list = new List<VirtualKeyOption>();
@@ -73,22 +144,23 @@ public class PluginSettingItem : ObservableObject
             if (key == Windows.System.VirtualKey.None) continue;
             list.Add(new VirtualKeyOption { KeyCode = (int)key, KeyName = key.ToString() });
         }
+
         return list.GroupBy(k => k.KeyCode).Select(g => g.First()).OrderBy(k => k.KeyCode).ToList();
     }
-    
+
     public int? KeyValue
     {
         get => int.TryParse(_rawValue, out var result) ? result : 0;
         set
         {
-            if (value == null) return;
-            
+            if (value == null || _canChangeValue?.Invoke() == false || value == KeyValue) return;
+
             var targetValue = value.Value.ToString();
             if (_rawValue != targetValue)
             {
                 var previousValue = _rawValue;
                 _rawValue = targetValue;
-                
+
                 bool isNew = EnsureKeyOption(value.Value);
 
                 if (isNew)
@@ -99,7 +171,7 @@ public class PluginSettingItem : ObservableObject
                         NotificationType.Success,
                         3000
                     ));
-                    
+
                     var dispatcher = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
                     if (dispatcher != null)
                     {
@@ -126,7 +198,8 @@ public class PluginSettingItem : ObservableObject
         }
     }
 
-    public PluginSettingItem(IniFile iniFile, string sectionKey, string displayName, string type, string value, Action<string, string, string> onValueChanged, bool useKeyListInput)
+    public PluginSettingItem(IniFile iniFile, string sectionKey, string displayName, string type, string value,
+        Action<string, string, string> onValueChanged, bool useKeyListInput, Func<bool>? canChangeValue = null)
     {
         _iniFile = iniFile;
         SectionKey = sectionKey;
@@ -134,8 +207,10 @@ public class PluginSettingItem : ObservableObject
         Type = type;
         _rawValue = value;
         _onValueChanged = onValueChanged;
+        _canChangeValue = canChangeValue;
         _useKeyListInput = useKeyListInput;
-        if (string.Equals(Type, "key", StringComparison.OrdinalIgnoreCase) && int.TryParse(_rawValue, out var currentKey))
+        if (string.Equals(Type, "key", StringComparison.OrdinalIgnoreCase) &&
+            int.TryParse(_rawValue, out var currentKey))
         {
             EnsureKeyOption(currentKey);
         }
@@ -165,7 +240,7 @@ public class PluginSettingItem : ObservableObject
         get => KeyValue ?? 0;
         set
         {
-            if (double.IsNaN(value)) return;
+            if (!double.IsFinite(value) || value < int.MinValue || value > int.MaxValue) return;
             KeyValue = (int)Math.Round(value);
         }
     }
@@ -180,6 +255,8 @@ public class PluginSettingItem : ObservableObject
         get => _rawValue == "1" || _rawValue.Equals("true", StringComparison.OrdinalIgnoreCase);
         set
         {
+            if (_canChangeValue?.Invoke() == false || value == BoolValue) return;
+
             var targetValue = value ? "1" : "0";
             if (_rawValue != targetValue)
             {
@@ -196,6 +273,8 @@ public class PluginSettingItem : ObservableObject
         get => double.TryParse(_rawValue, out var result) ? result : 0;
         set
         {
+            if (_canChangeValue?.Invoke() == false || !double.IsFinite(value) || value == FloatValue) return;
+
             var targetValue = value.ToString("G");
             if (_rawValue != targetValue)
             {
@@ -212,6 +291,8 @@ public class PluginSettingItem : ObservableObject
         get => _rawValue;
         set
         {
+            if (_canChangeValue?.Invoke() == false) return;
+
             if (_rawValue != value)
             {
                 var previousValue = _rawValue;
@@ -233,7 +314,7 @@ public class PluginSettingItem : ObservableObject
         {
             _rawValue = previousValue;
             OnPropertyChanged(propertyName);
-            
+
             WeakReferenceMessenger.Default.Send(new NotificationMessage(
                 "配置保存失败",
                 $"无法应用当前设置修改\n详细信息: {ex.Message}",
@@ -253,7 +334,7 @@ public class PluginSettingItem : ObservableObject
             KeyCode = keyCode,
             KeyName = $"Custom({keyCode})"
         });
-        
+
         return true;
     }
 }

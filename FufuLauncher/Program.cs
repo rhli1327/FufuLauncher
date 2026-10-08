@@ -1,9 +1,12 @@
-﻿/*
+/*
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
+
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using FufuLauncher.Services;
+using FufuLauncher.Services.CodeSigning;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.Windows.AppLifecycle;
@@ -20,7 +23,8 @@ namespace FufuLauncher
         [STAThread]
         static void Main(string[] args)
         {
-            if (args.Length >= 2 && string.Equals(args[0], "--backpack-elevated-inject", StringComparison.OrdinalIgnoreCase))
+            if (args.Length >= 2 &&
+                string.Equals(args[0], "--backpack-elevated-inject", StringComparison.OrdinalIgnoreCase))
             {
                 Environment.Exit(Services.Backpack.GameLaunchService.RunElevatedInjection(args[1]));
                 return;
@@ -29,6 +33,18 @@ namespace FufuLauncher
             if (args.Length >= 2 && string.Equals(args[0], "--yae-inject", StringComparison.OrdinalIgnoreCase))
             {
                 Environment.Exit(Services.Yae.YaeAchievementReader.RunElevatedInjection(args[1]));
+                return;
+            }
+
+            if (TrustCertCli.IsTrustCertCommand(args))
+            {
+                Environment.Exit(TrustCertCli.Run(args));
+                return;
+            }
+
+            if (TrustCertCli.IsTrustDiagCommand(args))
+            {
+                Environment.Exit(TrustCertCli.RunDiagnostics(args));
                 return;
             }
 
@@ -51,6 +67,7 @@ namespace FufuLauncher
                     {
                         goto startApp;
                     }
+
                     instance.UnregisterKey();
                     Thread.Sleep(retryDelayMs);
                 }
@@ -76,8 +93,8 @@ namespace FufuLauncher
             });
         }
 
-private static void RunElevatedInjection(string[] args)
-{
+        private static void RunElevatedInjection(string[] args)
+        {
     var exitCode = 1;
     try
     {
@@ -95,7 +112,7 @@ private static void RunElevatedInjection(string[] args)
         if (separatorIndex == -1 &&
             TryParseLegacyElevatedInjection(args, out var legacyDllPath, out var legacyCommandLineArgs))
         {
-            dllPath = string.IsNullOrEmpty(legacyDllPath) ? launcher.GetDefaultDllPath() : legacyDllPath;
+                    dllPath = string.IsNullOrEmpty(legacyDllPath) ? ResolveInjectDllPath(launcher) : legacyDllPath;
             commandLineArgs = legacyCommandLineArgs;
         }
         else
@@ -105,7 +122,22 @@ private static void RunElevatedInjection(string[] args)
                 return;
             }
 
-            dllPath = launcher.GetDefaultDllPath();
+                    foreach (var quarantined in PluginInjectionGuard.QuarantineRootStrayFiles())
+                    {
+                        Debug.WriteLine($"[Program] 已重命名插件根目录残留文件: {quarantined}");
+                    }
+
+                    var conflicts = PluginInjectionGuard.FindDuplicateDllNames(PluginConflictSettings.Read());
+                    if (conflicts.Count > 0)
+                    {
+                        MessageBox(IntPtr.Zero,
+                            PluginInjectionGuard.BuildConflictReport(conflicts),
+                            "PluginDllConflict_Title".GetLocalized(), 0x30);
+                        exitCode = 4;
+                        return;
+                    }
+
+                    dllPath = ResolveInjectDllPath(launcher);
 
             // Without an explicit preset, keep the config.ini prepared by the current in-app preset.
             for (var i = 2; i < separatorIndex; i++)
@@ -114,7 +146,7 @@ private static void RunElevatedInjection(string[] args)
                 {
                     if (i + 1 < separatorIndex)
                     {
-                        ApplyPreset(args[++i]);
+                                ApplyPreset(args[++i], Path.GetDirectoryName(dllPath) ?? string.Empty);
                     }
                 }
             }
@@ -130,27 +162,49 @@ private static void RunElevatedInjection(string[] args)
             return;
         }
 
-        var result = launcher.LaunchGameAndInject(gameExePath, dllPath, commandLineArgs, out var errorMessage, out var pid);
+                try
+                {
+                    var trustGate = new ModTrustGate(new CodeSigningTrustService());
+                    var decision = trustGate.EvaluateForLoading(dllPath);
+                    if (!decision.Allowed)
+                    {
+                        MessageBox(IntPtr.Zero,
+                            string.Format("ModTrust_BlockedMsg".GetLocalized(), decision.Reason),
+                            "ModTrust_BlockedTitle".GetLocalized(), 0x30);
+                        exitCode = 3;
+                        return;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[Program] 注入前信任校验异常（继续注入）：{ex.Message}");
+                }
 
+                var result = launcher.LaunchGameAndInject(gameExePath, dllPath, commandLineArgs, out var errorMessage,
+                    out var pid);
         if (result != 0)
         {
-            MessageBox(IntPtr.Zero, string.Format("Program_InjectionFailed".GetLocalized(), errorMessage, result), "Program_ErrorTitle".GetLocalized(), 0x10);
+                    MessageBox(IntPtr.Zero,
+                        string.Format("Program_InjectionFailed".GetLocalized(), errorMessage, result),
+                        "Program_ErrorTitle".GetLocalized(), 0x10);
         }
 
         exitCode = result == 0 ? 0 : 1;
     }
     catch (Exception ex)
     {
-        MessageBox(IntPtr.Zero, string.Format("Program_InjectionException".GetLocalized(), ex.Message), "Program_ErrorTitle".GetLocalized(), 0x10);
+                MessageBox(IntPtr.Zero, string.Format("Program_InjectionException".GetLocalized(), ex.Message),
+                    "Program_ErrorTitle".GetLocalized(), 0x10);
     }
     finally
     {
         Environment.Exit(exitCode);
     }
-}
+        }
 
-private static bool TryParseLegacyElevatedInjection(string[] args, out string dllPath, out string commandLineArgs)
-{
+        private static bool TryParseLegacyElevatedInjection(string[] args, out string dllPath,
+            out string commandLineArgs)
+        {
     dllPath = string.Empty;
     commandLineArgs = string.Empty;
 
@@ -165,13 +219,37 @@ private static bool TryParseLegacyElevatedInjection(string[] args, out string dl
     dllPath = args[2];
     commandLineArgs = args[4];
     return true;
-}
+        }
 
-private static void ApplyPreset(string presetId)
-{
-    try
-    {
-        var presetsDir = Path.Combine(AppContext.BaseDirectory, "Plugins", "Presets");
+        private static string ResolveInjectDllPath(LauncherService launcher)
+        {
+            var standard = launcher.GetDefaultDllPath();
+            if (File.Exists(standard)) return standard;
+            return LauncherService.GetBundledLitePluginDllPath();
+        }
+
+        private static string ResolvePluginConfigPath(string pluginDirectory)
+        {
+            if (string.IsNullOrEmpty(pluginDirectory) || !Directory.Exists(pluginDirectory))
+            {
+                return Path.Combine(AppContext.BaseDirectory, "Plugins", LightweightPluginService.MainPluginFolderName,
+                    "config.ini");
+            }
+
+            var lowerCaseConfig = Path.Combine(pluginDirectory, "config.ini");
+            if (File.Exists(lowerCaseConfig)) return lowerCaseConfig;
+
+            var upperCaseConfig = Path.Combine(pluginDirectory, LightweightPluginService.LitePluginConfigName);
+            if (File.Exists(upperCaseConfig)) return upperCaseConfig;
+
+            return lowerCaseConfig;
+        }
+
+        private static void ApplyPreset(string presetId, string pluginDirectory)
+        {
+            try
+            {
+                var presetsDir = AppPaths.PluginPresetsDir;
         var presetFile = Path.Combine(presetsDir, $"{presetId}.json");
         
         if (File.Exists(presetFile))
@@ -181,11 +259,12 @@ private static void ApplyPreset(string presetId)
             
             if (doc.RootElement.TryGetProperty("ConfigData", out var configData))
             {
-                var pluginDir = Path.Combine(AppContext.BaseDirectory, "Plugins", "FuFuPlugin");
-                var iniPath = Path.Combine(pluginDir, "config.ini");
+                        var iniPath = ResolvePluginConfigPath(pluginDirectory);
                 
                 var iniFile = new IniFile(iniPath);
-                var dict = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(configData.GetRawText());
+                        var dict =
+                            JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(
+                                configData.GetRawText());
                 
                 if (dict != null)
                 {
@@ -203,6 +282,6 @@ private static void ApplyPreset(string presetId)
     {
         // ignored
     }
-}
+        }
     }
 }

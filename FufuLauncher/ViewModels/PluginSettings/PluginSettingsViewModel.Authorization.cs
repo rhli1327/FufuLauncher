@@ -2,6 +2,7 @@
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
+
 using CommunityToolkit.Mvvm.Messaging;
 using FufuLauncher.Messages;
 
@@ -17,7 +18,7 @@ public partial class PluginSettingsViewModel
     private async Task<bool> CheckHwidAuthorizationAsync()
     {
         if (_hasCheckedHwid && _isHwidAuthorized) return true;
-        
+
         var authorizationService = App.GetService<Services.DeveloperAuthorizationService>();
         _isHwidAuthorized = authorizationService is not null && await authorizationService.IsAuthorizedAsync();
         _hasCheckedHwid = true;
@@ -25,35 +26,18 @@ public partial class PluginSettingsViewModel
         return _isHwidAuthorized;
     }
 
-public async Task TriggerBackgroundAuthCheckAsync()
-{
-    if (_hasCheckedHwid && _isHwidAuthorized) return;
-
-    bool isAuthorized = await CheckHwidAuthorizationAsync();
-    var dispatcher = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
-
-    if (!isAuthorized)
+    public async Task TriggerBackgroundAuthCheckAsync()
     {
-        string avatarDir = Path.Combine(AppContext.BaseDirectory, "Plugins", "Avatar");
-        string avatarEnabledPath = Path.Combine(avatarDir, "Avatar.dll");
-        string avatarDisabledPath = Path.Combine(avatarDir, "Avatar.disabled");
-        
-        if (File.Exists(avatarEnabledPath))
+        if (_hasCheckedHwid && _isHwidAuthorized) return;
+
+        bool isAuthorized = await CheckHwidAuthorizationAsync();
+        var dispatcher = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
+
+        if (!isAuthorized)
         {
-            try { File.Move(avatarEnabledPath, avatarDisabledPath); } catch {}
-            if (dispatcher != null)
-            {
-                dispatcher.TryEnqueue(() => 
-                {
-                    _isAvatarPluginEnabled = false;
-                    OnPropertyChanged(nameof(IsAvatarPluginEnabled));
-                    RefreshUIState();
-                });
-            }
+            return;
         }
-    }
-    else
-    {
+
         if (dispatcher != null)
         {
             dispatcher.TryEnqueue(() => LoadConfiguration());
@@ -63,13 +47,13 @@ public async Task TriggerBackgroundAuthCheckAsync()
             LoadConfiguration();
         }
     }
-}
+
     private async Task InitializeAuthAndReloadAsync()
     {
         if (!_hasCheckedHwid)
         {
             await CheckHwidAuthorizationAsync();
-            
+
             var dispatcher = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
             if (dispatcher != null)
             {
@@ -81,12 +65,12 @@ public async Task TriggerBackgroundAuthCheckAsync()
             }
         }
     }
-    
+
 
     public async Task StartAsynchronousAuthAsync()
     {
         bool isAuthorized = await CheckHwidAuthorizationAsync();
-        
+
         var dispatcher = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
         if (dispatcher != null)
         {
@@ -97,33 +81,15 @@ public async Task TriggerBackgroundAuthCheckAsync()
             HandleAuthResult(isAuthorized);
         }
     }
-    
+
     private void HandleAuthResult(bool isAuthorized)
     {
         if (isAuthorized)
         {
             LoadConfiguration();
         }
-        else
-        {
-            string avatarDir = Path.Combine(AppContext.BaseDirectory, "Plugins", "Avatar");
-            string avatarEnabledPath = Path.Combine(avatarDir, "Avatar.dll");
-            string avatarDisabledPath = Path.Combine(avatarDir, "Avatar.disabled");
-
-            if (File.Exists(avatarEnabledPath))
-            {
-                try
-                {
-                    File.Move(avatarEnabledPath, avatarDisabledPath);
-                }
-                catch { }
-                
-                _isAvatarPluginEnabled = false;
-                OnPropertyChanged(nameof(IsAvatarPluginEnabled));
-                RefreshUIState();
-            }
-        }
     }
+
     private async Task VerifyAndApplyDevFeaturesAsync()
     {
         bool isAuthorized = await CheckHwidAuthorizationAsync();
@@ -144,7 +110,7 @@ public async Task TriggerBackgroundAuthCheckAsync()
                     NotificationType.Error,
                     4000
                 ));
-                
+
                 _isDevFeaturesEnabled = false;
                 OnPropertyChanged(nameof(IsDevFeaturesEnabled));
                 SaveDevFeaturesSetting(false);

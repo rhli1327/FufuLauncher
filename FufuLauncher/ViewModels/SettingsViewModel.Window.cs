@@ -2,10 +2,13 @@
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
+
 using System.Diagnostics;
 using CommunityToolkit.Mvvm.Messaging;
 using CommunityToolkit.Mvvm.Messaging.Messages;
+using FufuLauncher.Helpers;
 using FufuLauncher.Messages;
+using FufuLauncher.Services;
 
 namespace FufuLauncher.ViewModels;
 
@@ -41,21 +44,58 @@ public partial class SettingsViewModel
 
     partial void OnIsSaveWindowSizeEnabledChanged(bool value)
     {
+        if (_isInitializing) return;
         Debug.WriteLine($"SettingsViewModel: 保存窗口大小记忆设置 {value}");
         _ = _localSettingsService.SaveSettingAsync("IsSaveWindowSizeEnabled", value);
     }
 
     partial void OnIsMinWindowSizeLimitEnabledChanged(bool value)
     {
+        if (_isInitializing) return;
         _ = _localSettingsService.SaveSettingAsync("IsMinWindowSizeLimitEnabled", value);
         WeakReferenceMessenger.Default.Send(new MinWindowSizeLimitChangedMessage(value));
     }
 
     partial void OnMinimizeToTrayChanged(bool value)
     {
+        if (_isInitializing) return;
         Debug.WriteLine($"SettingsViewModel: 保存托盘设置 {value}");
         _ = _localSettingsService.SaveSettingAsync("MinimizeToTray", value);
         WeakReferenceMessenger.Default.Send(new MinimizeToTrayChangedMessage(value));
+    }
+
+    partial void OnIsStartupEnabledChanged(bool value)
+    {
+        if (_isInitializing) return;
+        _ = ApplyStartupEnabledAsync(value);
+    }
+
+    private async Task ApplyStartupEnabledAsync(bool enabled)
+    {
+        if (StartupManager.TryApply(enabled, out _))
+        {
+            await _localSettingsService.SaveSettingAsync(LocalSettingsService.IsStartupEnabledKey, enabled);
+            return;
+        }
+
+        var wasInitializing = _isInitializing;
+        _isInitializing = true;
+        try
+        {
+            IsStartupEnabled = !enabled;
+        }
+        finally
+        {
+            _isInitializing = wasInitializing;
+        }
+
+        await _localSettingsService.SaveSettingAsync(LocalSettingsService.IsStartupEnabledKey, !enabled);
+
+        _notificationService.Show(
+            "RunAtStartupFailedTitle".GetLocalized(),
+            "RunAtStartupFailedMessage".GetLocalized(),
+            NotificationType.Error,
+            5000);
     }
 
     #endregion

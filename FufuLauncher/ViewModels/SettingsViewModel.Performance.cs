@@ -2,6 +2,7 @@
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
+
 using System.Diagnostics;
 using FufuLauncher.Services;
 using FufuLauncher.Services.Background;
@@ -21,7 +22,8 @@ public partial class SettingsViewModel
     partial void OnCpuUsageWarningThresholdChanged(double value)
     {
         if (_isInitializing) return;
-        _ = _localSettingsService.SaveSettingAsync(ProcessCpuUsageMonitor.ThresholdSettingKey, Math.Clamp(value, 5.0, 100.0));
+        _ = _localSettingsService.SaveSettingAsync(ProcessCpuUsageMonitor.ThresholdSettingKey,
+            Math.Clamp(value, 5.0, 100.0));
     }
 
     private async Task ResetCpuUsageWarningSettingsAsync()
@@ -29,12 +31,15 @@ public partial class SettingsViewModel
         IsCpuUsageWarningEnabled = true;
         CpuUsageWarningThreshold = ProcessCpuUsageMonitor.DefaultCpuThreshold;
         await _localSettingsService.SaveSettingAsync(ProcessCpuUsageMonitor.IsEnabledSettingKey, true);
-        await _localSettingsService.SaveSettingAsync(ProcessCpuUsageMonitor.ThresholdSettingKey, ProcessCpuUsageMonitor.DefaultCpuThreshold);
+        await _localSettingsService.SaveSettingAsync(ProcessCpuUsageMonitor.ThresholdSettingKey,
+            ProcessCpuUsageMonitor.DefaultCpuThreshold);
     }
 
     partial void OnAppProcessPriorityChanged(AppProcessPriority value)
     {
-        _localSettingsService.SaveSettingAsync("AppProcessPriority", (int)value);
+        if (!_isInitializing)
+            _localSettingsService.SaveSettingAsync("AppProcessPriority", (int)value);
+
         ApplyProcessPriority(value);
     }
 
@@ -64,12 +69,14 @@ public partial class SettingsViewModel
 
     partial void OnIsBetterGIIntegrationEnabledChanged(bool value)
     {
+        if (_isInitializing) return;
         Debug.WriteLine($"SettingsViewModel: BetterGI联动设置变更为 {value}");
         _ = _localSettingsService.SaveSettingAsync("IsBetterGIIntegrationEnabled", value);
     }
 
     partial void OnIsBetterGICloseOnExitEnabledChanged(bool value)
     {
+        if (_isInitializing) return;
         Debug.WriteLine($"SettingsViewModel: BetterGI 关闭随游戏退出设置变更为 {value}");
         _ = _localSettingsService.SaveSettingAsync("IsBetterGICloseOnExitEnabled", value);
     }
