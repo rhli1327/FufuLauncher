@@ -95,32 +95,32 @@ namespace FufuLauncher
 
         private static void RunElevatedInjection(string[] args)
         {
-    var exitCode = 1;
-    try
-    {
-        if (args.Length < 3)
-        {
-            return;
-        }
-
-        var gameExePath = args[1];
-        var launcher = new LauncherService();
-
-        string dllPath;
-        string commandLineArgs;
-        var separatorIndex = Array.IndexOf(args, "--", 2);
-        if (separatorIndex == -1 &&
-            TryParseLegacyElevatedInjection(args, out var legacyDllPath, out var legacyCommandLineArgs))
-        {
-                    dllPath = string.IsNullOrEmpty(legacyDllPath) ? ResolveInjectDllPath(launcher) : legacyDllPath;
-            commandLineArgs = legacyCommandLineArgs;
-        }
-        else
-        {
-            if (separatorIndex == -1)
+            var exitCode = 1;
+            try
             {
-                return;
-            }
+                if (args.Length < 3)
+                {
+                    return;
+                }
+
+                var gameExePath = args[1];
+                var launcher = new LauncherService();
+
+                string dllPath;
+                string commandLineArgs;
+                var separatorIndex = Array.IndexOf(args, "--", 2);
+                if (separatorIndex == -1 &&
+                    TryParseLegacyElevatedInjection(args, out var legacyDllPath, out var legacyCommandLineArgs))
+                {
+                    dllPath = string.IsNullOrEmpty(legacyDllPath) ? ResolveInjectDllPath(launcher) : legacyDllPath;
+                    commandLineArgs = legacyCommandLineArgs;
+                }
+                else
+                {
+                    if (separatorIndex == -1)
+                    {
+                        return;
+                    }
 
                     foreach (var quarantined in PluginInjectionGuard.QuarantineRootStrayFiles())
                     {
@@ -139,28 +139,28 @@ namespace FufuLauncher
 
                     dllPath = ResolveInjectDllPath(launcher);
 
-            // Without an explicit preset, keep the config.ini prepared by the current in-app preset.
-            for (var i = 2; i < separatorIndex; i++)
-            {
-                if (string.Equals(args[i], "--preset", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (i + 1 < separatorIndex)
+                    // Without an explicit preset, keep the config.ini prepared by the current in-app preset.
+                    for (var i = 2; i < separatorIndex; i++)
                     {
+                        if (string.Equals(args[i], "--preset", StringComparison.OrdinalIgnoreCase))
+                        {
+                            if (i + 1 < separatorIndex)
+                            {
                                 ApplyPreset(args[++i], Path.GetDirectoryName(dllPath) ?? string.Empty);
+                            }
+                        }
                     }
+
+                    commandLineArgs = string.Join(" ", args
+                        .Skip(separatorIndex + 1)
+                        .Select(argument => GameLauncherService.QuoteArgument(argument)));
                 }
-            }
 
-            commandLineArgs = string.Join(" ", args
-                .Skip(separatorIndex + 1)
-                .Select(argument => GameLauncherService.QuoteArgument(argument)));
-        }
-
-        if (!LauncherService.IsAllowedPluginDllPath(dllPath))
-        {
-            MessageBox(IntPtr.Zero, "主插件路径或 SHA-256 校验失败，已拒绝注入。", "安全校验失败", 0x10);
-            return;
-        }
+                if (!LauncherService.IsAllowedPluginDllPath(dllPath))
+                {
+                    MessageBox(IntPtr.Zero, "主插件路径或 SHA-256 校验失败，已拒绝注入。", "安全校验失败", 0x10);
+                    return;
+                }
 
                 try
                 {
@@ -182,43 +182,43 @@ namespace FufuLauncher
 
                 var result = launcher.LaunchGameAndInject(gameExePath, dllPath, commandLineArgs, out var errorMessage,
                     out var pid);
-        if (result != 0)
-        {
+                if (result != 0)
+                {
                     MessageBox(IntPtr.Zero,
                         string.Format("Program_InjectionFailed".GetLocalized(), errorMessage, result),
                         "Program_ErrorTitle".GetLocalized(), 0x10);
-        }
+                }
 
-        exitCode = result == 0 ? 0 : 1;
-    }
-    catch (Exception ex)
-    {
+                exitCode = result == 0 ? 0 : 1;
+            }
+            catch (Exception ex)
+            {
                 MessageBox(IntPtr.Zero, string.Format("Program_InjectionException".GetLocalized(), ex.Message),
                     "Program_ErrorTitle".GetLocalized(), 0x10);
-    }
-    finally
-    {
-        Environment.Exit(exitCode);
-    }
+            }
+            finally
+            {
+                Environment.Exit(exitCode);
+            }
         }
 
         private static bool TryParseLegacyElevatedInjection(string[] args, out string dllPath,
             out string commandLineArgs)
         {
-    dllPath = string.Empty;
-    commandLineArgs = string.Empty;
+            dllPath = string.Empty;
+            commandLineArgs = string.Empty;
 
-    if (args.Length != 5 ||
-        !int.TryParse(args[3], out _) ||
-        (!string.IsNullOrEmpty(args[2]) &&
-         !string.Equals(Path.GetExtension(args[2]), ".dll", StringComparison.OrdinalIgnoreCase)))
-    {
-        return false;
-    }
+            if (args.Length != 5 ||
+                !int.TryParse(args[3], out _) ||
+                (!string.IsNullOrEmpty(args[2]) &&
+                 !string.Equals(Path.GetExtension(args[2]), ".dll", StringComparison.OrdinalIgnoreCase)))
+            {
+                return false;
+            }
 
-    dllPath = args[2];
-    commandLineArgs = args[4];
-    return true;
+            dllPath = args[2];
+            commandLineArgs = args[4];
+            return true;
         }
 
         private static string ResolveInjectDllPath(LauncherService launcher)
