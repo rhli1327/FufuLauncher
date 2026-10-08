@@ -33,3 +33,12 @@ dotnet run --project tests/LauncherRegression/LauncherRegression.csproj -c Relea
 This also verifies that the downloaded DLL is accepted when the installed
 SHA-512 manifest describes a different build, while tampered DLLs remain rejected.
 The supplied release ZIP is preserved; all mutations use test-output copies.
+
+For the optional Lite plugin, check the pinned upstream release ZIP:
+
+```sh
+dotnet run --project tests/LauncherRegression/LauncherRegression.csproj -c Release -- --downloaded-lite "<YuanShen-UnlockerLite.zip>"
+```
+
+This validates the production ZIP and DLL pins and rejects modified Lite DLLs,
+including a replacement with a matching forged local SHA-512 manifest.
