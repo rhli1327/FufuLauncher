@@ -302,7 +302,7 @@ public sealed partial class PluginPage
             {
                 try
                 {
-                    await Launcher.LaunchUriAsync(new Uri(rawGithubUrl));
+                    await Launcher.LaunchUriAsync(new Uri(downloadUrl));
                 }
                 catch
                 {

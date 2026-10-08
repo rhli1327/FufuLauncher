@@ -352,7 +352,7 @@ public sealed partial class PluginSettingsPage
             };
             if (await failDialog.ShowAsync() == ContentDialogResult.Primary)
             {
-                await Launcher.LaunchUriAsync(new Uri(rawGithubUrl));
+                await Launcher.LaunchUriAsync(new Uri(downloadUrl));
             }
         }
         finally
