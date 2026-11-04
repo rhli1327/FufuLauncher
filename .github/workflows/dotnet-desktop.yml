@@ -2,6 +2,8 @@ name: .NET Core Desktop
 
 on:
   workflow_dispatch:
+  push:
+    branches: [hardening/windows-security]
 
 jobs:
   build:
@@ -46,14 +48,17 @@ jobs:
       uses: actions/checkout@v4
       with:
         repository: FufuLauncher/FufuLauncher.UnlockerIsland
-        ref: a306b1343320ad319c191b07b607ddd73d3857b2
+        ref: 2de496af1825ae45869218870f37f40f7023fe2e
         path: FufuLauncher.UnlockerIsland_Repo
 
     - name: Build pinned launcher and plugin sources
       run: |
         msbuild FufuLauncher.UnlockerIsland_Repo\Launcher\Launcher.vcxproj /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=v143
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
         msbuild FufuLauncher.UnlockerIsland_Repo\Launcher_2\Launcher_2.vcxproj /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=v143
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
         msbuild FufuLauncher.UnlockerIsland_Repo\FufuLauncher.UnlockerIsland\FufuLauncher.UnlockerIsland.vcxproj /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=v143
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
     - name: Replace launcher and plugin binaries
       shell: pwsh

@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
@@ -31,6 +31,10 @@ public partial class PluginSettingsViewModel
             : LightweightPluginService.FindMainPluginDisabledPath() ?? LightweightPluginService.MainPluginDisabledPath;
 
     private bool _isMainPluginEnabled;
+    private bool _mainPluginVersionBlocked;
+    private string _mainPluginVersionBlockMessage = string.Empty;
+    private bool _fpsPluginVersionBlocked;
+    private string _fpsPluginVersionBlockMessage = string.Empty;
 
     public bool IsMainPluginEnabled
     {
@@ -64,7 +68,8 @@ public partial class PluginSettingsViewModel
             : Microsoft.UI.Xaml.Visibility.Collapsed;
 
     public bool IsSettingsInteractable => (!_deferConfigurationLoading || IsConfigurationReady) &&
-        ((SelectedPluginIndex == 0 && _isMainPluginEnabled) || (SelectedPluginIndex == 1 && _isFpsPluginEnabled));
+                                          ((SelectedPluginIndex == 0 && _isMainPluginEnabled) ||
+                                           (SelectedPluginIndex == 1 && _isFpsPluginEnabled));
 
     public string OverlayWarningText
     {
@@ -72,23 +77,42 @@ public partial class PluginSettingsViewModel
         {
             if (SelectedPluginIndex == 0)
             {
+                if (_mainPluginVersionBlocked) return _mainPluginVersionBlockMessage;
+
                 return IsLightweightMode
                     ? "LightweightMode_LiteDisabledOverlay".GetLocalized()
-                    : "已被禁用，请启用主插件才能调试配置";
+                    : "PluginSettings_MainPluginDisabledOverlay".GetLocalized();
             }
 
-            if (SelectedPluginIndex == 1) return "已被禁用，请启用FPS插件才能调试插件配置";
+            if (SelectedPluginIndex == 1)
+            {
+                if (_fpsPluginVersionBlocked) return _fpsPluginVersionBlockMessage;
+
+                return "PluginSettings_FpsPluginDisabledOverlay".GetLocalized();
+            }
+
             return string.Empty;
         }
     }
 
-    private static string GetFpsPluginEnabledPath() => Path.Combine(AppContext.BaseDirectory, "Plugins", "FPS", "FPS.dll");
+    private static string GetFpsPluginDirectory() =>
+        Path.Combine(AppContext.BaseDirectory, "Plugins", "FPS");
 
-    private static string GetFpsPluginDisabledPath() =>
-        Path.Combine(AppContext.BaseDirectory, "Plugins", "FPS", "FPS.disabled");
+    private static string GetFpsPluginEnabledPath() =>
+        Path.Combine(AppContext.BaseDirectory, "Plugins", "FPS", "FPS.dll");
+
+    private static string GetFpsPluginDisabledPath()
+    {
+        var fullPath = Path.Combine(AppContext.BaseDirectory, "Plugins", "FPS", "FPS.dll.disabled");
+        if (File.Exists(fullPath)) return fullPath;
+
+        return Path.Combine(AppContext.BaseDirectory, "Plugins", "FPS", "FPS.disabled");
+    }
 
     private void CheckPluginStates()
     {
+        RefreshGameVersionBlockState();
+
         string fpsEnabledPath = GetFpsPluginEnabledPath();
         string fpsDisabledPath = GetFpsPluginDisabledPath();
 
@@ -132,8 +156,39 @@ public partial class PluginSettingsViewModel
     }
 
 
+    private void RefreshGameVersionBlockState()
+    {
+        var guard = App.GetService<PluginGameVersionGuard>();
+
+        var mainStatus = guard.Inspect(GetMainPluginDirectory());
+        if (mainStatus.IsBlocked && File.Exists(GetMainPluginEnabledPath()))
+        {
+            guard.TryDisablePlugin(GetMainPluginDirectory(), null, out _);
+        }
+
+        var fpsStatus = guard.Inspect(GetFpsPluginDirectory());
+        if (fpsStatus.IsBlocked && File.Exists(GetFpsPluginEnabledPath()))
+        {
+            guard.TryDisablePlugin(GetFpsPluginDirectory(), null, out _);
+        }
+
+        _mainPluginVersionBlocked = mainStatus.IsBlocked;
+        _mainPluginVersionBlockMessage = mainStatus.BlockMessage;
+        _fpsPluginVersionBlocked = fpsStatus.IsBlocked;
+        _fpsPluginVersionBlockMessage = fpsStatus.BlockMessage;
+
+        OnPropertyChanged(nameof(OverlayWarningText));
+    }
+
     private void ChangeMainPluginState(bool enable)
     {
+        if (enable && ApplyGameVersionBlock(mainPlugin: true))
+        {
+            OnPropertyChanged(nameof(IsMainPluginEnabled));
+            NotifyGameVersionBlocked(_mainPluginVersionBlockMessage);
+            return;
+        }
+
         if (enable && App.GetService<ConstraintService>().IsRestricted)
         {
             OnPropertyChanged(nameof(IsMainPluginEnabled));
@@ -179,8 +234,8 @@ public partial class PluginSettingsViewModel
             }
 
             WeakReferenceMessenger.Default.Send(new NotificationMessage(
-                "状态切换失败",
-                $"无法修改文件后缀名。\n详细信息: {ex.Message}",
+                "PluginSettings_StateSwitchFailedTitle".GetLocalized(),
+                string.Format("PluginSettings_ModifyExtensionFailedDetail_Format".GetLocalized(), ex.Message),
                 NotificationType.Error,
                 6000
             ));
@@ -191,6 +246,13 @@ public partial class PluginSettingsViewModel
     {
         string enabledPath = GetFpsPluginEnabledPath();
         string disabledPath = GetFpsPluginDisabledPath();
+
+        if (enable && ApplyGameVersionBlock(mainPlugin: false))
+        {
+            OnPropertyChanged(nameof(IsFpsPluginEnabled));
+            NotifyGameVersionBlocked(_fpsPluginVersionBlockMessage);
+            return;
+        }
 
         if (enable && IsFpsPluginDllMissing())
         {
@@ -223,12 +285,45 @@ public partial class PluginSettingsViewModel
             }
 
             WeakReferenceMessenger.Default.Send(new NotificationMessage(
-                "状态切换失败",
-                $"无法修改插件文件后缀名。\n详细信息: {ex.Message}",
+                "PluginSettings_StateSwitchFailedTitle".GetLocalized(),
+                string.Format("PluginSettings_ModifyExtensionFailedDetail_Format".GetLocalized(), ex.Message),
                 NotificationType.Error,
                 6000
             ));
         }
+    }
+
+    private bool ApplyGameVersionBlock(bool mainPlugin)
+    {
+        var guard = App.GetService<PluginGameVersionGuard>();
+        var status = mainPlugin
+            ? guard.Inspect(GetMainPluginDirectory())
+            : guard.Inspect(GetFpsPluginDirectory());
+
+        if (mainPlugin)
+        {
+            _mainPluginVersionBlocked = status.IsBlocked;
+            _mainPluginVersionBlockMessage = status.BlockMessage;
+        }
+        else
+        {
+            _fpsPluginVersionBlocked = status.IsBlocked;
+            _fpsPluginVersionBlockMessage = status.BlockMessage;
+        }
+
+        OnPropertyChanged(nameof(OverlayWarningText));
+        return status.IsBlocked;
+    }
+
+    private static void NotifyGameVersionBlocked(string message)
+    {
+        if (string.IsNullOrEmpty(message)) return;
+
+        WeakReferenceMessenger.Default.Send(new NotificationMessage(
+            "PluginGameVersion_BlockedTitle".GetLocalized(),
+            message,
+            NotificationType.Warning,
+            6000));
     }
 
     private static void NotifyLockedPluginFile(string lockedFilePath)
@@ -302,12 +397,12 @@ public partial class PluginSettingsViewModel
             else
             {
                 string fpsEnabledPath = Path.Combine(_pluginDir, "FPS.dll");
-                string fpsDisabledPath = Path.Combine(_pluginDir, "FPS.disabled");
+                string fpsDisabledPath = GetFpsPluginDisabledPath();
                 _dllPath = File.Exists(fpsDisabledPath) ? fpsDisabledPath : fpsEnabledPath;
             }
         }
 
-        _presetsDir = Path.Combine(AppPaths.PluginPresetsDir, subDir);
+        _presetsDir = PluginPresetStorage.GetDirectory(subDir);
 
         if (!string.IsNullOrEmpty(_iniPath))
         {
@@ -326,11 +421,7 @@ public partial class PluginSettingsViewModel
             }
             catch (UnauthorizedAccessException)
             {
-                // If the resolved path is not writable (e.g. under Program Files),
-                // fall back to the default AppData-based location.
-                _presetsDir = Path.Combine(
-                    Path.Combine(AppPaths.RootDir, "Data", "PluginPresets"),
-                    Path.GetFileName(_presetsDir));
+                _presetsDir = PluginPresetStorage.GetFallbackDirectory(subDir);
                 Directory.CreateDirectory(_presetsDir);
             }
         }

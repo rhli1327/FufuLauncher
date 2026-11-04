@@ -46,13 +46,14 @@ public partial class App
 
                 services.AddSingleton<ILocalSettingsService, LocalSettingsService>();
                 services.AddSingleton<IThemeSelectorService, ThemeSelectorService>();
+                services.AddSingleton<IAutoThemeColorService, AutoThemeColorService>();
 
                 services.AddSingleton<IHoyoverseBackgroundService, HoyoverseBackgroundService>();
                 services.AddSingleton<IHoyoverseContentService, HoyoverseContentService>();
                 services.AddSingleton<IBackgroundRenderer, BackgroundRenderer>();
+                services.AddSingleton<BingWallpaperService>();
 
                 services.AddSingleton<IActivationService, ActivationService>();
-                services.AddSingleton<IPageService, PageService>();
                 services.AddSingleton<INavigationService, NavigationService>();
                 services.AddSingleton<IFileService, FileService>();
 
@@ -64,9 +65,17 @@ public partial class App
                 services.AddTransient<DataViewModel>();
                 services.AddTransient<DataPage>();
 
+
+                services.AddSingleton<CycleChallengeRepository>();
+                services.AddSingleton<Services.CycleChallenge.GameRecordApiClient>();
+                services.AddSingleton<Services.CycleChallenge.CycleChallengeService>();
+                services.AddTransient<CycleChallengeViewModel>();
+                services.AddTransient<Views.CycleChallengePage>();
+
+                services.AddSingleton<LaunchConfigurationViewModel>();
                 services.AddTransient<SettingsViewModel>();
                 services.AddTransient<SettingsPage>();
-                services.AddTransient<BlankPage>();
+                services.AddTransient<ImageSourceViewModel>();
 
                 services.AddTransient<NullToVisibilityConverter>();
                 services.AddTransient<BoolToVisibilityConverter>();
@@ -81,13 +90,14 @@ public partial class App
                 services.AddSingleton<Services.AuthTicket.IAuthTicketService, Services.AuthTicket.AuthTicketService>();
 
                 services.AddSingleton<IHoyoverseCheckinService, HoyoverseCheckinService>();
+                services.AddSingleton<MiyousheGameCheckinService>();
                 services.AddSingleton<ICommunityCheckinService, CommunityCheckinService>();
                 services.AddSingleton<ICloudGameCheckinService, CloudGameCheckinService>();
                 services.AddSingleton<IHoyolabRoleResolverService, HoyolabRoleResolverService>();
                 services.AddSingleton<IUnifiedCheckinService, UnifiedCheckinService>();
                 services.AddSingleton<Services.MiHoYo.DailyNote.DailyNoteCardService>();
-                services.AddSingleton<BlankViewModel>();
-                services.AddTransient<BlankPage>();
+                services.AddSingleton<GameSettingsViewModel>();
+                services.AddTransient<GameSettingsPage>();
                 services.AddSingleton<ILauncherService, LauncherService>();
                 services.AddTransient<OtherViewModel>();
                 services.AddTransient<OtherPage>();
@@ -99,8 +109,9 @@ public partial class App
                 services.AddTransient<AgreementPage>();
                 services.AddSingleton<IDevBuildDetectionService, DevBuildDetectionService>();
                 services.AddSingleton<IUpdateService, UpdateService>();
-                services.AddSingleton<ControlPanelModel>();
-                services.AddTransient<PanelPage>();
+                services.AddSingleton<GamePlayTimeStore>();
+                services.AddSingleton<ControlPanelViewModel>();
+                services.AddTransient<ControlPanelPage>();
                 services.AddSingleton<IUserInfoService, UserInfoService>();
                 services.AddSingleton<IUidLookupService, Services.UID.UidLookupService>();
                 services.AddSingleton<Services.UID.BanCheckService>();
@@ -131,8 +142,6 @@ public partial class App
                 services.AddTransient<GenshinDataWindow>();
                 services.AddSingleton<IFilePickerService, FilePickerService>();
                 services.AddSingleton<INotificationService, NotificationService>();
-                services.AddTransient<CalculatorViewModel>();
-                services.AddTransient<CalculatorPage>();
                 services.AddTransient<PluginViewModel>();
                 services.AddTransient<PluginPage>();
                 services.AddTransient<GachaViewModel>();
@@ -142,11 +151,19 @@ public partial class App
                 services.AddSingleton<IGameAnnouncementImageService, GameAnnouncementImageService>();
                 services.AddTransient<GameAnnouncementViewModel>();
                 services.AddTransient<IPluginUpdateService, PluginUpdateService>();
-                services.AddTransient<GachaAnalysisModel>();
+                services.AddTransient<GachaAnalysisViewModel>();
                 services.AddSingleton<PluginStoreService>();
                 services.AddSingleton<LightweightPluginService>();
+                services.AddSingleton<PluginGameVersionGuard>();
+                services.AddSingleton<PluginConfigGuardService>();
+                services.AddSingleton<PluginProvenanceStore>();
+                services.AddSingleton<PluginAuditReporter>();
                 services.AddSingleton<ConstraintService>();
                 services.AddSingleton<LuaPluginInstaller>();
+                services.AddSingleton<GameSessionService>();
+                services.AddSingleton<Services.Mcp.McpInstallJobService>();
+                services.AddSingleton<Services.Mcp.McpToolInvoker>();
+                services.AddSingleton<Services.Mcp.McpHostService>();
                 services.AddSingleton<Services.PluginMirror.MirrorSiteProvider>();
                 services.AddSingleton<Services.PluginMirror.PluginMirrorDownloadService>();
                 services.AddSingleton<PluginStoreViewModel>();

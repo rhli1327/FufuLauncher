@@ -55,7 +55,7 @@ namespace FufuLauncher
             }
 
             var key = "FufuLauncher";
-            
+
             if (args.Length > 0 && string.Equals(args[0], "restart", StringComparison.OrdinalIgnoreCase))
             {
                 const int maxRetries = 50;
@@ -98,7 +98,9 @@ namespace FufuLauncher
             var exitCode = 1;
             try
             {
-                if (args.Length < 3)
+                AppPaths.EnsureDirectories();
+
+                if (args.Length < 2)
                 {
                     return;
                 }
@@ -124,7 +126,7 @@ namespace FufuLauncher
 
                     foreach (var quarantined in PluginInjectionGuard.QuarantineRootStrayFiles())
                     {
-                        Debug.WriteLine($"[Program] 已重命名插件根目录残留文件: {quarantined}");
+                        DebugLog.Info("Program", $"[Program] Renamed leftover files in plugin root: {quarantined}");
                     }
 
                     var conflicts = PluginInjectionGuard.FindDuplicateDllNames(PluginConflictSettings.Read());
@@ -139,7 +141,7 @@ namespace FufuLauncher
 
                     dllPath = ResolveInjectDllPath(launcher);
 
-                    // Without an explicit preset, keep the config.ini prepared by the current in-app preset.
+
                     for (var i = 2; i < separatorIndex; i++)
                     {
                         if (string.Equals(args[i], "--preset", StringComparison.OrdinalIgnoreCase))
@@ -158,7 +160,8 @@ namespace FufuLauncher
 
                 if (!LauncherService.IsAllowedPluginDllPath(dllPath))
                 {
-                    MessageBox(IntPtr.Zero, "主插件路径或 SHA-256 校验失败，已拒绝注入。", "安全校验失败", 0x10);
+                    ElevatedInjectionResultFile.Write("主插件路径或完整性校验失败，已拒绝注入。");
+                    MessageBox(IntPtr.Zero, "主插件路径或完整性校验失败，已拒绝注入。", "安全校验失败", 0x10);
                     return;
                 }
 
@@ -177,24 +180,27 @@ namespace FufuLauncher
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"[Program] 注入前信任校验异常（继续注入）：{ex.Message}");
+                    DebugLog.Info("Program",
+                        $"[Program] Pre-injection trust check exception (continuing injection): {ex.Message}");
                 }
 
                 var result = launcher.LaunchGameAndInject(gameExePath, dllPath, commandLineArgs, out var errorMessage,
                     out var pid);
                 if (result != 0)
                 {
-                    MessageBox(IntPtr.Zero,
-                        string.Format("Program_InjectionFailed".GetLocalized(), errorMessage, result),
-                        "Program_ErrorTitle".GetLocalized(), 0x10);
+                    var failureMessage =
+                        string.Format("Program_InjectionFailed".GetLocalized(), errorMessage, result);
+                    ElevatedInjectionResultFile.Write(failureMessage);
+                    MessageBox(IntPtr.Zero, failureMessage, "Program_ErrorTitle".GetLocalized(), 0x10);
                 }
 
                 exitCode = result == 0 ? 0 : 1;
             }
             catch (Exception ex)
             {
-                MessageBox(IntPtr.Zero, string.Format("Program_InjectionException".GetLocalized(), ex.Message),
-                    "Program_ErrorTitle".GetLocalized(), 0x10);
+                var exceptionMessage = string.Format("Program_InjectionException".GetLocalized(), ex.Message);
+                ElevatedInjectionResultFile.Write(exceptionMessage);
+                MessageBox(IntPtr.Zero, exceptionMessage, "Program_ErrorTitle".GetLocalized(), 0x10);
             }
             finally
             {
@@ -224,8 +230,11 @@ namespace FufuLauncher
         private static string ResolveInjectDllPath(LauncherService launcher)
         {
             var standard = launcher.GetDefaultDllPath();
-            if (File.Exists(standard)) return standard;
-            return LauncherService.GetBundledLitePluginDllPath();
+            if (LauncherService.IsAllowedPluginDllPath(standard) && PluginGameVersionGuard.IsPluginUsable(standard))
+                return standard;
+            var lite = LauncherService.GetBundledLitePluginDllPath();
+            return LauncherService.IsAllowedPluginDllPath(lite) && PluginGameVersionGuard.IsPluginUsable(lite)
+                ? lite : string.Empty;
         }
 
         private static string ResolvePluginConfigPath(string pluginDirectory)
@@ -249,39 +258,44 @@ namespace FufuLauncher
         {
             try
             {
-                var presetsDir = AppPaths.PluginPresetsDir;
-        var presetFile = Path.Combine(presetsDir, $"{presetId}.json");
-        
-        if (File.Exists(presetFile))
-        {
-            var content = File.ReadAllText(presetFile);
-            using var doc = JsonDocument.Parse(content);
-            
-            if (doc.RootElement.TryGetProperty("ConfigData", out var configData))
-            {
+                var folder = string.IsNullOrWhiteSpace(pluginDirectory)
+                    ? LightweightPluginService.MainPluginFolderName
+                    : Path.GetFileName(Path.TrimEndingDirectorySeparator(pluginDirectory));
+                var presetsDir = PluginPresetStorage.GetDirectory(folder);
+                var includeLegacyMain = folder.Equals(LightweightPluginService.MainPluginFolderName,
+                    StringComparison.OrdinalIgnoreCase);
+                var presetFile = PluginPresetStorage.ReadPresets(presetsDir, includeLegacyMain)
+                    .FirstOrDefault(preset => preset.Id == presetId)?.FilePath;
+
+                if (!string.IsNullOrEmpty(presetFile) && File.Exists(presetFile))
+                {
+                    var content = File.ReadAllText(presetFile);
+                    using var doc = JsonDocument.Parse(content);
+
+                    if (doc.RootElement.TryGetProperty("ConfigData", out var configData))
+                    {
                         var iniPath = ResolvePluginConfigPath(pluginDirectory);
-                
-                var iniFile = new IniFile(iniPath);
+
+                        var iniFile = new IniFile(iniPath);
                         var dict =
                             JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(
                                 configData.GetRawText());
-                
-                if (dict != null)
-                {
-                    dict.Remove("General");
-                    iniFile.UpdateMultiple(dict);
-                    
-                    var stateFile = Path.Combine(presetsDir, "active_state.json");
-                    var stateDict = new Dictionary<string, string> { { "ActiveId", presetId } };
-                    File.WriteAllText(stateFile, JsonSerializer.Serialize(stateDict));
+
+                        if (dict != null)
+                        {
+                            dict.Remove("General");
+                            iniFile.UpdateMultiple(dict);
+
+                            var stateFile = Path.Combine(presetsDir, "active_state.json");
+                            var stateDict = new Dictionary<string, string> { { "ActiveId", presetId } };
+                            File.WriteAllText(stateFile, JsonSerializer.Serialize(stateDict));
+                        }
+                    }
                 }
             }
-        }
-    }
-    catch
-    {
-        // ignored
-    }
+            catch
+            {
+            }
         }
     }
 }

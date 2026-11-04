@@ -1,0 +1,142 @@
+﻿<Window
+    x:Class="FufuLauncher.Views.DiagnosticsWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:viewmodels="using:FufuLauncher.ViewModels"
+    xmlns:helpers="using:FufuLauncher.Helpers"
+    mc:Ignorable="d"
+    Title="{helpers:Loc Key=Diagnostics_Title}">
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid x:Name="AppTitleBar" Height="48" VerticalAlignment="Top">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="{helpers:Loc Key=Diagnostics_HardwareAndSystem}"
+                       Grid.Column="1"
+                       VerticalAlignment="Center"
+                       Margin="24,0,0,0"
+                       FontSize="14"
+                       FontWeight="SemiBold" />
+        </Grid>
+
+        <Grid Grid.Row="1" Padding="24,0,24,24">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10"
+                        Visibility="{x:Bind ToVisible(ViewModel.IsLoading), Mode=OneWay}">
+                <ProgressRing IsActive="True" />
+                <TextBlock Text="{helpers:Loc Key=Diagnostics_CollectingInfo}"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            </StackPanel>
+
+            <ScrollViewer Visibility="{x:Bind ToCollapsed(ViewModel.IsLoading), Mode=OneWay}">
+                <StackPanel Spacing="20">
+                    <TextBlock Text="{helpers:Loc Key=Diagnostics_DisplayAndGraphics}"
+                               Style="{StaticResource SubtitleTextBlockStyle}" />
+
+                    <Grid ColumnSpacing="12" RowSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                CornerRadius="8" Padding="12">
+                            <StackPanel>
+                                <TextBlock Text="{helpers:Loc Key=Diagnostics_Resolution}"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           FontSize="12" />
+                                <TextBlock Text="{x:Bind ViewModel.Info.ScreenResolution, Mode=OneWay}" FontSize="16"
+                                           FontWeight="SemiBold" />
+                            </StackPanel>
+                        </Border>
+                        <Border Grid.Column="1" Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                CornerRadius="8" Padding="12">
+                            <StackPanel>
+                                <TextBlock Text="{helpers:Loc Key=Diagnostics_RefreshRate}"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           FontSize="12" />
+                                <TextBlock Text="{x:Bind ViewModel.Info.CurrentRefreshRate, Mode=OneWay}" FontSize="16"
+                                           FontWeight="SemiBold" />
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+
+                    <TextBlock Text="{helpers:Loc Key=Diagnostics_Hardware}"
+                               Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,10,0,0" />
+                    <Border Background="{ThemeResource LayerFillColorDefaultBrush}" CornerRadius="8" Padding="16">
+                        <StackPanel Spacing="16">
+                            <Grid>
+                                <TextBlock Text="OS" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                <TextBlock Text="{x:Bind ViewModel.Info.OsVersion, Mode=OneWay}"
+                                           HorizontalAlignment="Right" MaxWidth="300" TextWrapping="Wrap" />
+                            </Grid>
+                            <Border Height="1" Background="{ThemeResource SurfaceStrokeColorDefaultBrush}" />
+                            <Grid>
+                                <TextBlock Text="CPU" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                <TextBlock Text="{x:Bind ViewModel.Info.CpuName, Mode=OneWay}"
+                                           HorizontalAlignment="Right" MaxWidth="300" TextTrimming="CharacterEllipsis" />
+                            </Grid>
+                            <Border Height="1" Background="{ThemeResource SurfaceStrokeColorDefaultBrush}" />
+                            <Grid>
+                                <TextBlock Text="GPU" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                <TextBlock Text="{x:Bind ViewModel.Info.GpuName, Mode=OneWay}"
+                                           HorizontalAlignment="Right" MaxWidth="300" TextTrimming="CharacterEllipsis" />
+                            </Grid>
+                            <Border Height="1" Background="{ThemeResource SurfaceStrokeColorDefaultBrush}" />
+                            <Grid>
+                                <TextBlock Text="RAM" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                <TextBlock Text="{x:Bind ViewModel.Info.TotalMemory, Mode=OneWay}"
+                                           HorizontalAlignment="Right" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <TextBlock Text="{helpers:Loc Key=Diagnostics_SecurityAndNetwork}"
+                               Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,10,0,0" />
+                    <Border Background="{ThemeResource LayerFillColorDefaultBrush}" CornerRadius="8" Padding="16">
+                        <StackPanel Spacing="16">
+                            <Grid>
+                                <TextBlock Text="{helpers:Loc Key=Diagnostics_WindowsSecurity}"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                <TextBlock Text="{x:Bind ViewModel.Info.SecurityCenterStatus, Mode=OneWay}"
+                                           HorizontalAlignment="Right" />
+                            </Grid>
+                            <Border Height="1" Background="{ThemeResource SurfaceStrokeColorDefaultBrush}" />
+                            <Grid>
+                                <TextBlock Text="{helpers:Loc Key=Diagnostics_DiskSpace}"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                <TextBlock Text="{x:Bind ViewModel.Info.DiskSpace, Mode=OneWay}"
+                                           HorizontalAlignment="Right" />
+                            </Grid>
+                            <Border Height="1" Background="{ThemeResource SurfaceStrokeColorDefaultBrush}" />
+                            <Grid>
+                                <TextBlock Text="{helpers:Loc Key=Diagnostics_NetworkStatus}"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                <TextBlock Text="{x:Bind ViewModel.Info.NetworkStatus, Mode=OneWay}"
+                                           HorizontalAlignment="Right" />
+                            </Grid>
+                            <Border Height="1" Background="{ThemeResource SurfaceStrokeColorDefaultBrush}" />
+                            <Grid>
+                                <TextBlock Text="{helpers:Loc Key=Diagnostics_NetworkRegion}"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                <TextBlock Text="{x:Bind ViewModel.Info.NetworkRegion, Mode=OneWay}"
+                                           HorizontalAlignment="Right" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <InfoBar FontFamily="{StaticResource AppGlobalFont}" IsOpen="True" IsClosable="False" Severity="Informational"
+                             Title="{helpers:Loc Key=Diagnostics_Suggestion}"
+                             Message="{x:Bind ViewModel.Info.Suggestion, Mode=OneWay}" />
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</Window>

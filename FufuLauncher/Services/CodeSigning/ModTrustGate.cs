@@ -58,11 +58,18 @@ public sealed class ModTrustGate
     private const string LegacyPolicyFileName = "mod-trust-policy.json";
     private static readonly object FileLock = new();
 
-    private readonly CodeSigningTrustService _trust;
+    private readonly Func<string, ModTrustResult> _verify;
 
     public ModTrustGate(CodeSigningTrustService trust)
     {
-        _trust = trust;
+        ArgumentNullException.ThrowIfNull(trust);
+        _verify = filePath => CodeSignatureVerifier.VerifyFile(filePath, trust.GetPackage());
+    }
+
+    internal ModTrustGate(Func<string, ModTrustResult> verify)
+    {
+        ArgumentNullException.ThrowIfNull(verify);
+        _verify = verify;
     }
 
     public static string PolicyFilePath => Path.Combine(AppPaths.SettingsDir, PolicyFileName);
@@ -91,7 +98,8 @@ public sealed class ModTrustGate
                 }
 
                 if (mode.ValueKind == JsonValueKind.String &&
-                    Enum.TryParse<ModTrustEnforcement>(mode.GetString(), true, out var parsed))
+                    Enum.TryParse<ModTrustEnforcement>(mode.GetString(), true, out var parsed) &&
+                    Enum.IsDefined(parsed))
                 {
                     return parsed;
                 }
@@ -99,13 +107,15 @@ public sealed class ModTrustGate
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[ModTrustGate] 读取策略文件失败: {ex.Message}");
+            DebugLog.Info("ModTrustGate", $"[ModTrustGate] Failed to read policy file: {ex.Message}");
         }
 
         return ModTrustEnforcement.Off;
     }
 
-    public static void WriteMode(ModTrustEnforcement mode)
+    public static void WriteMode(ModTrustEnforcement mode) => TryWriteMode(mode);
+
+    public static bool TryWriteMode(ModTrustEnforcement mode)
     {
         lock (FileLock)
         {
@@ -116,7 +126,7 @@ public sealed class ModTrustGate
                 {
                     mode = mode.ToString(),
                     updatedUtc = DateTimeOffset.UtcNow.ToString("O"),
-                    note = "Off=不操作 Warn=仅提示 Enforce=拦截（仅平台签发且符合策略的 DLL 可加载）"
+                    note = "Off=跳过校验 Warn=仅提示 Enforce=拦截（仅平台签发且符合策略的 DLL 可加载）"
                 }, new JsonSerializerOptions { WriteIndented = true });
 
                 var temporary = PolicyFilePath + ".tmp";
@@ -124,28 +134,34 @@ public sealed class ModTrustGate
                 if (File.Exists(PolicyFilePath)) File.Replace(temporary, PolicyFilePath, null, true);
                 else File.Move(temporary, PolicyFilePath);
 
-                Debug.WriteLine($"[ModTrustGate] 信任策略已设置为 {mode}");
+                DebugLog.Info("ModTrustGate", $"[ModTrustGate] Trust policy set to {mode}");
+                return true;
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[ModTrustGate] 写入策略文件失败: {ex.Message}");
+                DebugLog.Info("ModTrustGate", $"[ModTrustGate] Failed to write policy file: {ex.Message}");
+                return false;
             }
         }
     }
 
-    public ModTrustResult Evaluate(string filePath) => CodeSignatureVerifier.VerifyFile(filePath, _trust.GetPackage());
+    public ModTrustResult Evaluate(string filePath) => _verify(filePath);
 
     public ModTrustDecision EvaluateForLoading(string filePath, ModTrustEnforcement? modeOverride = null)
     {
         var mode = modeOverride ?? ReadMode();
-        var result = Evaluate(filePath);
-
         if (mode == ModTrustEnforcement.Off)
         {
             return new ModTrustDecision
-                { Allowed = true, Result = result, Mode = mode, Reason = "trust check disabled" };
+            {
+                Allowed = true,
+                Result = new ModTrustResult { FilePath = filePath, Status = ModTrustStatus.VerificationSkipped },
+                Mode = mode,
+                Reason = "trust check disabled"
+            };
         }
 
+        var result = Evaluate(filePath);
         var allowed = mode switch
         {
             ModTrustEnforcement.Warn => true,
@@ -156,7 +172,7 @@ public sealed class ModTrustGate
 
         if (!allowed)
         {
-            Debug.WriteLine($"[ModTrustGate] 拒绝加载 {filePath}（{result.Status}）：{reason}");
+            DebugLog.Info("ModTrustGate", $"[ModTrustGate] Refused to load {filePath} ({result.Status}): {reason}");
         }
 
         return new ModTrustDecision { Allowed = allowed, Result = result, Mode = mode, Reason = reason };
@@ -170,6 +186,7 @@ public sealed class ModTrustGate
 
         return result.Status switch
         {
+            ModTrustStatus.VerificationSkipped => "trust check disabled",
             ModTrustStatus.TrustedPlatform => $"signed by the FufuLauncher code signing CA: {signer}",
             ModTrustStatus.TrustedAllowlisted => $"listed in the platform trust allow list: {signer}",
             ModTrustStatus.Unsigned => "unsigned: publisher cannot be verified",

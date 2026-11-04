@@ -4,6 +4,7 @@ Licensed under the MIT License.
 */
 
 using System.Text;
+using FufuLauncher.Services;
 
 namespace FufuLauncher.Helpers;
 
@@ -58,7 +59,7 @@ public class IniFile
     {
         if (!File.Exists(_path))
         {
-            throw new FileNotFoundException($"�޷��������ã�δ�ҵ�Ŀ���ļ�: {_path}");
+            throw new FileNotFoundException($"{_path}");
         }
 
         var lines = new List<string>(File.ReadAllLines(_path, Encoding.UTF8));
@@ -66,7 +67,8 @@ public class IniFile
         SaveToFile(lines);
     }
 
-    public void UpdateMultiple(Dictionary<string, Dictionary<string, string>> updates, CancellationToken cancellationToken = default)
+    public void UpdateMultiple(Dictionary<string, Dictionary<string, string>> updates,
+        CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
         if (!File.Exists(_path))
@@ -86,10 +88,12 @@ public class IniFile
             {
                 return;
             }
+
             foreach (var value in currentUpdates)
             {
                 output.Add($"{value.Key} = {value.Value}");
             }
+
             currentUpdates.Clear();
         }
 
@@ -170,6 +174,11 @@ public class IniFile
     {
         try
         {
+            if (PluginConfigGuard.TryRepairLines(_path, lines, out var repairedLines))
+            {
+                lines = repairedLines;
+            }
+
             File.WriteAllLines(_path, lines, Encoding.UTF8);
         }
         catch (UnauthorizedAccessException)

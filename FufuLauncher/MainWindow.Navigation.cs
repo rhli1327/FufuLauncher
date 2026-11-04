@@ -1,10 +1,11 @@
-﻿/*
+/*
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
 
 using System.Diagnostics;
 using System.Numerics;
+using CommunityToolkit.Mvvm.Messaging;
 using FufuLauncher.Contracts.Services;
 using FufuLauncher.Helpers;
 using FufuLauncher.Messages;
@@ -13,13 +14,22 @@ using FufuLauncher.Services;
 using FufuLauncher.ViewModels;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Hosting;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
+using Microsoft.UI.Xaml.Media.Imaging;
 
 namespace FufuLauncher;
 
 public sealed partial class MainWindow
 {
+    private Action? _accountFlyoutClosedAction;
+    private string? _accountAvatarUrl;
+    private BitmapImage? _navAvatarImage;
+
+    private static readonly Uri DefaultAccountAvatarUri = new("ms-appx:///Assets/DefaultAvatar.png");
+
     #region Navigation & Layout
 
     private async void NavigationView_Loaded(object sender, RoutedEventArgs e)
@@ -62,7 +72,7 @@ public sealed partial class MainWindow
             await LoadPageOverlayOpacitySettingAsync();
             await LoadHamburgerButtonSettingAsync();
             await LoadAndApplyAcrylicSettingAsync();
-            await LoadGlobalBackgroundAsync();
+            _ = LoadGlobalBackgroundAsync();
             await LoadMinimizeToTraySettingAsync();
             await LoadMinWindowSizeLimitSettingAsync();
             await LoadNotificationPositionAsync();
@@ -97,7 +107,7 @@ public sealed partial class MainWindow
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"启动时刷新 Token 失败: {ex.Message}");
+                    DebugLog.Info("MainWindow.Navigation", $"Failed to refresh token at startup: {ex.Message}");
                 }
             });
             _ = Task.Run(async () => await HashValidationService.ValidateFilesAsync());
@@ -166,6 +176,7 @@ public sealed partial class MainWindow
     {
         AgreementFrame.Visibility = Visibility.Collapsed;
         NavigationView.Visibility = Visibility.Visible;
+        RefreshAccountMenu();
         NavigationView.SelectedItem = NavigationView.MenuItems[0];
 
         try
@@ -175,7 +186,7 @@ public sealed partial class MainWindow
         }
         catch (InvalidCastException ex)
         {
-            Debug.WriteLine($"MainPage 导航类型转换异常: {ex.Message}");
+            DebugLog.Info("MainWindow.Navigation", $"MainPage navigation type cast exception: {ex.Message}");
         }
 
         SyncPageTheme();
@@ -200,6 +211,8 @@ public sealed partial class MainWindow
 
     private void NavigationView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
     {
+        RefreshAccountMenu();
+
         if (args.SelectedItem is NavigationViewItem selectedItem)
         {
             var viewModelTag = selectedItem.Tag?.ToString();
@@ -228,6 +241,9 @@ public sealed partial class MainWindow
 
     private void NavigationView_PaneOpened(NavigationView sender, object args)
     {
+        if (AccountNavText != null)
+            AccountNavText.Visibility = Visibility.Visible;
+
         if (_notificationPosition == NotificationPosition.TopLeft ||
             _notificationPosition == NotificationPosition.BottomLeft)
         {
@@ -237,6 +253,9 @@ public sealed partial class MainWindow
 
     private void NavigationView_PaneClosed(NavigationView sender, object args)
     {
+        if (AccountNavText != null)
+            AccountNavText.Visibility = Visibility.Collapsed;
+
         if (_notificationPosition == NotificationPosition.TopLeft ||
             _notificationPosition == NotificationPosition.BottomLeft)
         {
@@ -244,9 +263,267 @@ public sealed partial class MainWindow
         }
     }
 
-    internal async void NavigateToPage(string viewModelTag)
+    private void AccountNavButton_Click(object sender, RoutedEventArgs e)
     {
-        if (!IsNavItemVisible(viewModelTag))
+        RefreshAccountMenu();
+    }
+
+    private void RefreshAccountMenu()
+    {
+        AccountNavText.Visibility = NavigationView.IsPaneOpen ? Visibility.Visible : Visibility.Collapsed;
+        var entry = _accountManager.GetActiveAccountEntry();
+        if (entry == null)
+        {
+            _accountAvatarUrl = null;
+            ResetNavAvatar();
+            AccountNavText.Text = "Account_MenuTitle".GetLocalized();
+            AccountFlyoutProfilePanel.Visibility = Visibility.Collapsed;
+            AccountFlyoutGuestPanel.Visibility = Visibility.Visible;
+            return;
+        }
+
+        var role = GameRoleSelection.Current(entry);
+        var nickname = entry.Nickname;
+        if (string.IsNullOrWhiteSpace(nickname))
+            nickname = role?.nickname ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(nickname))
+            nickname = string.Format("Account_User_Format".GetLocalized(), entry.Stuid);
+
+        if (_navAvatarImage == null ||
+            !string.Equals(_accountAvatarUrl, entry.AvatarUrl, StringComparison.Ordinal))
+        {
+            _accountAvatarUrl = entry.AvatarUrl;
+            ShowNavAvatar(entry.AvatarUrl);
+            ApplyFlyoutAvatar(entry.AvatarUrl);
+        }
+
+        AccountNavText.Text = nickname;
+        AccountFlyoutNickname.Text = nickname;
+        AccountFlyoutCommunityUid.Text = FormatAccountValue(entry.Stuid);
+        AccountFlyoutGameUid.Text = FormatAccountValue(role?.game_uid ?? entry.GameUid);
+        var regionName = role?.region_name;
+        AccountFlyoutServer.Text = !string.IsNullOrWhiteSpace(regionName)
+            ? regionName
+            : (entry.ServerType == "os" || entry.Id.StartsWith("os_", StringComparison.Ordinal)
+                ? "Account_Server_Global".GetLocalized()
+                : "Account_Server_CN".GetLocalized());
+        AccountFlyoutLevel.Text = role != null && role.level > 0
+            ? role.level.ToString()
+            : "Common_None".GetLocalized();
+        AccountFlyoutProfilePanel.Visibility = Visibility.Visible;
+        AccountFlyoutGuestPanel.Visibility = Visibility.Collapsed;
+    }
+
+    private static string FormatAccountValue(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? "Common_None".GetLocalized() : value;
+
+    private static Uri ResolveAccountAvatarUri(string? avatarUrl)
+    {
+        if (!string.IsNullOrWhiteSpace(avatarUrl) &&
+            Uri.TryCreate(avatarUrl, UriKind.Absolute, out var parsed))
+        {
+            return parsed;
+        }
+
+        return DefaultAccountAvatarUri;
+    }
+
+    private void ShowNavAvatar(string? avatarUrl)
+    {
+        DetachNavAvatarImage();
+
+        var image = new BitmapImage();
+        image.ImageOpened += OnNavAvatarImageOpened;
+        image.ImageFailed += OnNavAvatarImageFailed;
+        _navAvatarImage = image;
+
+        AccountNavPlaceholderIcon.Visibility = Visibility.Visible;
+        AccountNavAvatar.Source = image;
+
+        image.UriSource = ResolveAccountAvatarUri(avatarUrl);
+    }
+
+    private void ApplyFlyoutAvatar(string? avatarUrl)
+    {
+        var image = new BitmapImage();
+        image.ImageFailed += (_, _) =>
+        {
+            if (!ReferenceEquals(AccountFlyoutAvatar.ProfilePicture, image)) return;
+            if (image.UriSource != DefaultAccountAvatarUri)
+                image.UriSource = DefaultAccountAvatarUri;
+        };
+
+        AccountFlyoutAvatar.ProfilePicture = image;
+        image.UriSource = ResolveAccountAvatarUri(avatarUrl);
+    }
+
+    private void OnNavAvatarImageOpened(object sender, RoutedEventArgs e)
+    {
+        if (ReferenceEquals(sender, _navAvatarImage))
+            AccountNavPlaceholderIcon.Visibility = Visibility.Collapsed;
+    }
+
+    private void OnNavAvatarImageFailed(object sender, ExceptionRoutedEventArgs e)
+    {
+        if (sender is not BitmapImage image || !ReferenceEquals(image, _navAvatarImage))
+            return;
+
+        if (image.UriSource != DefaultAccountAvatarUri)
+        {
+            image.UriSource = DefaultAccountAvatarUri;
+            return;
+        }
+
+        DebugLog.Info("MainWindow.Navigation", $"[NavAvatar] Avatar image failed to load: {e.ErrorMessage}");
+        ResetNavAvatar();
+    }
+
+    private void ResetNavAvatar()
+    {
+        DetachNavAvatarImage();
+
+        AccountNavAvatar.Source = null;
+        AccountNavPlaceholderIcon.Visibility = Visibility.Visible;
+    }
+
+    private void DetachNavAvatarImage()
+    {
+        if (_navAvatarImage == null)
+            return;
+
+        _navAvatarImage.ImageOpened -= OnNavAvatarImageOpened;
+        _navAvatarImage.ImageFailed -= OnNavAvatarImageFailed;
+        _navAvatarImage = null;
+    }
+
+    private void AccountSwitchButton_Click(object sender, RoutedEventArgs e)
+    {
+        _accountFlyoutClosedAction = ShowAccountSwitchFlyout;
+        AccountFlyout.Hide();
+    }
+
+    private void RoleSwitchButton_Click(object sender, RoutedEventArgs e)
+    {
+        _accountFlyoutClosedAction = ShowRoleSwitchFlyout;
+        AccountFlyout.Hide();
+    }
+
+    private void ShowAccountSwitchFlyout()
+    {
+        var flyout = new MenuFlyout
+        {
+            Placement = FlyoutPlacementMode.RightEdgeAlignedBottom
+        };
+        var activeId = _accountManager.ActiveAccountId;
+        foreach (var account in _accountManager.GetAllAccounts())
+        {
+            var nickname = string.IsNullOrWhiteSpace(account.Nickname) ? account.Stuid : account.Nickname;
+            var item = new RadioMenuFlyoutItem
+            {
+                FontFamily = (Microsoft.UI.Xaml.Media.FontFamily)Application.Current.Resources["AppGlobalFont"],
+                Text = $"{nickname} · {account.Stuid}",
+                GroupName = "AccountSwitch",
+                IsChecked = account.Id == activeId
+            };
+            item.Click += async (_, _) => await SwitchAccountAsync(account);
+            flyout.Items.Add(item);
+        }
+
+        if (flyout.Items.Count == 0)
+            flyout.Items.Add(new MenuFlyoutItem
+            {
+                FontFamily = (Microsoft.UI.Xaml.Media.FontFamily)Application.Current.Resources["AppGlobalFont"],
+                Text = "Account_NotLoggedIn".GetLocalized(),
+                IsEnabled = false
+            });
+
+        flyout.ShowAt(AccountNavButton);
+    }
+
+    private async Task SwitchAccountAsync(AccountEntry account)
+    {
+        if (account.Id == _accountManager.ActiveAccountId) return;
+        try
+        {
+            await _accountManager.SwitchAccountAsync(account.Id);
+            WeakReferenceMessenger.Default.Send(new AccountChangedMessage());
+            RefreshAccountMenu();
+            await RefreshAccountPageAsync(accountChanged: true);
+        }
+        catch (Exception ex)
+        {
+            DebugLog.Info("MainWindow.Navigation", $"[AccountSwitch] {ex.Message}");
+        }
+    }
+
+    private void ShowRoleSwitchFlyout()
+    {
+        var flyout = new MenuFlyout
+        {
+            Placement = FlyoutPlacementMode.RightEdgeAlignedBottom
+        };
+        var entry = _accountManager.GetActiveAccountEntry();
+        var roles = entry == null
+            ? new List<GameRoleInfo>()
+            : GameRoleSelection.Filter(entry.GameRoles ?? [], entry.ServerType);
+        var current = entry == null ? null : GameRoleSelection.Current(entry);
+
+        foreach (var role in roles)
+        {
+            var label = string.IsNullOrWhiteSpace(role.nickname)
+                ? role.game_uid
+                : $"{role.nickname} · {role.region_name} · {role.game_uid}";
+            var item = new RadioMenuFlyoutItem
+            {
+                FontFamily = (Microsoft.UI.Xaml.Media.FontFamily)Application.Current.Resources["AppGlobalFont"],
+                Text = label,
+                GroupName = "RoleSwitch",
+                IsChecked = current != null && role.game_uid == current.game_uid && role.region == current.region
+            };
+            item.Click += async (_, _) => await SwitchRoleAsync(entry!.Id, role);
+            flyout.Items.Add(item);
+        }
+
+        if (roles.Count == 0)
+            flyout.Items.Add(new MenuFlyoutItem
+            {
+                FontFamily = (Microsoft.UI.Xaml.Media.FontFamily)Application.Current.Resources["AppGlobalFont"],
+                Text = "Account_NoCharacters".GetLocalized(),
+                IsEnabled = false
+            });
+
+        flyout.ShowAt(AccountNavButton);
+    }
+
+    private async Task SwitchRoleAsync(string accountId, GameRoleInfo role)
+    {
+        try
+        {
+            await App.GetService<GameRoleService>().SelectAsync(accountId, role);
+            RefreshAccountMenu();
+            await RefreshAccountPageAsync(accountChanged: false);
+        }
+        catch (Exception ex)
+        {
+            DebugLog.Info("MainWindow.Navigation", $"[RoleSwitch] {ex.Message}");
+        }
+    }
+
+    private async Task RefreshAccountPageAsync(bool accountChanged)
+    {
+        if (ContentFrame.Content is Views.AccountPage accountPage)
+            await accountPage.RefreshForSidebarSwitchAsync(accountChanged);
+    }
+
+    private async void AccountFlyoutGoToAccount_Click(object sender, RoutedEventArgs e)
+    {
+        AccountFlyout.Hide();
+        await NavigateToAccountPageAsync();
+    }
+
+    internal async void NavigateToPage(string viewModelTag, bool force = false)
+    {
+        if (!force && !IsNavItemVisible(viewModelTag))
         {
             ShowNotification(new NotificationMessage("HiddenFeatureTitle".GetLocalized(),
                 "HiddenFeatureMessage".GetLocalized(), NotificationType.Warning, 3000));
@@ -259,15 +536,15 @@ public sealed partial class MainWindow
         var pageType = viewModelTag switch
         {
             "FufuLauncher.ViewModels.MainViewModel" => typeof(Views.MainPage),
-            "FufuLauncher.ViewModels.BlankViewModel" => typeof(Views.BlankPage),
+            "FufuLauncher.ViewModels.GameSettingsViewModel" or "FufuLauncher.ViewModels.BlankViewModel" =>
+                typeof(Views.GameSettingsPage),
             "FufuLauncher.ViewModels.SettingsViewModel" => typeof(Views.SettingsPage),
             "FufuLauncher.ViewModels.AccountViewModel" => typeof(Views.AccountPage),
             "FufuLauncher.ViewModels.OtherViewModel" => typeof(Views.OtherPage),
-            "FufuLauncher.ViewModels.CalculatorViewModel" => typeof(Views.CalculatorPage),
-            "FufuLauncher.ViewModels.ControlPanelModel" => typeof(Views.PanelPage),
+            "FufuLauncher.ViewModels.ControlPanelViewModel" or "FufuLauncher.ViewModels.ControlPanelModel" =>
+                typeof(Views.ControlPanelPage),
             "FufuLauncher.ViewModels.PluginViewModel" => typeof(Views.PluginPage),
             "FufuLauncher.ViewModels.PluginStoreViewModel" => typeof(Views.PluginStorePage),
-            "FufuLauncher.ViewModels.DataViewModel" => typeof(Views.DataPage),
             "FufuLauncher.ViewModels.PluginSettingsViewModel" => typeof(Views.PluginSettingsPage),
             "FufuLauncher.ViewModels.HelpViewModel" => typeof(Views.HelpPage),
             _ => null
@@ -292,7 +569,7 @@ public sealed partial class MainWindow
             }
             catch (InvalidCastException ex)
             {
-                Debug.WriteLine($"页面导航类型转换异常: {ex.Message}");
+                DebugLog.Info("MainWindow.Navigation", $"Page navigation type cast exception: {ex.Message}");
                 return;
             }
 
@@ -462,15 +739,67 @@ public sealed partial class MainWindow
             NavigateToPage("FufuLauncher.ViewModels.AccountViewModel");
     }
 
+    public void NavigateToGameSettingsPage()
+    {
+        if (_isExit) return;
+
+        var item = GetAllNavItems()
+            .FirstOrDefault(i =>
+                i.Tag?.ToString() == "FufuLauncher.ViewModels.GameSettingsViewModel" ||
+                i.Tag?.ToString() == "FufuLauncher.ViewModels.BlankViewModel");
+
+        if (item != null && (IsNavItemVisible("FufuLauncher.ViewModels.GameSettingsViewModel") ||
+                             IsNavItemVisible("FufuLauncher.ViewModels.BlankViewModel")))
+        {
+            if (NavigationView.SelectedItem == item)
+            {
+                NavigateToPage("FufuLauncher.ViewModels.GameSettingsViewModel");
+            }
+            else
+            {
+                NavigationView.SelectedItem = item;
+            }
+        }
+        else
+        {
+            NavigationView.SelectedItem = null;
+            NavigateToPage("FufuLauncher.ViewModels.GameSettingsViewModel", force: true);
+        }
+    }
+
+    public void NavigateToBlankPage() => NavigateToGameSettingsPage();
+
+    public async Task NavigateToGameSettingsPageAsync()
+    {
+        if (_isExit) return;
+        try
+        {
+            Activate();
+        }
+        catch (System.Runtime.InteropServices.COMException)
+        {
+            return;
+        }
+
+        for (var i = 0; i < 40 && !_isMainUiLoaded; i++)
+        {
+            await Task.Delay(100);
+        }
+
+        NavigateToGameSettingsPage();
+    }
+
+    public Task NavigateToBlankPageAsync() => NavigateToGameSettingsPageAsync();
+
     public async Task LoadNavItemVisibilityAsync()
     {
         var settings = App.GetService<ILocalSettingsService>();
         var allKeys = new[]
         {
-            "MainViewModel", "PluginSettingsViewModel", "ControlPanelModel",
-            "BlankViewModel", "AccountViewModel", "OtherViewModel",
-            "PluginViewModel", "DataViewModel", "HelpViewModel",
-            "CalculatorViewModel", "SettingsViewModel"
+            "MainViewModel", "PluginSettingsViewModel", "ControlPanelViewModel", "ControlPanelModel",
+            "GameSettingsViewModel", "BlankViewModel", "AccountViewModel", "OtherViewModel",
+            "PluginViewModel", "PluginStoreViewModel", "HelpViewModel",
+            "SettingsViewModel"
         };
 
         foreach (var key in allKeys)
@@ -495,6 +824,8 @@ public sealed partial class MainWindow
     {
         return _navItemVisibility.TryGetValue(viewModelKey, out var visible) ? visible : true;
     }
+
+    internal bool CanNavigateToPage(string viewModelKey) => IsNavItemVisible(viewModelKey);
 
     private void ApplyNavItemVisibility(NavItemConfig config)
     {
@@ -526,18 +857,12 @@ public sealed partial class MainWindow
 
             if (isMainPage && _isOverlayShown)
             {
+                PageBackgroundOverlay.Opacity = targetOpacity;
+
                 var translateAnim = new DoubleAnimation
                 {
-                    From = 0,
-                    To = screenHeight + 50,
-                    Duration = TimeSpan.FromMilliseconds(400),
-                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
-                };
-
-                var opacityAnim = new DoubleAnimation
-                {
-                    From = targetOpacity,
-                    To = 0.0,
+                    From = OverlayTranslate.Y,
+                    To = screenHeight + 100,
                     Duration = TimeSpan.FromMilliseconds(400),
                     EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
                 };
@@ -545,12 +870,18 @@ public sealed partial class MainWindow
                 var sb = new Storyboard();
                 Storyboard.SetTarget(translateAnim, OverlayTranslate);
                 Storyboard.SetTargetProperty(translateAnim, "Y");
-
-                Storyboard.SetTarget(opacityAnim, PageBackgroundOverlay);
-                Storyboard.SetTargetProperty(opacityAnim, "Opacity");
-
                 sb.Children.Add(translateAnim);
-                sb.Children.Add(opacityAnim);
+
+                sb.Completed += (_, _) =>
+                {
+                    if (!_isOverlayShown)
+                    {
+                        PageBackgroundOverlay.Opacity = 0.0;
+                    }
+                };
+
+                _pageOverlayStoryboard?.Stop();
+                _pageOverlayStoryboard = sb;
                 sb.Begin();
 
                 _isOverlayShown = false;
@@ -585,6 +916,9 @@ public sealed partial class MainWindow
 
                 sb.Children.Add(translateAnim);
                 sb.Children.Add(opacityAnim);
+
+                _pageOverlayStoryboard?.Stop();
+                _pageOverlayStoryboard = sb;
                 sb.Begin();
 
                 _isOverlayShown = true;
@@ -597,7 +931,7 @@ public sealed partial class MainWindow
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[MainWindow] 遮罩动画异常: {ex.Message}");
+            DebugLog.Info("MainWindow.Navigation", $"[MainWindow] Overlay animation exception: {ex.Message}");
         }
     }
 

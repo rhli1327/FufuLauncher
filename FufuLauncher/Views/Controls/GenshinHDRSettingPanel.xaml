@@ -1,0 +1,236 @@
+<UserControl
+    x:Class="FufuLauncher.Views.GenshinHDRSettingPanel"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:helpers="using:FufuLauncher.Helpers"
+    FontFamily="{StaticResource AppGlobalFont}"
+    x:DefaultBindMode="OneWay">
+
+    <UserControl.Resources>
+        <Style x:Key="HdrSectionHeaderStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+            <Setter Property="helpers:TrimmedToolTip.IsEnabled" Value="True" />
+        </Style>
+
+        <Style x:Key="HdrRowTitleStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+            <Setter Property="helpers:TrimmedToolTip.IsEnabled" Value="True" />
+        </Style>
+
+        <Style x:Key="HdrMetaLabelStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+            <Setter Property="helpers:TrimmedToolTip.IsEnabled" Value="True" />
+        </Style>
+
+        <Style x:Key="HdrMetaValueStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="HorizontalAlignment" Value="Right" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+            <Setter Property="helpers:TrimmedToolTip.IsEnabled" Value="True" />
+        </Style>
+
+        <Style x:Key="HdrDescriptionStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+            <Setter Property="helpers:TrimmedToolTip.IsEnabled" Value="True" />
+        </Style>
+
+        <Style x:Key="HdrDividerStyle" TargetType="Rectangle">
+            <Setter Property="Height" Value="1" />
+            <Setter Property="Fill" Value="{ThemeResource DividerStrokeColorDefaultBrush}" />
+        </Style>
+
+        <Style x:Key="HdrUnitStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+            <Setter Property="helpers:TrimmedToolTip.IsEnabled" Value="True" />
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Width="430">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <ScrollViewer Grid.Row="0" MaxHeight="480" VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled" Padding="0,0,4,0">
+            <StackPanel Spacing="14">
+
+                <StackPanel Spacing="8">
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="{helpers:Loc Key=HDR_DisplayInfo}"
+                                   Style="{StaticResource HdrSectionHeaderStyle}" />
+                        <TextBlock Grid.Column="1"
+                                   Text="{x:Bind SystemHDRStatusText, Mode=OneWay}"
+                                   Style="{StaticResource HdrMetaLabelStyle}" />
+                    </Grid>
+
+                    <InfoBar IsOpen="{x:Bind HDRNotSupported}" Severity="Warning" IsIconVisible="False"
+                             Title="{helpers:Loc Key=HDR_NotSupported}"
+                             Message="{helpers:Loc Key=HDR_NotSupportedMsg}" IsClosable="False" />
+                    <InfoBar IsOpen="{x:Bind HDRNotEnabled}" Severity="Informational" IsIconVisible="False"
+                             Title="{helpers:Loc Key=HDR_NotEnabled}"
+                             Message="{helpers:Loc Key=HDR_NotEnabledMsg}" IsClosable="False" />
+
+                    <Grid ColumnSpacing="12" RowSpacing="6">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="{helpers:Loc Key=HDR_ColorSpace}"
+                                   Style="{StaticResource HdrMetaLabelStyle}" />
+                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{x:Bind DisplayColorSpace, Mode=OneWay}"
+                                   Style="{StaticResource HdrMetaValueStyle}" />
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="{helpers:Loc Key=HDR_PeakLuminance}"
+                                   Style="{StaticResource HdrMetaLabelStyle}" />
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{x:Bind DisplayMaxLuminance, Mode=OneWay}"
+                                   Style="{StaticResource HdrMetaValueStyle}" />
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="{helpers:Loc Key=HDR_FullFrameLuminance}"
+                                   Style="{StaticResource HdrMetaLabelStyle}" />
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{x:Bind DisplayFullFrameLuminance, Mode=OneWay}"
+                                   Style="{StaticResource HdrMetaValueStyle}" />
+
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="{helpers:Loc Key=HDR_SdrWhiteLevel}"
+                                   Style="{StaticResource HdrMetaLabelStyle}" />
+                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{x:Bind DisplaySdrWhiteLevel, Mode=OneWay}"
+                                   Style="{StaticResource HdrMetaValueStyle}" />
+                    </Grid>
+                </StackPanel>
+
+                <Rectangle Style="{StaticResource HdrDividerStyle}" />
+
+                <StackPanel Spacing="6">
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="{helpers:Loc Key=HDR_SwitchSetting}"
+                                   Style="{StaticResource HdrRowTitleStyle}" />
+                        <ToggleSwitch Grid.Column="1"
+                                      IsOn="{x:Bind IsGenshinHDRForceEnabled, Mode=TwoWay}"
+                                      OnContent="{helpers:Loc Key=OnLabel}" OffContent="{helpers:Loc Key=OffLabel}"
+                                      MinWidth="0" VerticalAlignment="Center" />
+                    </Grid>
+                    <TextBlock Text="{helpers:Loc Key=HDR_RegistryNote}"
+                               Style="{StaticResource HdrDescriptionStyle}" />
+                </StackPanel>
+
+                <Rectangle Style="{StaticResource HdrDividerStyle}" />
+
+                <StackPanel Spacing="12">
+                    <TextBlock Text="{helpers:Loc Key=HDR_BrightnessConfig}"
+                               Style="{StaticResource HdrSectionHeaderStyle}" />
+
+                    <StackPanel Spacing="6">
+                        <Grid ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="{helpers:Loc Key=HDR_MaxLuminance}"
+                                       Style="{StaticResource HdrRowTitleStyle}" />
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                                <NumberBox Width="96" Value="{x:Bind MaxLuminance, Mode=TwoWay}"
+                                           Minimum="300" Maximum="2000" SpinButtonPlacementMode="Compact" />
+                                <TextBlock Text="nits" Style="{StaticResource HdrUnitStyle}" />
+                            </StackPanel>
+                        </Grid>
+                        <Slider Value="{x:Bind MaxLuminance, Mode=TwoWay}" Minimum="300" Maximum="2000"
+                                StepFrequency="10" />
+                        <TextBlock Text="{helpers:Loc Key=HDR_MaxLuminance_Desc}"
+                                   Style="{StaticResource HdrDescriptionStyle}" />
+                    </StackPanel>
+
+                    <StackPanel Spacing="6">
+                        <Grid ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="{helpers:Loc Key=HDR_SceneLuminance}"
+                                       Style="{StaticResource HdrRowTitleStyle}" />
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                                <NumberBox Width="96" Value="{x:Bind SceneLuminance, Mode=TwoWay}"
+                                           Minimum="100" Maximum="500" SpinButtonPlacementMode="Compact" />
+                                <TextBlock Text="nits" Style="{StaticResource HdrUnitStyle}" />
+                            </StackPanel>
+                        </Grid>
+                        <Slider Value="{x:Bind SceneLuminance, Mode=TwoWay}" Minimum="100" Maximum="500"
+                                StepFrequency="5" />
+                        <TextBlock Text="{helpers:Loc Key=HDR_SceneLuminance_Desc}"
+                                   Style="{StaticResource HdrDescriptionStyle}" />
+                    </StackPanel>
+
+                    <StackPanel Spacing="6">
+                        <Grid ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="{helpers:Loc Key=HDR_UILuminance}"
+                                       Style="{StaticResource HdrRowTitleStyle}" />
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                                <NumberBox Width="96" Value="{x:Bind UILuminance, Mode=TwoWay}"
+                                           Minimum="150" Maximum="550" SpinButtonPlacementMode="Compact" />
+                                <TextBlock Text="nits" Style="{StaticResource HdrUnitStyle}" />
+                            </StackPanel>
+                        </Grid>
+                        <Slider Value="{x:Bind UILuminance, Mode=TwoWay}" Minimum="150" Maximum="550"
+                                StepFrequency="5" />
+                        <TextBlock Text="{helpers:Loc Key=HDR_UILuminance_Desc}"
+                                   Style="{StaticResource HdrDescriptionStyle}" />
+                    </StackPanel>
+                </StackPanel>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <Grid Grid.Row="1" Padding="0,10,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Button Grid.Column="0" HorizontalAlignment="Stretch" Margin="0,0,6,0" FontSize="12"
+                    Content="{helpers:Loc Key=HDR_ResetDefault}"
+                    Command="{x:Bind ResetCommand}"
+                    ToolTipService.ToolTip="{helpers:Loc Key=HDR_ResetDefault}" />
+
+            <Button Grid.Column="1" HorizontalAlignment="Stretch" Margin="6,0,0,0" FontSize="12"
+                    Style="{StaticResource AccentButtonStyle}"
+                    Content="{helpers:Loc Key=HDR_AutoAdjust}"
+                    Command="{x:Bind AutoAdjustCommand}"
+                    ToolTipService.ToolTip="{helpers:Loc Key=HDR_AutoAdjustTooltip}" />
+        </Grid>
+    </Grid>
+</UserControl>

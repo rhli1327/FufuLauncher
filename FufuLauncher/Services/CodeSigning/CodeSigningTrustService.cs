@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
+using FufuLauncher.Constants;
 using FufuLauncher.Helpers;
 
 namespace FufuLauncher.Services.CodeSigning;
@@ -160,7 +161,7 @@ internal sealed class TrustInstallState
 
 public sealed class CodeSigningTrustService
 {
-    public const string DefaultSyncEndpoint = "https://certificate.fu1.fun";
+    public const string DefaultSyncEndpoint = ApiEndpoints.CertificateSyncUrl;
     public const string RootCerFileName = TrustPackageLoader.RootCerFileName;
     public const string PinnedRootFileName = "ModsRootCA.cer";
 
@@ -217,7 +218,8 @@ public sealed class CodeSigningTrustService
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[TrustService] 读取内置根证书失败: {ex.Message}");
+            DebugLog.Info("CodeSigningTrustService",
+                $"[TrustService] Failed to read pinned root certificate: {ex.Message}");
             return null;
         }
     }
@@ -250,7 +252,7 @@ public sealed class CodeSigningTrustService
                     {
                         _lastLoadError =
                             $"trust package root certificate does not match the pinned root ({package.RootThumbprintSha256}), rejected";
-                        Debug.WriteLine($"[TrustService] {_lastLoadError}");
+                        DebugLog.Info("CodeSigningTrustService", $"[TrustService] {_lastLoadError}");
                         package.Dispose();
                         continue;
                     }
@@ -261,7 +263,7 @@ public sealed class CodeSigningTrustService
                 catch (Exception ex)
                 {
                     _lastLoadError = $"trust package verification failed ({directory}): {ex.Message}";
-                    Debug.WriteLine($"[TrustService] {_lastLoadError}");
+                    DebugLog.Info("CodeSigningTrustService", $"[TrustService] {_lastLoadError}");
                 }
             }
 
@@ -304,7 +306,7 @@ public sealed class CodeSigningTrustService
             state.RootThumbprintSha256 = package.RootThumbprintSha256;
             WriteInstallState(state);
             machineManaged = true;
-            Debug.WriteLine("[TrustService] adopted the machine scope as managed by this app");
+            DebugLog.Info("CodeSigningTrustService", "[TrustService] adopted the machine scope as managed by this app");
         }
 
         bool userManaged;
@@ -326,7 +328,8 @@ public sealed class CodeSigningTrustService
                 state.RootThumbprintSha256 = package.RootThumbprintSha256;
                 WriteInstallState(state);
                 userManaged = true;
-                Debug.WriteLine("[TrustService] adopted the current-user scope as managed by this app");
+                DebugLog.Info("CodeSigningTrustService",
+                    "[TrustService] adopted the current-user scope as managed by this app");
             }
         }
         else
@@ -367,7 +370,7 @@ public sealed class CodeSigningTrustService
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[TrustService] failed to read install state: {ex.Message}");
+            DebugLog.Info("CodeSigningTrustService", $"[TrustService] failed to read install state: {ex.Message}");
             return new TrustInstallState();
         }
     }
@@ -386,7 +389,7 @@ public sealed class CodeSigningTrustService
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[TrustService] failed to write install state: {ex.Message}");
+            DebugLog.Info("CodeSigningTrustService", $"[TrustService] failed to write install state: {ex.Message}");
         }
     }
 
@@ -437,7 +440,8 @@ public sealed class CodeSigningTrustService
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[TrustService] 查询证书存储失败（{storeName}/{scope}）: {ex.Message}");
+            DebugLog.Info("CodeSigningTrustService",
+                $"[TrustService] Failed to query certificate store ({storeName}/{scope}): {ex.Message}");
             return false;
         }
     }
@@ -470,7 +474,8 @@ public sealed class CodeSigningTrustService
         }, ref denied, ref lastError);
 
         var scopeText = scope == TrustStoreScope.CurrentUser ? "current user" : "machine";
-        Debug.WriteLine($"[TrustService] install for {scope}: added={added}, denied={denied}, error={lastError}");
+        DebugLog.Info("CodeSigningTrustService",
+            $"[TrustService] install for {scope}: added={added}, denied={denied}, error={lastError}");
 
         if (denied)
         {
@@ -511,12 +516,12 @@ public sealed class CodeSigningTrustService
         {
             denied = true;
             lastError = ex.Message;
-            Debug.WriteLine($"[TrustService] {action} denied for {scope}: {ex.Message}");
+            DebugLog.Info("CodeSigningTrustService", $"[TrustService] {action} denied for {scope}: {ex.Message}");
         }
         catch (Exception ex)
         {
             lastError = ex.Message;
-            Debug.WriteLine($"[TrustService] {action} failed for {scope}: {ex}");
+            DebugLog.Info("CodeSigningTrustService", $"[TrustService] {action} failed for {scope}: {ex}");
         }
     }
 
@@ -604,7 +609,8 @@ public sealed class CodeSigningTrustService
         }, ref denied, ref lastError);
 
         var scopeText = scope == TrustStoreScope.CurrentUser ? "current user" : "machine";
-        Debug.WriteLine($"[TrustService] uninstall for {scope}: removed={removed}, denied={denied}, error={lastError}");
+        DebugLog.Info("CodeSigningTrustService",
+            $"[TrustService] uninstall for {scope}: removed={removed}, denied={denied}, error={lastError}");
 
         if (denied)
         {
@@ -650,7 +656,7 @@ public sealed class CodeSigningTrustService
         foreach (var match in matches)
         {
             store.Remove(match);
-            Debug.WriteLine(
+            DebugLog.Info("CodeSigningTrustService",
                 $"[TrustService] removed certificate {match.Subject} ({ManifestSignatureVerifier.Sha256Thumbprint(match)})");
         }
 
@@ -753,7 +759,8 @@ public sealed class CodeSigningTrustService
             Directory.Move(staging, targetDirectory);
 
             GetPackage(forceReload: true);
-            Debug.WriteLine($"[TrustService] 信任包已从 {url} 更新到 {targetDirectory}");
+            DebugLog.Info("CodeSigningTrustService",
+                $"[TrustService] Trust package updated from {url} to {targetDirectory}");
 
             return new TrustOperationResult
             {
@@ -763,7 +770,7 @@ public sealed class CodeSigningTrustService
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[TrustService] 信任包同步失败：{ex}");
+            DebugLog.Info("CodeSigningTrustService", $"[TrustService] Trust package sync failed: {ex}");
             return new TrustOperationResult { Ok = false, Message = $"同步失败：{ex.Message}" };
         }
         finally
@@ -774,7 +781,8 @@ public sealed class CodeSigningTrustService
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[TrustService] 清理临时目录失败：{ex.Message}");
+                DebugLog.Info("CodeSigningTrustService",
+                    $"[TrustService] Failed to clean temporary directory: {ex.Message}");
             }
         }
     }

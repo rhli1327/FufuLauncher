@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
@@ -6,6 +6,7 @@ Licensed under the MIT License.
 using System.Diagnostics;
 using FufuLauncher.Services;
 using Microsoft.UI.Windowing;
+using FufuLauncher.Helpers;
 
 namespace FufuLauncher;
 
@@ -13,25 +14,52 @@ public sealed partial class MainWindow
 {
     #region Memory Management
 
-    private void FlushMemory()
+    private void FlushMemory(bool force = false)
     {
+        if (!_isMemoryReleaseEnabled)
+            return;
+
         try
         {
-            if (ContentFrame.BackStackDepth > 0)
-            {
-                ContentFrame.BackStack.Clear();
-            }
-
             var isMinimized = AppWindow.Presenter.Kind == AppWindowPresenterKind.Overlapped &&
                               ((OverlappedPresenter)AppWindow.Presenter).State == OverlappedPresenterState.Minimized;
 
             var isHidden = !Visible;
+            var shouldFlush = force || isMinimized || isHidden;
+            if (!shouldFlush)
+                return;
 
-            MemoryOptimizationService.FlushMemory(isMinimized || isHidden);
+            if ((isMinimized || isHidden) && ContentFrame.BackStackDepth > 0)
+                ContentFrame.BackStack.Clear();
+
+            MemoryOptimizationService.FlushMemory();
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"内存清理异常: {ex.Message}");
+            DebugLog.Info("MainWindow.Memory", $"Memory cleanup exception: {ex.Message}");
+        }
+    }
+
+    private void ReleaseMemoryAfterSuspend()
+    {
+        try
+        {
+            var isMinimized = AppWindow.Presenter.Kind == AppWindowPresenterKind.Overlapped &&
+                              ((OverlappedPresenter)AppWindow.Presenter).State == OverlappedPresenterState.Minimized;
+            var isHidden = !Visible;
+
+            if ((isMinimized || isHidden) && ContentFrame.BackStackDepth > 0)
+                ContentFrame.BackStack.Clear();
+
+            MemoryOptimizationService.FlushMemory();
+
+            using var process = Process.GetCurrentProcess();
+            DebugLog.Info("MainWindow.Memory",
+                $"Memory released right after suspension, working set {process.WorkingSet64 / 1048576.0:F1} MB");
+        }
+        catch (Exception ex)
+        {
+            DebugLog.Info("MainWindow.Memory", $"Exception while releasing memory after suspension: {ex.Message}");
         }
     }
 
@@ -67,7 +95,7 @@ public sealed partial class MainWindow
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"挂起媒体播放时发生异常: {ex.Message}");
+            DebugLog.Info("MainWindow.Memory", $"Exception while suspending media playback: {ex.Message}");
         }
 
         _slideshowTimer?.Stop();
@@ -76,9 +104,9 @@ public sealed partial class MainWindow
         _messageDismissTimer.Stop();
 
         _announcementCheckTimer.Stop();
-        FlushMemory();
 
-        Debug.WriteLine("应用挂起");
+        DebugLog.Info("MainWindow.Memory", "App suspended");
+        ReleaseMemoryAfterSuspend();
     }
 
     private void RestoreFromSuspension()
@@ -106,7 +134,7 @@ public sealed partial class MainWindow
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"恢复媒体播放时发生异常: {ex.Message}");
+            DebugLog.Info("MainWindow.Memory", $"Exception while resuming media playback: {ex.Message}");
         }
 
         _slideshowTimer?.Start();
@@ -121,7 +149,7 @@ public sealed partial class MainWindow
             _announcementCheckTimer.Start();
         }
 
-        Debug.WriteLine("应用已唤醒");
+        DebugLog.Info("MainWindow.Memory", "App resumed");
     }
 
     #endregion

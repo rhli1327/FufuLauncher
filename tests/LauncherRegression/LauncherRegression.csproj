@@ -6,8 +6,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="../../FufuLauncher/Services/LauncherService.cs" Link="LauncherService.cs" />
-    <Compile Include="../../FufuLauncher/Services/PluginVerifier.cs" Link="PluginVerifier.cs" />
+    <Compile Include="../../FufuLauncher/Services/Game/LauncherService.cs" Link="LauncherService.cs" />
+    <Compile Include="../../FufuLauncher/Services/Plugins/PluginVerifier.cs" Link="PluginVerifier.cs" />
     <Compile Include="../../FufuLauncher/Constants/ApiEndpoints.cs" Link="ApiEndpoints.cs" />
+    <Compile Include="../../FufuLauncher/Helpers/DebugLog.cs" Link="DebugLog.cs" />
   </ItemGroup>
 </Project>

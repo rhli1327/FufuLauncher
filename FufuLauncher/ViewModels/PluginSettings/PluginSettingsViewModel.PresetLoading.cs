@@ -1,6 +1,8 @@
 using System.Security.Cryptography;
 using System.Text.Json;
 using FufuLauncher.Messages;
+using FufuLauncher.Helpers;
+using FufuLauncher.Services;
 
 namespace FufuLauncher.ViewModels;
 
@@ -14,13 +16,19 @@ public partial class PluginSettingsViewModel
         var presets = new List<PresetModel>();
         var notifications = new List<NotificationMessage>();
         var directory = request.PresetsDirectory;
+        var includeLegacyMain = request.PluginIndex == 0 && !request.LightweightMode;
+        var pluginFolder = request.PluginIndex == 1
+            ? "FPS"
+            : request.LightweightMode
+                ? LightweightPluginService.LitePluginFolderName
+                : LightweightPluginService.MainPluginFolderName;
         try
         {
             Directory.CreateDirectory(directory);
         }
         catch (UnauthorizedAccessException)
         {
-            directory = Path.Combine(FufuLauncher.Helpers.AppPaths.RootDir, "Data", "PluginPresets");
+            directory = PluginPresetStorage.GetFallbackDirectory(pluginFolder);
             Directory.CreateDirectory(directory);
         }
 
@@ -39,6 +47,7 @@ public partial class PluginSettingsViewModel
                     cancellationToken.ThrowIfCancellationRequested();
                     algorithm.TransformBlock(buffer, 0, length, null, 0);
                 }
+
                 algorithm.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
                 hash = Convert.ToHexString(algorithm.Hash!).ToLowerInvariant();
             }
@@ -52,21 +61,11 @@ public partial class PluginSettingsViewModel
         }
 
         var stateFile = Path.Combine(directory, "active_state.json");
-        var activeId = string.Empty;
-        if (File.Exists(stateFile))
-        {
-            try
-            {
-                var state = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(stateFile));
-                activeId = state?.GetValueOrDefault("ActiveId", string.Empty) ?? string.Empty;
-            }
-            catch
-            {
-            }
-        }
+        var activeId = PluginPresetStorage.ReadActivePresetId(directory, includeLegacyMain);
+        var loadedIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         PresetModel? active = null;
-        foreach (var file in Directory.EnumerateFiles(directory, "*.json"))
+        foreach (var file in PluginPresetStorage.EnumerateFiles(directory, includeLegacyMain))
         {
             cancellationToken.ThrowIfCancellationRequested();
             if (Path.GetFileName(file).Equals("active_state.json", StringComparison.OrdinalIgnoreCase))
@@ -77,7 +76,8 @@ public partial class PluginSettingsViewModel
             try
             {
                 var preset = JsonSerializer.Deserialize<PresetModel>(File.ReadAllText(file));
-                if (preset == null || string.IsNullOrWhiteSpace(preset.Id) || preset.ConfigData == null)
+                if (preset == null || string.IsNullOrWhiteSpace(preset.Id) || preset.ConfigData == null ||
+                    !loadedIds.Add(preset.Id))
                 {
                     continue;
                 }
@@ -99,7 +99,8 @@ public partial class PluginSettingsViewModel
                     if (currentData.TryGetValue(sectionKey, out var section) &&
                         preset.ConfigData[sectionKey].GetValueOrDefault("Name") != section.GetValueOrDefault("Name"))
                     {
-                        preset.ConfigData[sectionKey] = new Dictionary<string, string>(section, StringComparer.OrdinalIgnoreCase);
+                        preset.ConfigData[sectionKey] =
+                            new Dictionary<string, string>(section, StringComparer.OrdinalIgnoreCase);
                         modified = true;
                     }
                 }
@@ -122,6 +123,7 @@ public partial class PluginSettingsViewModel
                 {
                     WritePreparedPreset(preset, notifications, cancellationToken);
                 }
+
                 presets.Add(preset);
                 if (preset.Id == activeId)
                 {
@@ -134,13 +136,16 @@ public partial class PluginSettingsViewModel
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[PluginSettings] Preset read failed: {file}: {ex}");
+                DebugLog.Info("PluginSettingsViewModel.PresetLoading",
+                    $"[PluginSettings] Preset read failed: {file}: {ex}");
             }
         }
 
         if (active?.IsLocked == true)
         {
-            notifications.Add(new NotificationMessage("插件变更", "当前预设与最新插件版本不匹配，已自动生成新预设",
+            notifications.Add(new NotificationMessage(
+                "PluginSettings_PluginChangedTitle".GetLocalized(),
+                "PluginSettings_PluginChangedPresetAutoCreated".GetLocalized(),
                 NotificationType.Warning, 5000));
             active = null;
         }
@@ -154,7 +159,7 @@ public partial class PluginSettingsViewModel
             active = new PresetModel
             {
                 Id = Guid.NewGuid().ToString(),
-                Name = "默认预设",
+                Name = "PluginSettings_DefaultPreset".GetLocalized(),
                 DllHash = hash,
                 ConfigData = data
             };
@@ -166,18 +171,22 @@ public partial class PluginSettingsViewModel
         cancellationToken.ThrowIfCancellationRequested();
         try
         {
-            File.WriteAllText(stateFile, JsonSerializer.Serialize(new Dictionary<string, string> { ["ActiveId"] = active.Id }));
+            File.WriteAllText(stateFile,
+                JsonSerializer.Serialize(new Dictionary<string, string> { ["ActiveId"] = active.Id }));
         }
         catch (Exception ex)
         {
-            notifications.Add(new NotificationMessage("状态保存失败", $"无法保存激活状态记录，可能缺少写入权限\n详细信息: {ex.Message}",
+            notifications.Add(new NotificationMessage(
+                "PluginSettings_StateSaveFailedTitle".GetLocalized(),
+                string.Format("PluginSettings_StateSaveFailedDetail_Format".GetLocalized(), ex.Message),
                 NotificationType.Error, 6000));
         }
 
         cancellationToken.ThrowIfCancellationRequested();
         try
         {
-            var updates = new Dictionary<string, Dictionary<string, string>>(active.ConfigData, StringComparer.OrdinalIgnoreCase);
+            var updates =
+                new Dictionary<string, Dictionary<string, string>>(active.ConfigData, StringComparer.OrdinalIgnoreCase);
             updates.Remove("General");
             request.IniFile.UpdateMultiple(updates, cancellationToken);
         }
@@ -187,7 +196,9 @@ public partial class PluginSettingsViewModel
         }
         catch (Exception ex)
         {
-            notifications.Add(new NotificationMessage("配置应用失败", $"无法将预设写入配置文件，请检查权限\n详细信息: {ex.Message}",
+            notifications.Add(new NotificationMessage(
+                "PluginSettings_ConfigApplyFailedTitle".GetLocalized(),
+                string.Format("PluginSettings_ConfigApplyFailedDetail_Format".GetLocalized(), ex.Message),
                 NotificationType.Error, 6000));
         }
 
@@ -210,11 +221,16 @@ public partial class PluginSettingsViewModel
         }
         catch (Exception ex)
         {
-            notifications.Add(new NotificationMessage("预设保存失败", $"无法保存预设文件，可能缺少写入权限\n详细信息: {ex.Message}",
+            notifications.Add(new NotificationMessage(
+                "PluginSettings_PresetSaveFailedTitle".GetLocalized(),
+                string.Format("PluginSettings_PresetSaveFailedDetail_Format".GetLocalized(), ex.Message),
                 NotificationType.Error, 6000));
         }
     }
 
-    private sealed record PresetLoadResult(string Directory, IReadOnlyList<PresetModel> Presets,
-        PresetModel CurrentPreset, IReadOnlyList<NotificationMessage> Notifications);
+    private sealed record PresetLoadResult(
+        string Directory,
+        IReadOnlyList<PresetModel> Presets,
+        PresetModel CurrentPreset,
+        IReadOnlyList<NotificationMessage> Notifications);
 }

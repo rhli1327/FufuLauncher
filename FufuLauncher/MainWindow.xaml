@@ -39,17 +39,13 @@
                         IconSource="/Assets/WindowIcon.ico"
                         ToolTipText="{helpers:Loc Key=AppDisplayName}"
                         LeftClickCommand="{x:Bind ShowWindowCommand}"
-                        DoubleClickCommand="{x:Bind ShowWindowCommand}">
-            <tb:TaskbarIcon.ContextFlyout>
-                <MenuFlyout>
-                    <MenuFlyoutItem Text="{helpers:Loc Key=TrayShowWindow}" Command="{x:Bind ShowWindowCommand}" />
-                    <MenuFlyoutItem Text="{helpers:Loc Key=TrayExit}" Command="{x:Bind ExitApplicationCommand}" />
-                </MenuFlyout>
-            </tb:TaskbarIcon.ContextFlyout>
-        </tb:TaskbarIcon>
+                        DoubleClickCommand="{x:Bind ShowWindowCommand}"
+                        RightClickCommand="{x:Bind ShowTrayMenuCommand}" />
 
         <Grid x:Name="GlobalBackgroundHost" IsHitTestVisible="False">
             <Image x:Name="GlobalBackgroundImage"
+                   ImageFailed="OnGlobalBackgroundImageFailed"
+                   helpers:ImageFadeInHelper.IsFadeInEnabled="False"
                    Stretch="UniformToFill"
                    VerticalAlignment="Top"
                    Margin="0,-25,0,0"
@@ -121,13 +117,13 @@
 
                     <FontFamily x:Key="ActionIconFont">Segoe Fluent Icons, Segoe MDL2 Assets, Segoe UI Symbol</FontFamily>
 
-                    <CornerRadius x:Key="OverlayCornerRadius">0</CornerRadius>
                     <CornerRadius x:Key="NavigationViewContentGridCornerRadius">0</CornerRadius>
                     <CornerRadius x:Key="NavigationViewItemCornerRadius">0</CornerRadius>
                     <Thickness x:Key="NavigationViewContentGridBorderThickness">0</Thickness>
                     <Thickness x:Key="NavigationViewBorderThickness">0</Thickness>
 
                     <Style TargetType="NavigationViewItem">
+                        <Setter Property="FontFamily" Value="{StaticResource AppGlobalFont}" />
                         <Setter Property="MinHeight" Value="48" />
                         <Setter Property="Margin" Value="0,1,0,1" />
                     </Style>
@@ -150,90 +146,371 @@
             <NavigationView.MenuItems>
                 <NavigationViewItem Content="{helpers:Loc Key=NavHome}" Tag="FufuLauncher.ViewModels.MainViewModel">
                     <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE80F;" FontFamily="{StaticResource ActionIconFont}" FontSize="24" />
+                        <FontIcon Glyph="&#xF480;"
+                                  FontFamily="{StaticResource FluentIconsFont}"
+                                  FontSize="24"
+                                  RenderTransformOrigin="0.5,0.5">
+                            <FontIcon.RenderTransform>
+                                <ScaleTransform ScaleX="1.35" ScaleY="1.35" />
+                            </FontIcon.RenderTransform>
+                        </FontIcon>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
 
                 <NavigationViewItem Content="{helpers:Loc Key=InjectionSettingsNav}"
                                     Tag="FufuLauncher.ViewModels.PluginSettingsViewModel">
                     <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xEA86;" FontFamily="{StaticResource ActionIconFont}" FontSize="24" />
+                        <FontIcon Glyph="&#xE9E9;"
+                                  FontFamily="{StaticResource FluentIconsFont}"
+                                  FontSize="24"
+                                  RenderTransformOrigin="0.5,0.5">
+                            <FontIcon.RenderTransform>
+                                <ScaleTransform ScaleX="1.35" ScaleY="1.35" />
+                            </FontIcon.RenderTransform>
+                        </FontIcon>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
 
-                <NavigationViewItem Content="{helpers:Loc Key=NavControlPanel}"
-                                    Tag="FufuLauncher.ViewModels.ControlPanelModel">
+                <NavigationViewItem Content="{helpers:Loc Key=Panel_Toolbox}"
+                                    Tag="FufuLauncher.ViewModels.ControlPanelViewModel">
                     <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE80A;" FontFamily="{StaticResource ActionIconFont}" FontSize="24" />
+                        <FontIcon Glyph="&#xF82E;"
+                                  FontFamily="{StaticResource FluentIconsFont}"
+                                  FontSize="24"
+                                  RenderTransformOrigin="0.5,0.5">
+                            <FontIcon.RenderTransform>
+                                <ScaleTransform ScaleX="1.35" ScaleY="1.35" />
+                            </FontIcon.RenderTransform>
+                        </FontIcon>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
 
                 <NavigationViewItem Content="{helpers:Loc Key=PageTitle_GameSettings}"
-                                    Tag="FufuLauncher.ViewModels.BlankViewModel">
+                                    Tag="FufuLauncher.ViewModels.GameSettingsViewModel">
                     <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE7FC;" FontFamily="{StaticResource ActionIconFont}" FontSize="24" />
+                        <FontIcon Glyph="&#xE68A;"
+                                  FontFamily="{StaticResource FluentIconsFont}"
+                                  FontSize="24"
+                                  RenderTransformOrigin="0.5,0.5">
+                            <FontIcon.RenderTransform>
+                                <ScaleTransform ScaleX="1.35" ScaleY="1.35" />
+                            </FontIcon.RenderTransform>
+                        </FontIcon>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
 
                 <NavigationViewItem Content="{helpers:Loc Key=NavAccountSettings}"
                                     Tag="FufuLauncher.ViewModels.AccountViewModel">
                     <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE77B;" FontFamily="{StaticResource ActionIconFont}" FontSize="24" />
+                        <FontIcon Glyph="&#xF5BD;"
+                                  FontFamily="{StaticResource FluentIconsFont}"
+                                  FontSize="24"
+                                  RenderTransformOrigin="0.5,0.5">
+                            <FontIcon.RenderTransform>
+                                <ScaleTransform ScaleX="1.35" ScaleY="1.35" />
+                            </FontIcon.RenderTransform>
+                        </FontIcon>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
 
                 <NavigationViewItem Content="{helpers:Loc Key=NavOtherFeatures}"
                                     Tag="FufuLauncher.ViewModels.OtherViewModel">
                     <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE71D;" FontFamily="{StaticResource ActionIconFont}" FontSize="24" />
+                        <FontIcon Glyph="&#xF8CB;"
+                                  FontFamily="{StaticResource FluentIconsFont}"
+                                  FontSize="24"
+                                  RenderTransformOrigin="0.5,0.5">
+                            <FontIcon.RenderTransform>
+                                <ScaleTransform ScaleX="1.35" ScaleY="1.35" />
+                            </FontIcon.RenderTransform>
+                        </FontIcon>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
 
                 <NavigationViewItem Content="{helpers:Loc Key=PluginMgmtTitle}"
                                     Tag="FufuLauncher.ViewModels.PluginViewModel">
                     <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE7B5;" FontFamily="{StaticResource ActionIconFont}" FontSize="24" />
+                        <FontIcon Glyph="&#xF133;"
+                                  FontFamily="{StaticResource FluentIconsFont}"
+                                  FontSize="24"
+                                  RenderTransformOrigin="0.5,0.5">
+                            <FontIcon.RenderTransform>
+                                <ScaleTransform ScaleX="1.35" ScaleY="1.35" />
+                            </FontIcon.RenderTransform>
+                        </FontIcon>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
 
                 <NavigationViewItem Content="{helpers:Loc Key=PluginStoreTitle}"
                                     Tag="FufuLauncher.ViewModels.PluginStoreViewModel">
                     <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE90F;" FontFamily="{StaticResource ActionIconFont}" FontSize="24" />
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
-
-                <NavigationViewItem Content="{helpers:Loc Key=NavDataCenter}"
-                                    Tag="FufuLauncher.ViewModels.DataViewModel">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE9D9;" FontFamily="{StaticResource ActionIconFont}" FontSize="24" />
+                        <FontIcon Glyph="&#xE22E;"
+                                  FontFamily="{StaticResource FluentIconsFont}"
+                                  FontSize="24"
+                                  RenderTransformOrigin="0.5,0.5">
+                            <FontIcon.RenderTransform>
+                                <ScaleTransform ScaleX="1.35" ScaleY="1.35" />
+                            </FontIcon.RenderTransform>
+                        </FontIcon>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
 
                 <NavigationViewItem Content="{helpers:Loc Key=NavHelpDocs}" Tag="FufuLauncher.ViewModels.HelpViewModel">
                     <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE82D;" FontFamily="{StaticResource ActionIconFont}" FontSize="24" />
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
-
-                <NavigationViewItem Content="{helpers:Loc Key=NavCalculator}"
-                                    Tag="FufuLauncher.ViewModels.CalculatorViewModel">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE1D0;" FontFamily="{StaticResource ActionIconFont}" FontSize="24" />
+                        <FontIcon Glyph="&#xE186;"
+                                  FontFamily="{StaticResource FluentIconsFont}"
+                                  FontSize="24"
+                                  RenderTransformOrigin="0.5,0.5">
+                            <FontIcon.RenderTransform>
+                                <ScaleTransform ScaleX="1.35" ScaleY="1.35" />
+                            </FontIcon.RenderTransform>
+                        </FontIcon>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
             </NavigationView.MenuItems>
+
+            <NavigationView.PaneFooter>
+                <Grid Padding="10,0,10,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Button x:Name="AccountNavButton"
+                            Width="40"
+                            Height="40"
+                            Padding="0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            HorizontalContentAlignment="Center"
+                            VerticalContentAlignment="Center"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            CornerRadius="20"
+                            Click="AccountNavButton_Click"
+                            AutomationProperties.Name="{helpers:Loc Key=Account_MenuTitle}"
+                            ToolTipService.ToolTip="{helpers:Loc Key=Account_MenuTitle}">
+                        <Button.Flyout>
+                            <Flyout x:Name="AccountFlyout"
+                                    Placement="RightEdgeAlignedBottom"
+                                    ShouldConstrainToRootBounds="True">
+                                <Flyout.FlyoutPresenterStyle>
+                                    <Style TargetType="FlyoutPresenter">
+                                        <Setter Property="FontFamily" Value="{StaticResource AppGlobalFont}" />
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                        <Setter Property="VerticalContentAlignment" Value="Stretch" />
+                                        <Setter Property="IsTabStop" Value="False" />
+                                        <Setter Property="Padding" Value="0" />
+                                        <Setter Property="MinWidth" Value="0" />
+                                        <Setter Property="MaxWidth" Value="400" />
+                                        <Setter Property="Background"
+                                                Value="{ThemeResource AcrylicInAppFillColorDefaultBrush}" />
+                                        <Setter Property="BorderBrush"
+                                                Value="{ThemeResource CardStrokeColorDefaultBrush}" />
+                                        <Setter Property="BorderThickness" Value="1" />
+                                        <Setter Property="CornerRadius" Value="12" />
+                                    </Style>
+                                </Flyout.FlyoutPresenterStyle>
+                                <Border Width="300">
+                                    <Grid>
+                                        <StackPanel x:Name="AccountFlyoutProfilePanel"
+                                                    Padding="18,16,18,14"
+                                                    Spacing="14"
+                                                    Visibility="Collapsed">
+                                            <Grid ColumnSpacing="12">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <PersonPicture x:Name="AccountFlyoutAvatar"
+                                                               Width="52"
+                                                               Height="52" />
+                                                <TextBlock x:Name="AccountFlyoutNickname"
+                                                           Grid.Column="1"
+                                                           VerticalAlignment="Center"
+                                                           FontSize="16"
+                                                           FontWeight="SemiBold"
+                                                           MaxLines="1"
+                                                           TextTrimming="CharacterEllipsis" />
+                                            </Grid>
+
+                                            <StackPanel Spacing="8">
+                                                <Grid ColumnSpacing="12">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock FontSize="12"
+                                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                               Text="{helpers:Loc Key=Account_Flyout_CommunityUid}" />
+                                                    <TextBlock x:Name="AccountFlyoutCommunityUid"
+                                                               Grid.Column="1"
+                                                               FontSize="12"
+                                                               FontWeight="SemiBold"
+                                                               TextAlignment="Right"
+                                                               TextTrimming="CharacterEllipsis" />
+                                                </Grid>
+                                                <Grid ColumnSpacing="12">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock FontSize="12"
+                                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                               Text="{helpers:Loc Key=Account_Flyout_GameUid}" />
+                                                    <TextBlock x:Name="AccountFlyoutGameUid"
+                                                               Grid.Column="1"
+                                                               FontSize="12"
+                                                               FontWeight="SemiBold"
+                                                               TextAlignment="Right"
+                                                               TextTrimming="CharacterEllipsis" />
+                                                </Grid>
+                                                <Grid ColumnSpacing="12">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock FontSize="12"
+                                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                               Text="{helpers:Loc Key=ServerLabel}" />
+                                                    <TextBlock x:Name="AccountFlyoutServer"
+                                                               Grid.Column="1"
+                                                               FontSize="12"
+                                                               FontWeight="SemiBold"
+                                                               TextAlignment="Right"
+                                                               TextTrimming="CharacterEllipsis" />
+                                                </Grid>
+                                                <Grid ColumnSpacing="12">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock FontSize="12"
+                                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                               Text="{helpers:Loc Key=Account_Flyout_Level}" />
+                                                    <TextBlock x:Name="AccountFlyoutLevel"
+                                                               Grid.Column="1"
+                                                               FontSize="12"
+                                                               FontWeight="SemiBold"
+                                                               TextAlignment="Right"
+                                                               TextTrimming="CharacterEllipsis" />
+                                                </Grid>
+                                            </StackPanel>
+
+                                            <Grid ColumnSpacing="8">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <Button Grid.Column="0"
+                                                        Padding="8,7"
+                                                        HorizontalAlignment="Stretch"
+                                                        HorizontalContentAlignment="Center"
+                                                        Click="AccountSwitchButton_Click"
+                                                        ToolTipService.ToolTip="{helpers:Loc Key=Account_Flyout_SwitchAccount}">
+                                                    <StackPanel Orientation="Horizontal"
+                                                                HorizontalAlignment="Center"
+                                                                VerticalAlignment="Center"
+                                                                Spacing="6">
+                                                        <FontIcon FontFamily="{StaticResource ActionIconFont}"
+                                                                  FontSize="14"
+                                                                  VerticalAlignment="Center"
+                                                                  Glyph="&#xE8AB;" />
+                                                        <TextBlock FontSize="12"
+                                                                   VerticalAlignment="Center"
+                                                                   Text="{helpers:Loc Key=Account_Flyout_SwitchAccount}"
+                                                                   TextTrimming="CharacterEllipsis"
+                                                                   TextWrapping="NoWrap" />
+                                                    </StackPanel>
+                                                </Button>
+                                                <Button Grid.Column="1"
+                                                        Padding="8,7"
+                                                        HorizontalAlignment="Stretch"
+                                                        HorizontalContentAlignment="Center"
+                                                        Click="RoleSwitchButton_Click"
+                                                        ToolTipService.ToolTip="{helpers:Loc Key=Account_Flyout_SwitchRole}">
+                                                    <StackPanel Orientation="Horizontal"
+                                                                HorizontalAlignment="Center"
+                                                                VerticalAlignment="Center"
+                                                                Spacing="6">
+                                                        <FontIcon FontFamily="{StaticResource ActionIconFont}"
+                                                                  FontSize="14"
+                                                                  VerticalAlignment="Center"
+                                                                  Glyph="&#xE8AB;" />
+                                                        <TextBlock FontSize="12"
+                                                                   VerticalAlignment="Center"
+                                                                   Text="{helpers:Loc Key=Account_Flyout_SwitchRole}"
+                                                                   TextTrimming="CharacterEllipsis"
+                                                                   TextWrapping="NoWrap" />
+                                                    </StackPanel>
+                                                </Button>
+                                            </Grid>
+                                        </StackPanel>
+
+                                        <StackPanel x:Name="AccountFlyoutGuestPanel"
+                                                    Padding="18,20,18,16"
+                                                    Spacing="12">
+                                            <FontIcon HorizontalAlignment="Center"
+                                                      FontSize="32"
+                                                      Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                      Glyph="&#xE77B;" />
+                                            <TextBlock HorizontalAlignment="Center"
+                                                       FontSize="14"
+                                                       FontWeight="SemiBold"
+                                                       Text="{helpers:Loc Key=Account_NotLoggedIn}" />
+                                            <Button HorizontalAlignment="Stretch"
+                                                    HorizontalContentAlignment="Center"
+                                                    Click="AccountFlyoutGoToAccount_Click"
+                                                    Content="{helpers:Loc Key=Account_Login}"
+                                                    Style="{StaticResource AccentButtonStyle}" />
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </Flyout>
+                        </Button.Flyout>
+                        <Grid Width="32" Height="32" IsHitTestVisible="False">
+                            <FontIcon x:Name="AccountNavPlaceholderIcon"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"
+                                      FontFamily="{StaticResource ActionIconFont}"
+                                      FontSize="24"
+                                      Glyph="&#xE77B;"
+                                      AutomationProperties.AccessibilityView="Raw" />
+                            <Grid CornerRadius="16">
+                                <Image x:Name="AccountNavAvatar"
+                                       Width="32"
+                                       Height="32"
+                                       Stretch="UniformToFill"
+                                       helpers:ImageFadeInHelper.IsFadeInEnabled="True"
+                                       helpers:ImageFadeInHelper.DurationMilliseconds="260"
+                                       helpers:ImageFadeInHelper.EnableRetry="False" />
+                            </Grid>
+                        </Grid>
+                    </Button>
+                    <TextBlock x:Name="AccountNavText"
+                               Grid.Column="1"
+                               Margin="8,0,0,0"
+                               VerticalAlignment="Center"
+                               FontSize="14"
+                               Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                               Text="{helpers:Loc Key=Account_MenuTitle}"
+                               TextTrimming="CharacterEllipsis"
+                               Visibility="Collapsed" />
+                </Grid>
+            </NavigationView.PaneFooter>
 
             <NavigationView.FooterMenuItems>
                 <NavigationViewItem Content="{helpers:Loc Key=NavSettings}"
                                     Tag="FufuLauncher.ViewModels.SettingsViewModel">
                     <NavigationViewItem.Icon>
                         <FontIcon x:Name="SettingsIcon"
-                                  Glyph="&#xE713;" FontFamily="{StaticResource ActionIconFont}"
+                                  Glyph="&#xF6A9;" FontFamily="{StaticResource FluentIconsFont}"
                                   FontSize="24"
                                   RenderTransformOrigin="0.5,0.5">
                             <FontIcon.RenderTransform>
-                                <RotateTransform x:Name="SettingsIconRotation" Angle="0" />
+                                <TransformGroup>
+                                    <ScaleTransform ScaleX="1.35" ScaleY="1.35" />
+                                    <RotateTransform x:Name="SettingsIconRotation" Angle="0" />
+                                </TransformGroup>
                             </FontIcon.RenderTransform>
                         </FontIcon>
                     </NavigationViewItem.Icon>
@@ -360,7 +637,8 @@
                     BorderThickness="1">
 
                 <StackPanel Orientation="Horizontal" Spacing="0">
-                    <Image x:Name="TitleBarIcon" Width="20" Height="20" Margin="0,0,8,0" VerticalAlignment="Center" />
+                    <Image x:Name="TitleBarIcon" helpers:ImageFadeInHelper.IsFadeInEnabled="False" Width="20"
+                           Height="20" Margin="0,0,8,0" VerticalAlignment="Center" />
                     <TextBlock x:Name="TitleBarText"
                                Text="{helpers:Loc Key=AppDisplayName}"
                                FontSize="12"

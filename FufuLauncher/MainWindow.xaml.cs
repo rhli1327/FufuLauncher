@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
@@ -13,6 +13,7 @@ using FufuLauncher.Helpers;
 using FufuLauncher.Messages;
 using FufuLauncher.Services;
 using FufuLauncher.Services.Background;
+using FufuLauncher.Tray;
 using FufuLauncher.ViewModels;
 using Microsoft.UI.Xaml;
 using Windows.Media.Core;
@@ -30,17 +31,23 @@ public sealed partial class MainWindow : WindowEx
     private readonly IBackgroundRenderer _backgroundRenderer;
     private readonly IDevBuildDetectionService _devBuildDetectionService;
     private readonly ILocalSettingsService _localSettingsService;
+    private readonly BingWallpaperService _bingWallpaperService;
+    private readonly IAutoThemeColorService _autoThemeColorService;
+    private readonly AccountManager _accountManager;
     private MediaPlayer? _globalBackgroundPlayer;
     private IMediaPlaybackSource? _suspendedVideoSource;
     private TypedEventHandler<MediaPlayer, MediaPlayerFailedEventArgs>? _bgVideoFailedHandler;
     private MediaSource? _bgVideoFallbackSource;
-    private DispatcherTimer _bgFallbackTimer;
-    private RoutedEventHandler _bgImageOpenedHandler;
-    private ExceptionRoutedEventHandler _bgImageFailedHandler;
+    private Microsoft.UI.Xaml.Media.Animation.Storyboard? _bgImageFadeStoryboard;
+    private int _backgroundLoadVersion;
+    private bool _isFallbackBackground;
+    private int? _slideshowLoadingVersion;
     private double _frameBackgroundOpacity;
     private bool _minimizeToTray;
     private bool _isExit;
+    private TrayIconController? _trayIconController;
     private bool _isOverlayShown;
+    private Microsoft.UI.Xaml.Media.Animation.Storyboard? _pageOverlayStoryboard;
     private bool _isAcrylicOverlayEnabled;
     private bool _isPageOverlaySemiTransparent;
     private double _pageOverlayTargetOpacity = 1.0;
@@ -88,6 +95,11 @@ public sealed partial class MainWindow : WindowEx
         get;
     }
 
+    public IRelayCommand ShowTrayMenuCommand
+    {
+        get;
+    }
+
     private void SyncPageTheme()
     {
         if (Content is FrameworkElement rootElement)
@@ -110,19 +122,26 @@ public sealed partial class MainWindow : WindowEx
 
     private Task RunOnUIThreadAsync(Action action)
     {
-        var tcs = new TaskCompletionSource();
-        dispatcherQueue.TryEnqueue(() =>
+        if (dispatcherQueue.HasThreadAccess)
         {
-            try
+            action();
+            return Task.CompletedTask;
+        }
+
+        var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        if (!dispatcherQueue.TryEnqueue(() =>
             {
-                action();
-                tcs.SetResult();
-            }
-            catch (Exception ex)
-            {
-                tcs.SetException(ex);
-            }
-        });
+                try
+                {
+                    action();
+                    tcs.SetResult();
+                }
+                catch (Exception ex)
+                {
+                    tcs.SetException(ex);
+                }
+            }))
+            tcs.SetException(new InvalidOperationException("主窗口的 UI 调度队列已关闭"));
         return tcs.Task;
     }
 
@@ -135,29 +154,29 @@ public sealed partial class MainWindow : WindowEx
         catch (Exception ex) when (ex is Microsoft.UI.Xaml.Markup.XamlParseException ||
                                    ex is System.IO.FileNotFoundException)
         {
-            Debug.WriteLine($"XAML解析失败: {ex.Message}");
+            DebugLog.Info("MainWindow", $"XAML parse failed: {ex.Message}");
             if (ex.InnerException != null)
             {
-                Debug.WriteLine($"内部异常: {ex.InnerException.Message}");
+                DebugLog.Info("MainWindow", $"Inner exception: {ex.InnerException.Message}");
             }
 
-            // Retry once - XAML parse can fail transiently when assemblies are still loading from single-file extraction
+
             try
             {
                 InitializeComponent();
             }
             catch (Exception retryEx)
             {
-                Debug.WriteLine($"XAML解析重试仍失败: {retryEx.Message}");
+                DebugLog.Info("MainWindow", $"XAML parse retry failed: {retryEx.Message}");
                 throw;
             }
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"XAML解析失败: {ex.Message}");
+            DebugLog.Info("MainWindow", $"XAML parse failed: {ex.Message}");
             if (ex.InnerException != null)
             {
-                Debug.WriteLine($"内部异常: {ex.InnerException.Message}");
+                DebugLog.Info("MainWindow", $"Inner exception: {ex.InnerException.Message}");
             }
 
             throw;
@@ -167,6 +186,12 @@ public sealed partial class MainWindow : WindowEx
 
         ShowWindowCommand = new RelayCommand(ShowWindow);
         ExitApplicationCommand = new RelayCommand(ExitApplication);
+
+        _trayIconController = new TrayIconController(TrayIcon, this, ShowWindowCommand, ExitApplicationCommand);
+        ShowTrayMenuCommand = new RelayCommand(() => _trayIconController?.ShowTrayMenu());
+        TrayIcon.RightClickCommand = ShowTrayMenuCommand;
+        TrayIcon.LeftClickCommand = ShowWindowCommand;
+        TrayIcon.DoubleClickCommand = ShowWindowCommand;
 
         AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets/WindowIcon.ico"));
         Title = "AppDisplayName".GetLocalized();
@@ -186,6 +211,16 @@ public sealed partial class MainWindow : WindowEx
         _backgroundRenderer = App.GetService<IBackgroundRenderer>();
         _devBuildDetectionService = App.GetService<IDevBuildDetectionService>();
         _localSettingsService = App.GetService<ILocalSettingsService>();
+        _bingWallpaperService = App.GetService<BingWallpaperService>();
+        _autoThemeColorService = App.GetService<IAutoThemeColorService>();
+        _accountManager = App.GetService<AccountManager>();
+        AccountFlyout.Closed += (_, _) =>
+        {
+            var action = _accountFlyoutClosedAction;
+            _accountFlyoutClosedAction = null;
+            if (action != null)
+                dispatcherQueue.TryEnqueue(() => action());
+        };
 
         WeakReferenceMessenger.Default.Register<AgreementAcceptedMessage>(this, (_, _) =>
         {
@@ -204,7 +239,7 @@ public sealed partial class MainWindow : WindowEx
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"消息处理异常: {ex.Message}");
+                    DebugLog.Info("MainWindow", $"Message handling exception: {ex.Message}");
                 }
             });
 
@@ -217,7 +252,7 @@ public sealed partial class MainWindow : WindowEx
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"启动语音播放失败: {ex.Message}");
+                    DebugLog.Info("MainWindow", $"Failed to play startup sound: {ex.Message}");
                 }
             });
 
@@ -232,24 +267,31 @@ public sealed partial class MainWindow : WindowEx
                     {
                         dispatcherQueue.TryEnqueue(() =>
                         {
-                            var announcementWindow = new Views.AnnouncementWindowL(announcementUrl);
+                            var announcementWindow = new Views.WebAnnouncementWindow(announcementUrl);
                             announcementWindow.Activate();
                         });
                     }
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"[Announcement] 公告检查失败: {ex.Message}");
+                    DebugLog.Info("MainWindow", $"[Announcement] Announcement check failed: {ex.Message}");
                 }
             });
         });
 
         WeakReferenceMessenger.Default.Register<GameRunningStateChangedMessage>(this, (_, m) =>
         {
+            dispatcherQueue.TryEnqueue(() => ApplyGameMemoryStrategy(m.IsRunning));
+
             if (m.IsRunning) return;
 
             dispatcherQueue.TryEnqueue(async () => await CheckPeriodicAnnouncementAsync());
             dispatcherQueue.TryEnqueue(async () => await CheckPeriodicConstraintAsync());
+        });
+
+        WeakReferenceMessenger.Default.Register<MemoryReleaseEnabledChangedMessage>(this, (_, m) =>
+        {
+            dispatcherQueue.TryEnqueue(() => ApplyMemoryReleaseEnabled(m.IsEnabled));
         });
 
         WeakReferenceMessenger.Default.Register<OverlayStyleChangedMessage>(this, (_, m) =>
@@ -325,12 +367,23 @@ public sealed partial class MainWindow : WindowEx
             dispatcherQueue.TryEnqueue(() => ApplyOverlayOpacity(m.Value));
         });
 
+        WeakReferenceMessenger.Default.Register<AccountChangedMessage>(this, (_, _) =>
+        {
+            dispatcherQueue.TryEnqueue(RefreshAccountMenu);
+        });
+
+        WeakReferenceMessenger.Default.Register<GameRoleChangedMessage>(this, (_, _) =>
+        {
+            dispatcherQueue.TryEnqueue(RefreshAccountMenu);
+        });
+
         _memoryOptimizationTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
         _memoryOptimizationTimer.Tick += OnMemoryOptimizationTick!;
 
-        _periodicMemoryTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(1) };
-        _periodicMemoryTimer.Tick += (_, _) => FlushMemory();
+        _periodicMemoryTimer = new DispatcherTimer { Interval = NormalMemoryReleaseInterval };
+        _periodicMemoryTimer.Tick += (_, _) => FlushMemory(force: true);
         _periodicMemoryTimer.Start();
+        _ = LoadMemoryReleaseSettingAsync();
 
         AppWindow.Changed += AppWindow_Changed;
 
@@ -372,7 +425,7 @@ public sealed partial class MainWindow : WindowEx
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"启动弹窗检查发生未捕获异常: {ex.Message}");
+                    DebugLog.Info("MainWindow", $"Unhandled exception in startup popup check: {ex.Message}");
                 }
             });
         }

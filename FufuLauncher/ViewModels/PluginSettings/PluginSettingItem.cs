@@ -1,30 +1,43 @@
-﻿/*
+/*
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
 
 using System.Collections.ObjectModel;
-using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Messaging;
 using FufuLauncher.Helpers;
 using FufuLauncher.Messages;
+using FufuLauncher.Models;
 
 namespace FufuLauncher.ViewModels;
 
-public class PluginSettingItem : ObservableObject
+public class PluginSettingItem : PinnablePluginSetting
 {
     private readonly IniFile _iniFile;
     private readonly Action<string, string, string> _onValueChanged;
     private readonly Func<bool>? _canChangeValue;
+
+    private string _displayName;
 
     public string SectionKey
     {
         get;
     }
 
-    public string DisplayName
+    public string RawDisplayName
     {
         get;
+    }
+
+    public string DisplayName
+    {
+        get => _displayName;
+        private set => SetProperty(ref _displayName, value);
+    }
+
+    public void ApplyTranslatedDisplayName(string? displayName)
+    {
+        DisplayName = string.IsNullOrWhiteSpace(displayName) ? RawDisplayName : displayName.Trim();
     }
 
     public string Type
@@ -47,28 +60,6 @@ public class PluginSettingItem : ObservableObject
 
     public Microsoft.UI.Xaml.Visibility GifErrorVisibility => Microsoft.UI.Xaml.Visibility.Collapsed;
 
-    private bool _isPinned;
-
-    public bool IsPinned
-    {
-        get => _isPinned;
-        set
-        {
-            if (SetProperty(ref _isPinned, value))
-            {
-                OnPropertyChanged(nameof(PinGlyph));
-                OnPropertyChanged(nameof(PinOpacity));
-                OnPropertyChanged(nameof(PinTooltip));
-            }
-        }
-    }
-
-    public string PinGlyph => IsPinned ? "\uE735" : "\uE734";
-
-    public double PinOpacity => IsPinned ? 0.95 : 0.5;
-
-    public string PinTooltip => IsPinned ? "UnpinSettingTooltip".GetLocalized() : "PinSettingTooltip".GetLocalized();
-
     private bool _isSelected;
 
     public bool IsSelected
@@ -88,8 +79,7 @@ public class PluginSettingItem : ObservableObject
 
     private string _rawValue;
 
-    private static readonly ObservableCollection<VirtualKeyOption> _availableKeys =
-        new ObservableCollection<VirtualKeyOption>(GetAvailableKeys());
+    private static readonly ObservableCollection<VirtualKeyOption> _availableKeys = VirtualKeyCatalog.Keys;
 
     private bool _useKeyListInput;
 
@@ -118,11 +108,13 @@ public class PluginSettingItem : ObservableObject
     }
 
     public PluginSettingItem(IniFile iniFile, string sectionKey, string displayName, string type, string value,
-        string helpUrl, Action<string, string, string> onValueChanged, bool useKeyListInput, Func<bool>? canChangeValue = null)
+        string helpUrl, Action<string, string, string> onValueChanged, bool useKeyListInput,
+        Func<bool>? canChangeValue = null)
     {
         _iniFile = iniFile;
         SectionKey = sectionKey;
-        DisplayName = displayName;
+        RawDisplayName = displayName ?? string.Empty;
+        _displayName = RawDisplayName;
         Type = type;
         _rawValue = value;
         HelpUrl = helpUrl;
@@ -134,18 +126,6 @@ public class PluginSettingItem : ObservableObject
         {
             EnsureKeyOption(currentKey);
         }
-    }
-
-    private static List<VirtualKeyOption> GetAvailableKeys()
-    {
-        var list = new List<VirtualKeyOption>();
-        foreach (Windows.System.VirtualKey key in Enum.GetValues(typeof(Windows.System.VirtualKey)))
-        {
-            if (key == Windows.System.VirtualKey.None) continue;
-            list.Add(new VirtualKeyOption { KeyCode = (int)key, KeyName = key.ToString() });
-        }
-
-        return list.GroupBy(k => k.KeyCode).Select(g => g.First()).OrderBy(k => k.KeyCode).ToList();
     }
 
     public int? KeyValue
@@ -166,8 +146,8 @@ public class PluginSettingItem : ObservableObject
                 if (isNew)
                 {
                     WeakReferenceMessenger.Default.Send(new NotificationMessage(
-                        "内部视图已刷新",
-                        $"新增未知键值 {value}",
+                        "PluginSettings_InternalViewRefreshed".GetLocalized(),
+                        string.Format("PluginSettings_AddedUnknownKey_Format".GetLocalized(), value),
                         NotificationType.Success,
                         3000
                     ));
@@ -203,7 +183,8 @@ public class PluginSettingItem : ObservableObject
     {
         _iniFile = iniFile;
         SectionKey = sectionKey;
-        DisplayName = displayName;
+        RawDisplayName = displayName ?? string.Empty;
+        _displayName = RawDisplayName;
         Type = type;
         _rawValue = value;
         _onValueChanged = onValueChanged;
@@ -316,8 +297,8 @@ public class PluginSettingItem : ObservableObject
             OnPropertyChanged(propertyName);
 
             WeakReferenceMessenger.Default.Send(new NotificationMessage(
-                "配置保存失败",
-                $"无法应用当前设置修改\n详细信息: {ex.Message}",
+                "PluginSettings_SaveFailedTitle".GetLocalized(),
+                string.Format("PluginSettings_ApplyFailedDetail_Format".GetLocalized(), ex.Message),
                 NotificationType.Error,
                 6000
             ));

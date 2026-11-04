@@ -4,6 +4,7 @@ using System.Net;
 using ColorCode.Styling;
 using Markdig;
 using Markdown.ColorCode;
+using FufuLauncher.Helpers;
 
 namespace FufuLauncher.Services.Help;
 
@@ -15,7 +16,8 @@ public static class HelpDocumentRenderer
     private const string FontFaceRule =
         "@font-face { font-family: 'FufuDoc'; src: url('https://fufu.fonts/MiSans-Regular.ttf') format('truetype'); font-display: swap; }";
 
-    private static readonly string s_fontPath = Path.Combine(AppContext.BaseDirectory, "Assets", "Fonts", "MiSans-Regular.ttf");
+    private static readonly string s_fontPath =
+        Path.Combine(AppContext.BaseDirectory, "Assets", "Fonts", "MiSans-Regular.ttf");
 
     public static bool HasCustomFont
     {
@@ -91,7 +93,8 @@ public static class HelpDocumentRenderer
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[HelpDocumentRenderer] 读取文档模板失败: {ex.Message}");
+            DebugLog.Info("HelpDocumentRenderer",
+                $"[HelpDocumentRenderer] Failed to read document template: {ex.Message}");
             return FallbackTemplate;
         }
     }

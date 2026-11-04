@@ -8,12 +8,10 @@ using FufuLauncher.Constants.MiHoYo;
 using FufuLauncher.Models.MiHoYo.Identity;
 using FufuLauncher.Services.Device;
 using FufuLauncher.Services.MiHoYo.Fingerprint;
+using FufuLauncher.Helpers;
 
 namespace FufuLauncher.Services.MiHoYo;
 
-/// <summary>
-///     单账号运行期身份聚合：cookies（账号级）+ 设备身份（App 级）。
-/// </summary>
 public sealed class AccountIdentityService
 {
     private readonly AccountManager _accountManager;
@@ -36,7 +34,8 @@ public sealed class AccountIdentityService
         if (cookies == null)
         {
             cookies = new Dictionary<string, string>();
-            Debug.WriteLine($"[AccountIdentity] 账号 {accountId} 未找到 cookies，返回空 ctx");
+            DebugLog.Info("AccountIdentityService",
+                $"[AccountIdentity] No cookies found for account {accountId}, returning empty ctx");
         }
 
         var device = await _deviceFpService.GetOrRegisterAsync(token).ConfigureAwait(false);
@@ -51,7 +50,7 @@ public sealed class AccountIdentityService
             Stuid: ExtractStuid(cookies, serverType),
             Mid: cookies.GetValueOrDefault("mid") ?? "");
 
-        // 设备特征直接取自固定档案，无需再从 ext_fields 反解。
+
         var deviceIdentity = new DeviceIdentity(
             DeviceId: device.DeviceId,
             BbsDeviceId: device.BbsDeviceId,

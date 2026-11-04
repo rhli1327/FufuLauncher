@@ -40,10 +40,7 @@ public partial class App : Application
         private set;
     }
 
-    /// <summary>
-    ///     Tracks the language selected on the first-run language selection page,
-    ///     so the AgreementPage can show the appropriate agreement text.
-    /// </summary>
+
     public static ViewModels.AppLanguage? FirstRunSelectedLanguage
     {
         get;
@@ -74,14 +71,14 @@ public partial class App : Application
 
         InitializeComponent();
 
-        // 清理旧版遗留的 resources.pri
+
         try
         {
             string oldPri = Path.Combine(AppContext.BaseDirectory, "resources.pri");
             if (File.Exists(oldPri))
             {
                 File.Delete(oldPri);
-                Debug.WriteLine("[App] 已删除残留的 resources.pri");
+                DebugLog.Info("App", "[App] Removed leftover resources.pri");
             }
         }
         catch
@@ -135,13 +132,12 @@ public partial class App : Application
                 if (content.Contains("System.Private.CoreLib") || content.Contains("True") || content.Contains("False"))
                 {
                     File.Delete(filePath);
-                    Debug.WriteLine("清理了旧的无效设置文件");
+                    DebugLog.Info("App", "Cleaned up old invalid settings file");
                 }
             }
         }
         catch
         {
-            // ignored
         }
     }
 

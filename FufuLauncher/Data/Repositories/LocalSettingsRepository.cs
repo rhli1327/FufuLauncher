@@ -60,10 +60,7 @@ public class LocalSettingsRepository
             if (!string.IsNullOrEmpty(dir))
                 Directory.CreateDirectory(dir);
 
-            // Always ensure the Settings table exists via raw SQL first.
-            // This is idempotent and avoids relying on EF Core's EnsureCreated(),
-            // which can silently skip table creation when the database file
-            // already exists but contains orphan tables (e.g. from a prior crash).
+
             EnsureSettingsTable(dbPath);
 
             using var context = new LocalSettingsDbContext(dbPath);
@@ -71,11 +68,12 @@ public class LocalSettingsRepository
                 "CREATE TABLE IF NOT EXISTS __EFMigrationsHistory (MigrationId TEXT PRIMARY KEY, ProductVersion TEXT);");
             context.Database.ExecuteSqlRaw(
                 "INSERT OR IGNORE INTO __EFMigrationsHistory VALUES ('20240716000000_InitialCreate', '8.0.28');");
-            Debug.WriteLine("LocalSettingsRepository: 数据库迁移完成");
+            DebugLog.Info("LocalSettingsRepository", "LocalSettingsRepository: Database migration complete");
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"LocalSettingsRepository: 数据库迁移处理异常 - {ex.Message}");
+            DebugLog.Info("LocalSettingsRepository",
+                $"LocalSettingsRepository: Database migration exception - {ex.Message}");
 
             try
             {
@@ -88,7 +86,8 @@ public class LocalSettingsRepository
             }
             catch (Exception ex2)
             {
-                Debug.WriteLine($"LocalSettingsRepository: 迁移历史回退创建失败 - {ex2.Message}");
+                DebugLog.Info("LocalSettingsRepository",
+                    $"LocalSettingsRepository: Failed to create migration history fallback - {ex2.Message}");
             }
         }
     }
@@ -102,12 +101,13 @@ public class LocalSettingsRepository
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"LocalSettingsRepository: 加载设置失败 - {ex.Message}");
+            DebugLog.Info("LocalSettingsRepository",
+                $"LocalSettingsRepository: Failed to load settings - {ex.Message}");
             return new Dictionary<string, string>();
         }
     }
 
-    //读取单个设置项
+
     public async Task<(bool Success, bool Found, string Value)> TryGetSettingAsync(string key)
     {
         try
@@ -118,12 +118,12 @@ public class LocalSettingsRepository
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"LocalSettingsRepository: 读取 '{key}' 失败 - {ex.Message}");
+            DebugLog.Info("LocalSettingsRepository", $"LocalSettingsRepository: Failed to read '{key}' - {ex.Message}");
             return (false, false, string.Empty);
         }
     }
 
-    //全量读取
+
     public async Task<(bool Success, Dictionary<string, string> Values)> TryGetAllSettingsAsync()
     {
         try
@@ -134,7 +134,8 @@ public class LocalSettingsRepository
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"LocalSettingsRepository: 全量加载设置失败 - {ex.Message}");
+            DebugLog.Info("LocalSettingsRepository",
+                $"LocalSettingsRepository: Failed to load all settings - {ex.Message}");
             return (false, new Dictionary<string, string>());
         }
     }
@@ -153,7 +154,7 @@ public class LocalSettingsRepository
         }
 
         await context.SaveChangesAsync();
-        SettingsLog.Write($"LocalSettingsRepository: 已保存 '{key}'");
+        SettingsLog.Write($"LocalSettingsRepository: Saved '{key}'");
     }
 
 
@@ -167,14 +168,15 @@ public class LocalSettingsRepository
             {
                 context.Settings.Remove(entity);
                 await context.SaveChangesAsync();
-                SettingsLog.Write($"LocalSettingsRepository: 已删除 '{key}'");
+                SettingsLog.Write($"LocalSettingsRepository: Deleted '{key}'");
             }
 
             return true;
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"LocalSettingsRepository: 删除设置失败 - {ex.Message}");
+            DebugLog.Info("LocalSettingsRepository",
+                $"LocalSettingsRepository: Failed to delete setting - {ex.Message}");
             return false;
         }
     }
@@ -188,7 +190,8 @@ public class LocalSettingsRepository
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"LocalSettingsRepository: 加载实体失败 - {ex.Message}");
+            DebugLog.Info("LocalSettingsRepository",
+                $"LocalSettingsRepository: Failed to load entities - {ex.Message}");
             return new List<SettingEntity>();
         }
     }

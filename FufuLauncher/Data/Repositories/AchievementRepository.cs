@@ -87,18 +87,20 @@ public class AchievementRepository
                     "CREATE TABLE IF NOT EXISTS __EFMigrationsHistory (MigrationId TEXT PRIMARY KEY, ProductVersion TEXT);");
                 context.Database.ExecuteSqlRaw(
                     "INSERT OR IGNORE INTO __EFMigrationsHistory VALUES ('20240716000000_InitialCreate', '8.0.28');");
-                Debug.WriteLine("AchievementRepository: 检测到现有数据库，已跳过迁移");
+                DebugLog.Info("AchievementRepository",
+                    "AchievementRepository: existing database detected, migration skipped");
             }
             else
             {
                 using var context = new AchievementDbContext(dbPath);
                 context.Database.EnsureCreated();
-                Debug.WriteLine("AchievementRepository: 已创建新数据库");
+                DebugLog.Info("AchievementRepository", "AchievementRepository: new database created");
             }
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"AchievementRepository: 数据库迁移处理异常 - {ex.Message}");
+            DebugLog.Info("AchievementRepository",
+                $"AchievementRepository: Database migration exception - {ex.Message}");
 
             try
             {
@@ -110,12 +112,12 @@ public class AchievementRepository
             }
             catch (Exception ex2)
             {
-                Debug.WriteLine($"AchievementRepository: 迁移历史回退创建失败 - {ex2.Message}");
+                DebugLog.Info("AchievementRepository",
+                    $"AchievementRepository: Failed to create migration history fallback - {ex2.Message}");
             }
         }
     }
 
-    // ---- Categories ----
 
     public List<AchievementCategoryEntity> GetAllCategories()
     {
@@ -126,7 +128,7 @@ public class AchievementRepository
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[AchievementRepo] 加载分类失败: {ex.Message}");
+            DebugLog.Info("AchievementRepository", $"[AchievementRepo] Failed to load categories: {ex.Message}");
             return new List<AchievementCategoryEntity>();
         }
     }
@@ -160,7 +162,6 @@ public class AchievementRepository
         return count;
     }
 
-    // ---- Achievements ----
 
     public List<AchievementEntity> GetAllAchievements()
     {
@@ -171,15 +172,93 @@ public class AchievementRepository
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[AchievementRepo] 加载成就失败: {ex.Message}");
+            DebugLog.Info("AchievementRepository", $"[AchievementRepo] Failed to load achievements: {ex.Message}");
             return new List<AchievementEntity>();
         }
     }
 
-    public HashSet<int> GetExistingAchievementIds()
+    public (int AddedCategories, int AddedAchievements, int UpdatedAchievements) SynchronizeCatalog(
+        IEnumerable<(string Name, string? IconUrl)> categories, IReadOnlyCollection<AchievementEntity> achievements)
     {
         using var context = CreateContext();
-        return context.Achievements.Select(a => a.Id).ToHashSet();
+        using var transaction = context.Database.BeginTransaction();
+
+        var existingCategories = context.Categories.ToDictionary(c => c.Name, StringComparer.Ordinal);
+        var addedCategories = 0;
+        foreach (var (name, iconUrl) in categories)
+        {
+            if (existingCategories.TryGetValue(name, out var category))
+            {
+                category.IconUrl = iconUrl;
+            }
+            else
+            {
+                category = new AchievementCategoryEntity { Name = name, IconUrl = iconUrl };
+                context.Categories.Add(category);
+                existingCategories.Add(name, category);
+                addedCategories++;
+            }
+        }
+
+        var existingAchievements = context.Achievements.OrderBy(a => a.Uid).ToList();
+        var identities = existingAchievements.ToDictionary(a => a, AchievementIdentity.FromEntity);
+        var byId = existingAchievements.Where(a => a.Id > 0).ToLookup(a => a.Id);
+        var byIdentity = existingAchievements.ToLookup(a => identities[a]);
+        var matchedAchievements = new HashSet<AchievementEntity>();
+        var seenAchievements = new HashSet<(int Id, AchievementIdentity Identity)>();
+        var addedAchievements = 0;
+        var updatedAchievements = 0;
+
+        foreach (var achievement in achievements)
+        {
+            var identity = AchievementIdentity.FromEntity(achievement);
+            if (!seenAchievements.Add((achievement.Id, identity)))
+            {
+                continue;
+            }
+
+            AchievementEntity? existing = null;
+            if (achievement.Id > 0)
+            {
+                var candidates = byId[achievement.Id].Where(a => !matchedAchievements.Contains(a)).ToList();
+                existing = candidates.FirstOrDefault(a => identities[a] == identity)
+                           ?? candidates.FirstOrDefault(a => identities[a].StageIndex == identity.StageIndex)
+                           ?? candidates.FirstOrDefault();
+            }
+
+            existing ??= byIdentity[identity].FirstOrDefault(a =>
+                !matchedAchievements.Contains(a) &&
+                (!string.IsNullOrEmpty(identity.SeriesId) || achievement.Id <= 0 || a.Id <= 0 ||
+                 a.Id == achievement.Id));
+
+            if (existing == null)
+            {
+                context.Achievements.Add(achievement);
+                addedAchievements++;
+                continue;
+            }
+
+            matchedAchievements.Add(existing);
+            var id = achievement.Id > 0 ? achievement.Id : existing.Id;
+            var maxProgress = achievement.MaxProgress > 0 ? achievement.MaxProgress : existing.MaxProgress;
+            if (existing.Id == id && existing.Title == achievement.Title &&
+                existing.CategoryName == achievement.CategoryName && existing.RawJson == achievement.RawJson &&
+                existing.MaxProgress == maxProgress)
+            {
+                continue;
+            }
+
+            existing.Id = id;
+            existing.Title = achievement.Title;
+            existing.CategoryName = achievement.CategoryName;
+            existing.RawJson = achievement.RawJson;
+            existing.MaxProgress = maxProgress;
+            updatedAchievements++;
+        }
+
+        context.SaveChanges();
+        transaction.Commit();
+        return (addedCategories, addedAchievements, updatedAchievements);
     }
 
     public void InsertAchievement(AchievementEntity achievement)

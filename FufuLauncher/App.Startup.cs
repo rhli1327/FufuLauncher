@@ -23,11 +23,11 @@ public partial class App
         try
         {
             base.OnLaunched(args);
-            Debug.WriteLine("App启动开始");
+            DebugLog.Info("App.Startup", "App startup begin");
 
             _mainDispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
 
-            //全量加载设置
+
             GetService<ILocalSettingsService>().StartBackgroundLoad();
 
             await GetService<LightweightPluginService>().InitializeAsync();
@@ -36,6 +36,7 @@ public partial class App
             await VerifyResourceFilesAsync();
 
             await ApplyLanguageSettingAsync();
+            await PluginContentTranslationService.Instance.InitializeAsync();
 
             var localUids = await LoadUidLookupAsync();
             if (await EnforceBanListAsync(localUids))
@@ -55,6 +56,7 @@ public partial class App
                     _mainDispatcherQueue.TryEnqueue(async () =>
                     {
                         await SetDefaultThemeAsync();
+                        await RefreshPluginConfigBaselineAsync();
                     });
                 });
             }
@@ -72,11 +74,26 @@ public partial class App
             var activationService = GetService<IActivationService>();
             await activationService.ActivateAsync(args);
 
-            Debug.WriteLine("App主窗口已激活");
+            _ = GetService<PluginConfigGuardService>();
+
+            DebugLog.Info("App.Startup", "App main window activated");
+
+            try
+            {
+                var mcpHost = GetService<FufuLauncher.Services.Mcp.McpHostService>();
+                _ = mcpHost.StartIfEnabledAsync();
+            }
+            catch (Exception ex)
+            {
+                DebugLog.Info("App.Startup", $"[App] MCP service start skipped: {ex.Message}");
+            }
+
             var shouldRunBackgroundTasks = !AppPaths.IsFirstRun &&
                                            !(MainWindow is MainWindow mw && mw.IsAgreementShowing);
             if (shouldRunBackgroundTasks)
             {
+                _ = Task.Run(RefreshPluginConfigBaselineAsync);
+
                 _ = Task.Run(PlayStartupSoundDelayedAsync);
 
                 _ = Task.Run(CheckForAnnouncementAsync);
@@ -92,14 +109,26 @@ public partial class App
                 ProcessStartupLaunchArguments();
             }
 
-            Debug.WriteLine("App启动完成");
+            DebugLog.Info("App.Startup", "App startup complete");
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"启动失败: {ex.Message}");
+            DebugLog.Info("App.Startup", $"Startup failed: {ex.Message}");
             LogException(ex, "OnLaunched (启动流程异常)");
             ShowCrashDialog("应用启动流程异常", ex);
             Environment.Exit(-1);
+        }
+    }
+
+    private static async Task RefreshPluginConfigBaselineAsync()
+    {
+        try
+        {
+            await GetService<PluginConfigGuardService>().RefreshBaselineAsync();
+        }
+        catch (Exception ex)
+        {
+            DebugLog.Info("App.Startup", $"[PluginConfigGuard] Baseline refresh failed: {ex.Message}");
         }
     }
 
@@ -112,7 +141,7 @@ public partial class App
 
             if (isThemeInitialized == null)
             {
-                Debug.WriteLine("Initializing default theme to Dark.");
+                DebugLog.Info("App.Startup", "Initializing default theme to Dark.");
                 var themeService = GetService<IThemeSelectorService>();
 
                 await themeService.SetThemeAsync(ElementTheme.Dark);
@@ -122,7 +151,7 @@ public partial class App
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"Failed to set default theme: {ex.Message}");
+            DebugLog.Info("App.Startup", $"Failed to set default theme: {ex.Message}");
         }
     }
 
@@ -141,7 +170,7 @@ public partial class App
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[App] 同步开机自启注册表项失败: {ex.Message}");
+            DebugLog.Info("App.Startup", $"[App] Failed to sync startup registry entry: {ex.Message}");
         }
     }
 
@@ -158,16 +187,16 @@ public partial class App
             if (resourceCandidate != null)
             {
                 var test = resourceCandidate.ValueAsString;
-                Debug.WriteLine($"资源加载成功: {test}");
+                DebugLog.Info("App.Startup", $"Resource load succeeded: {test}");
             }
             else
             {
-                Debug.WriteLine("警告: 找不到资源 AppDisplayName");
+                DebugLog.Info("App.Startup", "Warning: resource AppDisplayName not found");
             }
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"资源加载严重失败: {ex.Message}");
+            DebugLog.Info("App.Startup", $"Resource load failed critically: {ex.Message}");
         }
     }
 
@@ -178,7 +207,7 @@ public partial class App
             var localSettingsService = GetService<ILocalSettingsService>();
             var languageValue = await localSettingsService.ReadSettingAsync("AppLanguage");
 
-            Debug.WriteLine(
+            DebugLog.Info("App.Startup",
                 $"[App] ApplyLanguageSettingAsync: raw value='{languageValue}' (type={languageValue?.GetType().Name ?? "null"})");
 
             var language = languageValue != null && int.TryParse(languageValue.ToString(), out var languageCode)
@@ -188,12 +217,12 @@ public partial class App
                 language,
                 Windows.System.UserProfile.GlobalizationPreferences.Languages);
 
-            Debug.WriteLine($"[App] ApplyLanguageSettingAsync: language={language}, culture='{culture}'");
+            DebugLog.Info("App.Startup", $"[App] ApplyLanguageSettingAsync: language={language}, culture='{culture}'");
             ResourceExtensions.SetLanguage(culture);
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[App] ApplyLanguageSettingAsync ERROR: {ex.Message}");
+            DebugLog.Info("App.Startup", $"[App] ApplyLanguageSettingAsync ERROR: {ex.Message}");
         }
     }
 
@@ -217,7 +246,7 @@ public partial class App
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"应用语言设置失败: {ex.Message}");
+            DebugLog.Info("App.Startup", $"Failed to apply language setting: {ex.Message}");
         }
     }
 

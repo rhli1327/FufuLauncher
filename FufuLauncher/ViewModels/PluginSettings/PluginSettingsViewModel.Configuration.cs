@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
@@ -6,6 +6,7 @@ Licensed under the MIT License.
 using CommunityToolkit.Mvvm.Messaging;
 using FufuLauncher.Helpers;
 using FufuLauncher.Messages;
+using FufuLauncher.Services;
 
 namespace FufuLauncher.ViewModels;
 
@@ -24,6 +25,8 @@ public partial class PluginSettingsViewModel
         LoadConfigurationSynchronously();
     }
 
+    private int _contentTranslationVersion;
+
     private void LoadConfigurationSynchronously()
     {
         Settings.Clear();
@@ -32,20 +35,22 @@ public partial class PluginSettingsViewModel
         _settingOrderIndexes.Clear();
         NotifySelectionChanged();
 
+        Interlocked.Increment(ref _contentTranslationVersion);
+
         if (!File.Exists(_iniPath))
         {
             if (SelectedPluginIndex == 0)
             {
                 PluginName = IsLightweightMode
                     ? "LightweightMode_LiteNotInstalled".GetLocalized()
-                    : "未安装 FuFuPlugin";
+                    : "PluginSettings_FuFuPluginNotInstalled".GetLocalized();
             }
             else
             {
-                PluginName = "未安装 FPS 插件";
+                PluginName = "PluginSettings_FpsUnlockNotInstalled".GetLocalized();
             }
 
-            PluginDescription = "请确保Plugins目录下存在对应的文件夹及config.ini文件";
+            PluginDescription = "PluginSettings_EnsurePluginDirConfigHint".GetLocalized();
             AvailablePresets.Clear();
             CurrentPreset = null;
             return;
@@ -59,13 +64,16 @@ public partial class PluginSettingsViewModel
             var configData = _iniFile.ReadAll();
             if (configData.TryGetValue("General", out var generalSection))
             {
-                PluginName = generalSection.GetValueOrDefault("Name", "未知插件");
-                PluginDescription = generalSection.GetValueOrDefault("Description", "无描述");
-                PluginDeveloper = generalSection.GetValueOrDefault("Developer", "未知作者");
+                PluginName = generalSection.GetValueOrDefault("Name", "PluginSettings_UnknownPlugin".GetLocalized());
+                PluginDescription =
+                    generalSection.GetValueOrDefault("Description", "PluginSettings_NoDescription".GetLocalized());
+                PluginDeveloper =
+                    generalSection.GetValueOrDefault("Developer", "PluginSettings_UnknownDeveloper".GetLocalized());
             }
 
             ManagePresets(configData);
 
+            var restoredSettingNames = new List<string>();
             bool isDevZone = false;
             foreach (var section in _iniFile.ReadAll())
             {
@@ -84,17 +92,7 @@ public partial class PluginSettingsViewModel
 
                 var dic = section.Value;
                 var iniName = dic.GetValueOrDefault("Name", section.Key);
-                var name = iniName;
-                if (SelectedPluginIndex == 0)
-                {
-                    // Translations under "Plugin_<SectionKey>" were authored specifically for
-                    // FuFuPlugin's config.ini. Other plugins (FPS) can reuse the same
-                    // section names for unrelated settings, so only apply this lookup for
-                    // FuFuPlugin to avoid showing a mistranslated label on another plugin's setting.
-                    var localizationKey = $"Plugin_{section.Key}";
-                    var localizedName = localizationKey.GetLocalized();
-                    name = localizedName != localizationKey ? localizedName : iniName;
-                }
+                var name = ResolveLocalizedSettingName(section.Key, iniName);
 
                 var type = dic.GetValueOrDefault("Type", "string");
                 var value = dic.GetValueOrDefault("Value", "");
@@ -102,6 +100,11 @@ public partial class PluginSettingsViewModel
 
                 var settingItem = new PluginSettingItem(_iniFile, section.Key, name, type, value, help,
                     OnSettingValueChanged, UseKeyListInput);
+
+                if (ApplySettingDisableGuard(settingItem))
+                {
+                    restoredSettingNames.Add(settingItem.DisplayName);
+                }
 
                 _settingOrderIndexes[section.Key] = _settingOrder.Count;
                 _settingOrder.Add(section.Key);
@@ -116,17 +119,92 @@ public partial class PluginSettingsViewModel
                     Settings.Add(settingItem);
                 }
             }
+
+            NotifySettingDisablesRestored(restoredSettingNames);
         }
         catch (Exception ex)
         {
             WeakReferenceMessenger.Default.Send(new NotificationMessage(
-                "配置读取失败",
-                $"无法读取插件配置文件。\n详细信息: {ex.Message}",
+                "PluginSettings_ConfigReadFailedTitle".GetLocalized(),
+                string.Format("PluginSettings_ReadConfigFailedDetail_Format".GetLocalized(), ex.Message),
                 NotificationType.Error,
                 6000
             ));
         }
     }
+
+    private string ResolveLocalizedSettingName(string sectionKey, string iniName)
+    {
+        if (SelectedPluginIndex != 0)
+        {
+            return iniName;
+        }
+
+        var localizationKey = $"Plugin_{sectionKey}";
+        var localizedName = localizationKey.GetLocalized();
+        return localizedName != localizationKey ? localizedName : iniName;
+    }
+
+    private void QueueContentTranslation(IReadOnlyList<SettingTranslationRequest> requests, string? rawDescription)
+    {
+        if (!PluginContentTranslationService.Instance.ShouldTranslate)
+        {
+            return;
+        }
+
+        if (requests.Count == 0 && string.IsNullOrWhiteSpace(rawDescription))
+        {
+            return;
+        }
+
+        var version = Volatile.Read(ref _contentTranslationVersion);
+        _ = RunContentTranslationAsync(version, requests, rawDescription);
+    }
+
+    private async Task RunContentTranslationAsync(int version,
+        IReadOnlyList<SettingTranslationRequest> requests, string? rawDescription)
+    {
+        var translator = PluginContentTranslationService.Instance;
+
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(rawDescription) &&
+                !translator.TryGetCachedTranslation(rawDescription, out _))
+            {
+                var translatedDescription = await translator.TranslateAsync(rawDescription, rawDescription);
+                if (version != Volatile.Read(ref _contentTranslationVersion))
+                {
+                    return;
+                }
+
+                PluginContentTranslationService.RunOnUiThread(() => PluginDescription = translatedDescription);
+            }
+
+            foreach (var request in requests)
+            {
+                if (version != Volatile.Read(ref _contentTranslationVersion))
+                {
+                    return;
+                }
+
+                var translated = await translator.TranslateAsync(request.RawName, request.FallbackName);
+                if (version != Volatile.Read(ref _contentTranslationVersion))
+                {
+                    return;
+                }
+
+                PluginContentTranslationService.RunOnUiThread(
+                    () => request.Item.ApplyTranslatedDisplayName(translated));
+            }
+        }
+        catch (Exception ex)
+        {
+            DebugLog.Info("PluginSettingsViewModel.Configuration",
+                $"[PluginSettings] Content translation failed: {ex.Message}");
+        }
+    }
+
+    private sealed record SettingTranslationRequest(PluginSettingItem Item, string RawName, string FallbackName);
 
     #endregion
 }

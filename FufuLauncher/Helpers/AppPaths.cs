@@ -31,15 +31,19 @@ public static class AppPaths
     public static string GachaDataFile => Path.Combine(DataDir, "gacha_data.json");
     public static string MetadataDb => Path.Combine(DataDir, "metadata.db");
 
-    public static string FufuConfigFile => Path.Combine(DataDir, "FufuConfig.cfg");
+    public static string GamePlayTimeFile => Path.Combine(DataDir, "game_play_time.json");
 
-    //public static string ConfigFile => Path.Combine(DataDir, "config.json");
-    //public static string ConfigLabFile => Path.Combine(DataDir, "config.lab.json");
+    public static string LegacyFufuConfigFile => Path.Combine(DataDir, "FufuConfig.cfg");
+
+
     public static string InventoryCacheFile => Path.Combine(DataDir, "inventory_cache.json");
     public static string MiHoYoDeviceFile => Path.Combine(DataDir, "mihoyo_device.json");
     public static string ServerCacheDir => Path.Combine(CacheDir, "ServerCache");
     public static string VerifyCacheDir => Path.Combine(CacheDir, "VerifyCache");
     public static string PluginPresetsDir => Path.Combine(DataDir, "PluginPresets");
+    public static string PluginConfigBaselineDir => Path.Combine(DataDir, "PluginConfigBaseline");
+    public static string MainPluginConfigBaselineFile =>
+        Path.Combine(PluginConfigBaselineDir, "FuFuPlugin.config.bin");
 
     static AppPaths()
     {
@@ -78,13 +82,13 @@ public static class AppPaths
         if (!Directory.Exists(_dataDir) && !string.Equals(_dataDir, defaultData, StringComparison.OrdinalIgnoreCase))
         {
             MissingDataDir = _dataDir;
-            Debug.WriteLine($"[AppPaths] 数据目录不存在: {_dataDir}");
+            DebugLog.Info("AppPaths", $"[AppPaths] Data directory missing: {_dataDir}");
         }
 
         if (!Directory.Exists(_cacheDir) && !string.Equals(_cacheDir, defaultCache, StringComparison.OrdinalIgnoreCase))
         {
             MissingCacheDir = _cacheDir;
-            Debug.WriteLine($"[AppPaths] 缓存目录不存在: {_cacheDir}");
+            DebugLog.Info("AppPaths", $"[AppPaths] Cache directory missing: {_cacheDir}");
         }
 
         ValidateOrFallbackDataDir();
@@ -103,7 +107,7 @@ public static class AppPaths
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[AppPaths] paths.json 创建失败: {ex.Message}");
+                DebugLog.Info("AppPaths", $"[AppPaths] Failed to create paths.json: {ex.Message}");
             }
 
             return;
@@ -149,7 +153,8 @@ public static class AppPaths
             if (!ArePathsOverlapping(oldDataDir, newDataDir))
                 dataMovedOk = MoveDirectoryContents(oldDataDir, newDataDir);
             else
-                Debug.WriteLine($"[AppPaths] 跳过数据迁移: 源目录与目标目录存在包含关系 {oldDataDir} <-> {newDataDir}");
+                DebugLog.Info("AppPaths",
+                    $"[AppPaths] Skipping data migration: source and target directories overlap {oldDataDir} <-> {newDataDir}");
         }
 
         if (!string.Equals(oldCacheDir, newCacheDir, StringComparison.OrdinalIgnoreCase))
@@ -157,7 +162,8 @@ public static class AppPaths
             if (!ArePathsOverlapping(oldCacheDir, newCacheDir))
                 cacheMovedOk = MoveDirectoryContents(oldCacheDir, newCacheDir);
             else
-                Debug.WriteLine($"[AppPaths] 跳过缓存迁移: 源目录与目标目录存在包含关系 {oldCacheDir} <-> {newCacheDir}");
+                DebugLog.Info("AppPaths",
+                    $"[AppPaths] Skipping cache migration: source and target directories overlap {oldCacheDir} <-> {newCacheDir}");
         }
 
         _dataDir = newDataDir;
@@ -305,7 +311,8 @@ public static class AppPaths
 
             if (IsSubdirectoryOf(destDir, sourceDir))
             {
-                Debug.WriteLine($"[AppPaths] 中止迁移: 目标目录是源目录的子目录 {sourceDir} -> {destDir}");
+                DebugLog.Info("AppPaths",
+                    $"[AppPaths] Aborting migration: target is a subdirectory of source {sourceDir} -> {destDir}");
                 return false;
             }
 
@@ -329,7 +336,7 @@ public static class AppPaths
                 catch (Exception ex)
                 {
                     allSuccess = false;
-                    Debug.WriteLine($"[AppPaths] 迁移文件失败 {file}: {ex.Message}");
+                    DebugLog.Info("AppPaths", $"[AppPaths] Failed to migrate file {file}: {ex.Message}");
                 }
             }
 
@@ -361,7 +368,7 @@ public static class AppPaths
         catch (Exception ex)
         {
             allSuccess = false;
-            Debug.WriteLine($"[AppPaths] 迁移目录失败 {sourceDir} -> {destDir}: {ex.Message}");
+            DebugLog.Info("AppPaths", $"[AppPaths] Failed to migrate directory {sourceDir} -> {destDir}: {ex.Message}");
         }
 
         return allSuccess;
@@ -382,16 +389,11 @@ public static class AppPaths
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[AppPaths] 读取自定义路径失败: {ex.Message}");
+            DebugLog.Info("AppPaths", $"[AppPaths] Failed to read custom paths: {ex.Message}");
         }
     }
 
-    /// <summary>
-    ///     Verifies the configured DataDir is creatable and writable. If a custom
-    ///     DataDir is unusable (missing drive, read-only location, revoked
-    ///     permissions, etc.), fall back to the default %LOCALAPPDATA% location so
-    ///     the SQLite databases can still be opened.
-    /// </summary>
+
     private static void ValidateOrFallbackDataDir()
     {
         if (string.IsNullOrWhiteSpace(_dataDir))
@@ -410,7 +412,8 @@ public static class AppPaths
         catch (Exception ex)
         {
             var defaultData = Path.Combine(RootDir, "Data");
-            Debug.WriteLine($"[AppPaths] 数据目录不可用，已回退到默认目录: {_dataDir} -> {defaultData} ({ex.Message})");
+            DebugLog.Info("AppPaths",
+                $"[AppPaths] Data directory unavailable, fell back to default: {_dataDir} -> {defaultData} ({ex.Message})");
             MissingDataDir = _dataDir;
             _dataDir = defaultData;
 
@@ -420,7 +423,7 @@ public static class AppPaths
             }
             catch (Exception fallbackEx)
             {
-                Debug.WriteLine($"[AppPaths] 默认数据目录创建失败: {fallbackEx.Message}");
+                DebugLog.Info("AppPaths", $"[AppPaths] Failed to create default data directory: {fallbackEx.Message}");
             }
         }
     }
@@ -443,7 +446,8 @@ public static class AppPaths
         catch (Exception ex)
         {
             var defaultCache = Path.Combine(RootDir, "Cache");
-            Debug.WriteLine($"[AppPaths] 缓存目录不可用，已回退到默认目录: {_cacheDir} -> {defaultCache} ({ex.Message})");
+            DebugLog.Info("AppPaths",
+                $"[AppPaths] Cache directory unavailable, fell back to default: {_cacheDir} -> {defaultCache} ({ex.Message})");
             MissingCacheDir = _cacheDir;
             _cacheDir = defaultCache;
 
@@ -453,7 +457,7 @@ public static class AppPaths
             }
             catch (Exception fallbackEx)
             {
-                Debug.WriteLine($"[AppPaths] 默认缓存目录创建失败: {fallbackEx.Message}");
+                DebugLog.Info("AppPaths", $"[AppPaths] Failed to create default cache directory: {fallbackEx.Message}");
             }
         }
     }
@@ -470,12 +474,15 @@ public static class AppPaths
         {
             MoveFileIfExists(Path.Combine(docsFufu, "gacha_data.json"), GachaDataFile);
             MoveFileIfExists(Path.Combine(docsFufu, "metadata.db"), MetadataDb);
-            MoveFileIfExists(Path.Combine(docsFufu, "FufuConfig.cfg"), FufuConfigFile);
+            if (!File.Exists(GamePlayTimeFile))
+            {
+                MoveFileIfExists(Path.Combine(docsFufu, "FufuConfig.cfg"), LegacyFufuConfigFile);
+            }
         }
 
         string exeDir = AppContext.BaseDirectory;
-        //MoveFileIfExists(Path.Combine(exeDir, "config.json"), ConfigFile);
-        //MoveFileIfExists(Path.Combine(exeDir, "config.lab.json"), ConfigLabFile);
+
+
         MoveFileIfExists(Path.Combine(exeDir, "Data", "inventory_cache.json"), InventoryCacheFile);
         MoveFileIfExists(Path.Combine(exeDir, "browser_config.json"), Path.Combine(DataDir, "browser_config.json"));
         MoveFileIfExists(Path.Combine(exeDir, "user.config.json"), Path.Combine(DataDir, "user.config.json"));
@@ -496,7 +503,7 @@ public static class AppPaths
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[AppPaths] 迁移通配文件失败: {ex.Message}");
+            DebugLog.Info("AppPaths", $"[AppPaths] Failed to migrate wildcard files: {ex.Message}");
         }
     }
 
@@ -513,7 +520,7 @@ public static class AppPaths
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[AppPaths] 迁移失败 {source}: {ex.Message}");
+            DebugLog.Info("AppPaths", $"[AppPaths] Migration failed {source}: {ex.Message}");
         }
     }
 }

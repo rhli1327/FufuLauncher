@@ -52,8 +52,8 @@ public abstract class GameCheckin
     protected readonly string CheckinRewardsUrl = ApiEndpoints.MihoyoBbsCheckinRewardsUrl;
     protected readonly string IsSignUrl = ApiEndpoints.MihoyoBbsIsSignUrl;
     protected readonly string SignUrl = ApiEndpoints.MihoyoBbsSignUrl;
-    protected readonly string ResignInfoUrl = "https://api-takumi.mihoyo.com/event/luna/resign_info";
-    protected readonly string ResignUrl = "https://api-takumi.mihoyo.com/event/luna/resign";
+    protected readonly string ResignInfoUrl = ApiEndpoints.LunaEventApiBase + "/resign_info";
+    protected readonly string ResignUrl = ApiEndpoints.LunaEventApiBase + "/resign";
 
     protected GameCheckin(string gameId, string gameName, string actId, string playerName = "玩家")
     {
@@ -73,7 +73,7 @@ public abstract class GameCheckin
     {
         try
         {
-            var url = $"https://api-takumi.mihoyo.com/event/luna/home?act_id={ActId}&lang=zh-cn";
+            var url = $"{ApiEndpoints.LunaEventApiBase}/home?act_id={ActId}&lang=zh-cn";
             using (var request = new HttpRequestMessage(HttpMethod.Get, url))
             {
                 AddHeadersToRequest(request);
@@ -119,10 +119,10 @@ public abstract class GameCheckin
             ["Accept"] = "application/json, text/plain, */*",
             ["DS"] = Tools.GetDs(true),
             ["x-rpc-channel"] = "miyousheluodi",
-            ["Origin"] = "https://act.mihoyo.com",
+            ["Origin"] = ApiEndpoints.ActMihoyoBase,
             ["x-rpc-app_version"] = "2.93.1",
             ["x-rpc-client_type"] = "5",
-            ["Referer"] = "https://act.mihoyo.com/",
+            ["Referer"] = ApiEndpoints.ActMihoyoBase + "/",
             ["Accept-Encoding"] = "gzip, deflate",
             ["Accept-Language"] = "zh-CN,en-US;q=0.8",
             ["X-Requested-With"] = "com.mihoyo.hyperion",
@@ -136,7 +136,7 @@ public abstract class GameCheckin
     public virtual async Task InitializeAsync(Config config)
     {
         SetHeaders(config);
-        // 并行获取账号列表和签到奖励，省一个 HTTP 往返
+
         var accountTask = GetAccountListAsync(config);
         var rewardsTask = GetCheckinRewardsAsync();
         AccountList = await accountTask.ConfigureAwait(false);
@@ -202,7 +202,6 @@ public abstract class GameCheckin
             }
             catch (Exception)
             {
-                // ignored
             }
 
             await Task.Delay(1500);
@@ -401,7 +400,7 @@ public abstract class GameCheckin
             return returnData;
         }
 
-        // 统计需要签到的角色数，只有多角色时才加延时
+
         var activeAccounts = AccountList
             .Where(a => disabledUids == null || !disabledUids.Contains(a.GameUid))
             .Where(a => string.IsNullOrEmpty(targetUid) || a.GameUid == targetUid)

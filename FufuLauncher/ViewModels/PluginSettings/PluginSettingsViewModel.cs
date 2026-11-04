@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
@@ -98,10 +98,24 @@ public partial class PluginSettingsViewModel : ObservableObject
 
     partial void OnSelectedPluginIndexChanged(int value)
     {
-        CheckPluginStates();
-        UpdatePaths();
-        LoadConfiguration();
-        RefreshUIState();
+        ReloadConfigurationForCurrentTarget("switching target");
+    }
+
+    private void ReloadConfigurationForCurrentTarget(string reason)
+    {
+        try
+        {
+            CheckPluginStates();
+            UpdatePaths();
+            LoadConfiguration();
+            RefreshUIState();
+        }
+        catch (Exception ex)
+        {
+            DebugLog.Info("PluginSettingsViewModel",
+                $"[PluginSettings] Failed to reload configuration after {reason}: {ex}");
+            ReportConfigurationLoadError(ex);
+        }
     }
 
 
@@ -117,18 +131,6 @@ public partial class PluginSettingsViewModel : ObservableObject
         PinnedSettings.CollectionChanged += (_, _) => OnPropertyChanged(nameof(PinnedSettingsVisibility));
         CheckPluginStates();
         UpdatePaths();
-        _pluginDir = GetMainPluginDirectory();
-        _iniPath = IsLightweightMode
-            ? LightweightPluginService.LitePluginConfigPath
-            : Path.Combine(_pluginDir, "config.ini");
-        _dllPath = IsLightweightMode
-            ? LightweightPluginService.FindLitePluginDisabledPath() ?? LightweightPluginService.LitePluginDllPath
-            : LightweightPluginService.MainPluginDllPath;
-        _presetsDir = IsLightweightMode
-            ? Path.Combine(AppPaths.PluginPresetsDir, LightweightPluginService.LitePluginFolderName)
-            : AppPaths.PluginPresetsDir;
-
-        _iniFile = new IniFile(_iniPath);
         if (_deferConfigurationLoading)
         {
             PluginName = SelectedPluginComboLabel;
@@ -147,19 +149,19 @@ public partial class PluginSettingsViewModel : ObservableObject
         }
         catch (UnauthorizedAccessException)
         {
-            _presetsDir = Path.Combine(AppPaths.RootDir, "Data", "PluginPresets");
+            _presetsDir = PluginPresetStorage.GetFallbackDirectory(GetMainPluginFolderName());
             try
             {
                 Directory.CreateDirectory(_presetsDir);
             }
             catch (Exception inner)
             {
-                System.Diagnostics.Debug.WriteLine($"目录创建失败: {inner.Message}");
+                DebugLog.Info("PluginSettingsViewModel", $"Directory creation failed: {inner.Message}");
             }
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"目录创建失败: {ex.Message}");
+            DebugLog.Info("PluginSettingsViewModel", $"Directory creation failed: {ex.Message}");
         }
 
         var localSettings = App.GetService<FufuLauncher.Contracts.Services.ILocalSettingsService>();
@@ -180,6 +182,10 @@ public partial class PluginSettingsViewModel : ObservableObject
             var pinnedSectionsTask = localSettings.ReadSettingAsync(PinnedSettingsKey);
             pinnedSectionsTask.Wait();
             _pinnedSections = DeserializePinnedSections(pinnedSectionsTask.Result);
+
+            var confirmedDisablesTask = localSettings.ReadSettingAsync(ConfirmedSettingDisablesKey);
+            confirmedDisablesTask.Wait();
+            _confirmedSettingDisables = DeserializeConfirmedSettingDisables(confirmedDisablesTask.Result);
 
             if (savedDevFeatures)
             {
@@ -254,26 +260,71 @@ public partial class PluginSettingsViewModel : ObservableObject
         OnPropertyChanged(nameof(PluginToggleLabel));
         OnPropertyChanged(nameof(SelectedPluginComboLabel));
 
-        CheckPluginStates();
-        UpdatePaths();
-        LoadConfiguration();
-        RefreshUIState();
+        ReloadConfigurationForCurrentTarget("switching install mode");
     }
 
     public void ToggleSettingPin(PluginSettingItem? item)
     {
-        if (item == null || (!Settings.Contains(item) && !PinnedSettings.Contains(item))) return;
+        if (item == null) return;
 
-        ApplyPin(item, !item.IsPinned);
-        SavePinnedSections();
+        PrepareSettingsPinChange(new[] { item }, !item.IsPinned)?.Invoke();
     }
 
-    private void ApplyPin(PluginSettingItem item, bool pinned)
+    public Action? PrepareSettingsPinChange(IReadOnlyCollection<PluginSettingItem> items, bool pinned,
+        bool clearSelection = false)
+    {
+        var available = items.Distinct().Where(ContainsPluginSetting).ToArray();
+        if (available.Length == 0) return null;
+
+        var target = GetSettingsTargetKey();
+        var changed = false;
+        foreach (var item in available)
+        {
+            if (item.IsPinned == pinned) continue;
+
+            UpdateSettingPinState(item, pinned, target);
+            changed = true;
+        }
+
+        if (changed)
+        {
+            SavePinnedSections();
+        }
+
+        var completed = false;
+        return () =>
+        {
+            if (completed) return;
+            completed = true;
+            if (!string.Equals(target, GetSettingsTargetKey(), StringComparison.OrdinalIgnoreCase)) return;
+
+            foreach (var item in available)
+            {
+                if (!ContainsPluginSetting(item)) continue;
+                if (item.IsPinned == pinned)
+                {
+                    MoveSettingToPinGroup(item, pinned);
+                }
+
+                if (clearSelection)
+                {
+                    item.IsSelected = false;
+                }
+            }
+
+            if (clearSelection)
+            {
+                NotifySelectionChanged();
+            }
+        };
+    }
+
+    private bool ContainsPluginSetting(PluginSettingItem item) =>
+        Settings.Contains(item) || PinnedSettings.Contains(item);
+
+    private void UpdateSettingPinState(PluginSettingItem item, bool pinned, string target)
     {
         item.IsPinned = pinned;
-
-        string target = GetSettingsTargetKey();
-
         if (!_pinnedSections.TryGetValue(target, out var sections))
         {
             sections = new List<string>();
@@ -286,15 +337,20 @@ public partial class PluginSettingsViewModel : ObservableObject
             {
                 sections.Add(item.SectionKey);
             }
-
-            Settings.Remove(item);
-            InsertBySettingOrder(PinnedSettings, item);
         }
         else
         {
             sections.RemoveAll(key => string.Equals(key, item.SectionKey, StringComparison.OrdinalIgnoreCase));
-            PinnedSettings.Remove(item);
-            InsertBySettingOrder(Settings, item);
+        }
+    }
+
+    private void MoveSettingToPinGroup(PluginSettingItem item, bool pinned)
+    {
+        var source = pinned ? Settings : PinnedSettings;
+        var destination = pinned ? PinnedSettings : Settings;
+        if (source.Remove(item) && !destination.Contains(item))
+        {
+            InsertBySettingOrder(destination, item);
         }
     }
 
@@ -342,21 +398,7 @@ public partial class PluginSettingsViewModel : ObservableObject
 
     public void BatchSetPinned(bool pinned)
     {
-        var selected = PinnedSettings.Concat(Settings).Where(item => item.IsSelected).ToList();
-        if (selected.Count == 0) return;
-
-        foreach (var item in selected)
-        {
-            if (item.IsPinned != pinned)
-            {
-                ApplyPin(item, pinned);
-            }
-
-            item.IsSelected = false;
-        }
-
-        SavePinnedSections();
-        NotifySelectionChanged();
+        PrepareSettingsPinChange(SelectedSettings.ToArray(), pinned, clearSelection: true)?.Invoke();
     }
 
     public bool IsSettingPinned(string sectionKey)
@@ -398,6 +440,7 @@ public partial class PluginSettingsViewModel : ObservableObject
                 right = middle;
             }
         }
+
         target.Insert(left, item);
     }
 
@@ -427,7 +470,7 @@ public partial class PluginSettingsViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[插件配置] 读取收藏项失败: {ex.Message}");
+            DebugLog.Info("PluginSettingsViewModel", $"[PluginConfig] Failed to read favorites: {ex.Message}");
         }
 
         return result;

@@ -76,9 +76,10 @@ public static class DailyNoteParser
 {
     public static DailyNoteCardData Parse(string json)
     {
-        Debug.WriteLine($"[DailyNoteParser] 解析JSON: {json?.Substring(0, Math.Min(200, json?.Length ?? 0))}...");
+        DebugLog.Info("DailyNoteParser",
+            $"[DailyNoteParser] Parsing JSON: {json?.Substring(0, Math.Min(200, json?.Length ?? 0))}...");
 
-        // 租用池化缓冲，需显式释放；返回的 DailyNoteCardData 只持有已拷贝的值。
+
         using var doc = JsonDocument.Parse(json);
         var root = doc.RootElement;
 
@@ -143,7 +144,7 @@ public static class DailyNoteParser
             }
         }
 
-        Debug.WriteLine("[DailyNoteParser] 解析成功");
+        DebugLog.Info("DailyNoteParser", "[DailyNoteParser] Parse succeeded");
         return result;
     }
 }

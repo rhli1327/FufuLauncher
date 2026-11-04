@@ -29,4 +29,18 @@ public sealed class PredownloadStatus
         get;
         set;
     }
+
+    [JsonPropertyName("blocks")]
+    public Dictionary<string, long> Blocks
+    {
+        get;
+        set;
+    } = new(StringComparer.Ordinal);
+
+    [JsonPropertyName("completed_blocks")]
+    public Dictionary<string, long> CompletedBlocks
+    {
+        get;
+        set;
+    } = new(StringComparer.Ordinal);
 }

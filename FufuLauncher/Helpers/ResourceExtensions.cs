@@ -15,9 +15,7 @@ public static class ResourceExtensions
     private static readonly object _lock = new();
     private static bool _loaded;
 
-    /// <summary>
-    ///     Gets the currently active effective culture name (e.g., "zh-CN", "en-US").
-    /// </summary>
+
     public static string? CurrentCulture
     {
         get
@@ -29,16 +27,13 @@ public static class ResourceExtensions
         }
     }
 
-    /// <summary>
-    ///     Sets the effective language for resource resolution.
-    ///     Callers in default-language mode must resolve a supported system culture first.
-    /// </summary>
+
     public static void SetLanguage(string? culture)
     {
         lock (_lock)
         {
             _currentCulture = string.IsNullOrEmpty(culture) ? null : culture;
-            Debug.WriteLine($"[ResourceExt] SetLanguage: culture='{_currentCulture ?? "null"}'");
+            DebugLog.Info("ResourceExtensions", $"[ResourceExt] SetLanguage: culture='{_currentCulture ?? "null"}'");
         }
     }
 
@@ -52,7 +47,7 @@ public static class ResourceExtensions
             try
             {
                 var exeDir = AppContext.BaseDirectory;
-                Debug.WriteLine($"[ResourceExt] Loading resw from: {exeDir}");
+                DebugLog.Info("ResourceExtensions", $"[ResourceExt] Loading resw from: {exeDir}");
 
                 LoadResw(Path.Combine(exeDir, "Strings", "zh-CN", "Resources.resw"), "zh-CN");
                 LoadResw(Path.Combine(exeDir, "Strings", "en-US", "Resources.resw"), "en-US");
@@ -69,12 +64,12 @@ public static class ResourceExtensions
                 LoadResw(Path.Combine(exeDir, "Strings", "es-MX", "Resources.resw"), "es-MX");
                 LoadResw(Path.Combine(exeDir, "Strings", "hi-IN", "Resources.resw"), "hi-IN");
 
-                Debug.WriteLine(
+                DebugLog.Info("ResourceExtensions",
                     $"[ResourceExt] Loaded {_resources.Count} language(s): {string.Join(", ", _resources.Keys)}");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[ResourceExt] Failed to load resw files: {ex.Message}");
+                DebugLog.Info("ResourceExtensions", $"[ResourceExt] Failed to load resw files: {ex.Message}");
             }
             finally
             {
@@ -87,7 +82,7 @@ public static class ResourceExtensions
     {
         if (!File.Exists(path))
         {
-            Debug.WriteLine($"[ResourceExt] Resw not found: {path}");
+            DebugLog.Info("ResourceExtensions", $"[ResourceExt] Resw not found: {path}");
             return;
         }
 
@@ -102,15 +97,15 @@ public static class ResourceExtensions
                 var key = data.Attribute("name")?.Value;
                 var value = data.Element("value")?.Value;
                 if (!string.IsNullOrEmpty(key) && value != null)
-                    dict[key] = value;
+                    dict[key] = value.Replace("\\n", "\n");
             }
 
             _resources[culture] = dict;
-            Debug.WriteLine($"[ResourceExt] Loaded '{culture}': {dict.Count} strings");
+            DebugLog.Info("ResourceExtensions", $"[ResourceExt] Loaded '{culture}': {dict.Count} strings");
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[ResourceExt] Error loading '{path}': {ex.Message}");
+            DebugLog.Info("ResourceExtensions", $"[ResourceExt] Error loading '{path}': {ex.Message}");
         }
     }
 
@@ -120,7 +115,7 @@ public static class ResourceExtensions
         {
             EnsureLoaded();
 
-            // 1) Use the explicitly-set language
+
             string? culture;
             lock (_lock)
             {
@@ -132,7 +127,7 @@ public static class ResourceExtensions
                 dict.TryGetValue(resourceKey, out var result))
                 return result;
 
-            // 2) A missing translation falls back to the complete Chinese resource set.
+
             if (culture != "zh-CN" &&
                 _resources.TryGetValue("zh-CN", out var zhDict) &&
                 zhDict.TryGetValue(resourceKey, out var zhResult))
@@ -150,12 +145,13 @@ public static class ResourceExtensions
                     return fb;
             }
 
-            // 3) Absolute fallback: return the key itself
+
             return resourceKey;
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[ResourceExt] GetLocalized error: key='{resourceKey}', err='{ex.Message}'");
+            DebugLog.Info("ResourceExtensions",
+                $"[ResourceExt] GetLocalized error: key='{resourceKey}', err='{ex.Message}'");
             return resourceKey;
         }
     }

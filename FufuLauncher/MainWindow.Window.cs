@@ -1,4 +1,4 @@
-﻿/*
+/*
 Copyright (c) FufuLauncher Dev Team. All rights reserved.
 Licensed under the MIT License.
 */
@@ -48,16 +48,31 @@ public sealed partial class MainWindow
         }
     }
 
+    private void DisposeTrayIcon()
+    {
+        try
+        {
+            _trayIconController?.Dispose();
+        }
+        catch
+        {
+        }
+
+        TrayIcon.Dispose();
+    }
+
     private void CleanupWindowResources()
     {
         _memoryOptimizationTimer?.Stop();
         _periodicMemoryTimer?.Stop();
+        _gameMemoryTelemetryTimer?.Stop();
+        _gameMemoryReleaseTimer?.Stop();
         _messageDismissTimer?.Stop();
         _announcementCheckTimer?.Stop();
         _slideshowTimer?.Stop();
         _networkMonitorService.Stop();
 
-        // 通知 ViewModel 取消后台任务
+
         try
         {
             App.GetService<MainViewModel>()?.Cleanup();
@@ -68,13 +83,15 @@ public sealed partial class MainWindow
 
         try
         {
-            App.GetService<ControlPanelModel>()?.Cleanup();
+            App.GetService<ControlPanelViewModel>()?.Cleanup();
         }
         catch
         {
         }
 
         DisposeGlobalBackgroundPlayer();
+        StopBackgroundImageAnimation();
+        Interlocked.Increment(ref _backgroundLoadVersion);
         GlobalBackgroundImage.Source = null;
         WeakReferenceMessenger.Default.UnregisterAll(this);
         settings.ColorValuesChanged -= Settings_ColorValuesChanged;
@@ -82,6 +99,15 @@ public sealed partial class MainWindow
 
     private async void ExitApplication()
     {
+        try
+        {
+            await App.GetService<FufuLauncher.Services.Mcp.McpHostService>().StopAsync();
+        }
+        catch (Exception ex)
+        {
+            DebugLog.Info("MainWindow.Window", $"[MainWindow] Failed to stop MCP service: {ex.Message}");
+        }
+
         try
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
@@ -93,7 +119,7 @@ public sealed partial class MainWindow
 
         _isExit = true;
         CleanupWindowResources();
-        TrayIcon.Dispose();
+        DisposeTrayIcon();
         Close();
     }
 
@@ -106,7 +132,7 @@ public sealed partial class MainWindow
         {
             _isExit = true;
             CleanupWindowResources();
-            TrayIcon.Dispose();
+            DisposeTrayIcon();
             Close();
             return;
         }
@@ -129,7 +155,7 @@ public sealed partial class MainWindow
 
             _isExit = true;
             CleanupWindowResources();
-            TrayIcon.Dispose();
+            DisposeTrayIcon();
             Close();
         }
     }
@@ -155,7 +181,6 @@ public sealed partial class MainWindow
         }
         catch
         {
-            // ignored
         }
     }
 
@@ -237,7 +262,6 @@ public sealed partial class MainWindow
         }
         catch
         {
-            // ignored
         }
 
         Activated -= OnWindowActivated;
@@ -259,7 +283,6 @@ public sealed partial class MainWindow
         }
         catch
         {
-            // ignored
         }
     }
 
@@ -273,7 +296,6 @@ public sealed partial class MainWindow
         }
         catch
         {
-            // ignored
         }
     }
 
@@ -302,7 +324,6 @@ public sealed partial class MainWindow
         }
         catch
         {
-            // ignored
         }
     }
 

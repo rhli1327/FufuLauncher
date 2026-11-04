@@ -10,17 +10,18 @@ using FufuLauncher.Models.MiHoYo.Fingerprint;
 using FufuLauncher.Models.MiHoYo.Identity;
 using FufuLauncher.Services.Device;
 using FufuLauncher.Services.MiHoYo.Networking;
+using FufuLauncher.Helpers;
 
 namespace FufuLauncher.Services.MiHoYo.Fingerprint;
 
 public sealed class DeviceFpService
 {
-    private const string GetFpUrl = "https://public-data-api.mihoyo.com/device-fp/api/getFp";
+    private const string GetFpUrl = ApiEndpoints.DeviceFpUrl;
 
-    /// <summary><c>getFp</c> 的 <c>app_name</c>（国服）。</summary>
+
     public const string AppName = "bbs_cn";
 
-    /// <summary><c>getFp</c> 的 <c>platform</c>（2 = 安卓 App）。</summary>
+
     public const string Platform = "2";
 
     private static readonly HttpClient _httpClient = new() { Timeout = TimeSpan.FromSeconds(15) };
@@ -41,17 +42,15 @@ public sealed class DeviceFpService
         _device = device;
     }
 
-    // ---------------------------------------------------------------- 取用
-
 
     public Task<MiHoYoDeviceIdentity> GetIdentityAsync(CancellationToken token = default) =>
         _store.GetOrCreateAsync(ResolveInitialDeviceId(), token);
 
-    /// <summary>取用设备号（<c>x-rpc-device_id</c> 同源值）。</summary>
+
     public async Task<string> GetBbsDeviceIdAsync(CancellationToken token = default) =>
         (await GetIdentityAsync(token).ConfigureAwait(false)).BbsDeviceId;
 
-    /// <summary>取用设备指纹；尚未注册时返回 null。</summary>
+
     public async Task<string?> GetFingerprintAsync(CancellationToken token = default)
     {
         var identity = await GetIdentityAsync(token).ConfigureAwait(false);
@@ -70,7 +69,6 @@ public sealed class DeviceFpService
         await _gate.WaitAsync(token).ConfigureAwait(false);
         try
         {
-            // 双检：等锁期间可能已被其它调用注册完成。
             identity = await GetIdentityAsync(token).ConfigureAwait(false);
             if (!string.IsNullOrEmpty(identity.DeviceFp))
             {
@@ -80,21 +78,21 @@ public sealed class DeviceFpService
             string? issued = await RegisterAsync(identity, token).ConfigureAwait(false);
             if (string.IsNullOrEmpty(issued))
             {
-                Debug.WriteLine("[DeviceFp] 注册未获得指纹，返回无指纹身份");
+                DebugLog.Info("DeviceFpService",
+                    "[DeviceFp] Registration returned no fingerprint, returning fingerprint-less identity");
                 return identity;
             }
 
-            // 只把指纹回填到发起注册时用的那个 device_id 上。
-            // 若期间发生过重置，写入会被拒绝，避免旧指纹挂到新设备号。
+
             var updated = await _store.WithFingerprintAsync(identity.DeviceId, issued, token)
                 .ConfigureAwait(false);
             if (updated is null)
             {
-                Debug.WriteLine("[DeviceFp] 身份已重置，丢弃本次注册结果");
+                DebugLog.Info("DeviceFpService", "[DeviceFp] Identity reset, discarding this registration result");
                 return await GetIdentityAsync(token).ConfigureAwait(false);
             }
 
-            Debug.WriteLine($"[DeviceFp] 注册成功并已回填: {issued}");
+            DebugLog.Info("DeviceFpService", $"[DeviceFp] Registration succeeded and backfilled: {issued}");
             return updated;
         }
         finally
@@ -115,7 +113,6 @@ public sealed class DeviceFpService
 
     public string BuildExtFieldsJson() => FpExtFieldsBuilder.BuildJson(_device.CaptureSnapshot());
 
-    // ---------------------------------------------------------------- 内部
 
     private async Task<string?> RegisterAsync(MiHoYoDeviceIdentity identity, CancellationToken token)
     {
@@ -140,7 +137,8 @@ public sealed class DeviceFpService
 
             using var resp = await _httpClient.SendAsync(req, token).ConfigureAwait(false);
             string json = await resp.Content.ReadAsStringAsync(token).ConfigureAwait(false);
-            Debug.WriteLine($"[DeviceFp] getFp 状态码: {(int)resp.StatusCode}, 响应: {Truncate(json, 300)}");
+            DebugLog.Info("DeviceFpService",
+                $"[DeviceFp] getFp status code: {(int)resp.StatusCode}, response: {Truncate(json, 300)}");
 
             return ParseFingerprint(json);
         }
@@ -150,12 +148,12 @@ public sealed class DeviceFpService
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[DeviceFp] getFp 异常: {ex.Message}");
+            DebugLog.Info("DeviceFpService", $"[DeviceFp] getFp exception: {ex.Message}");
             return null;
         }
     }
 
-    /// <summary>解析 <c>getFp</c> 响应中的 <c>device_fp</c>；任一步失败返回 null。</summary>
+
     private static string? ParseFingerprint(string json)
     {
         try
@@ -165,7 +163,7 @@ public sealed class DeviceFpService
 
             if (root.TryGetProperty("retcode", out var rc) && rc.GetInt32() != 0)
             {
-                Debug.WriteLine($"[DeviceFp] getFp retcode={rc.GetInt32()}");
+                DebugLog.Info("DeviceFpService", $"[DeviceFp] getFp retcode={rc.GetInt32()}");
                 return null;
             }
 
@@ -176,12 +174,12 @@ public sealed class DeviceFpService
                 return string.IsNullOrEmpty(fp) ? null : fp;
             }
 
-            Debug.WriteLine("[DeviceFp] getFp 响应未包含 device_fp");
+            DebugLog.Info("DeviceFpService", "[DeviceFp] getFp response missing device_fp");
             return null;
         }
         catch (JsonException ex)
         {
-            Debug.WriteLine($"[DeviceFp] getFp 响应解析失败: {ex.Message}");
+            DebugLog.Info("DeviceFpService", $"[DeviceFp] Failed to parse getFp response: {ex.Message}");
             return null;
         }
     }

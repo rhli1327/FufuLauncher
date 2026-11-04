@@ -14,7 +14,6 @@ using FufuLauncher.Contracts.Services;
 using FufuLauncher.Helpers;
 using FufuLauncher.Messages;
 using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Media.Imaging;
 using Windows.Media.Core;
 using Windows.Storage.Streams;
 using CommunityToolkit.Mvvm.Messaging;
@@ -46,6 +45,12 @@ namespace FufuLauncher.Services.Background
 {
     public class BackgroundRenderResult
     {
+        public bool IsFallback
+        {
+            get;
+            set;
+        }
+
         public ImageSource ImageSource
         {
             get;
@@ -76,10 +81,12 @@ namespace FufuLauncher.Services.Background
         Task<BackgroundRenderResult> GetBackgroundAsync(ServerType server, bool preferVideo);
         Task<BackgroundRenderResult> GetCustomBackgroundAsync(string filePath);
         Task<BackgroundRenderResult> GetSpecificOnlineBackgroundAsync(string url, bool isVideo);
+        Task<BackgroundRenderResult> GetFallbackBackgroundAsync();
         Task PreloadImageBackgroundsAsync(IEnumerable<string> imageUrls);
         Task CacheAllBackgroundsAsync(ServerType server);
         void ClearBackground();
         void ClearCustomBackground();
+        void ClearImageCaches();
     }
 
     public class BackgroundRenderer : IBackgroundRenderer
@@ -87,6 +94,7 @@ namespace FufuLauncher.Services.Background
         private static readonly HttpClient _httpClient;
 
         private readonly IDevBuildDetectionService _devBuildDetectionService;
+        private readonly SemaphoreSlim _downloadLock = new(1, 1);
 
         private string _cacheFolderPath => Path.Combine(Helpers.AppPaths.CacheDir, "BackgroundCache");
         private BackgroundRenderResult _cachedBackground;
@@ -95,6 +103,7 @@ namespace FufuLauncher.Services.Background
         private string _videoBytesUrl;
         private string _videoMimeType;
         private BackgroundRenderResult _cachedCustomBackground;
+        private BackgroundRenderResult _cachedFallbackBackground;
         private string _customBackgroundPath;
 
         private bool AllowVideoBackground => _devBuildDetectionService.IsDevBuild;
@@ -123,47 +132,35 @@ namespace FufuLauncher.Services.Background
             {
                 preferVideo = preferVideo && AllowVideoBackground;
 
-                var localSettings = App.GetService<ILocalSettingsService>();
-
-                var specificUrlObj = await localSettings.ReadSettingAsync("SelectedOnlineBackgroundUrl");
-                string specificUrl = specificUrlObj?.ToString();
-                if (!string.IsNullOrEmpty(specificUrl))
+                var apiResponse = await TryRequestBackgroundApiAsync(server);
+                var apiRequested = !string.IsNullOrEmpty(apiResponse);
+                if (apiRequested)
                 {
-                    var isVideoObj = await localSettings.ReadSettingAsync("SelectedOnlineBackgroundIsVideo");
-                    bool isVideo = isVideoObj != null && Convert.ToBoolean(isVideoObj);
+                    var freshResult = await LoadFromApiResponseAsync(server, apiResponse!, preferVideo);
+                    if (freshResult != null)
+                        return freshResult;
+                }
 
-                    if (isVideo && !AllowVideoBackground)
-                    {
-                        Debug.WriteLine("BackgroundRenderer: 非开发版，忽略已选中的视频背景");
-                    }
-                    else
-                    {
-                        var result = await LoadFromCacheOrNull(specificUrl, isVideo);
-                        if (result != null)
-                        {
-                            ScheduleBackgroundRefresh(server, preferVideo);
-                            return result;
-                        }
-                    }
+                var selectedCachedResult = await TryLoadSelectedFromCacheAsync();
+                if (selectedCachedResult != null)
+                {
+                    if (!apiRequested) ScheduleBackgroundRefresh(server, preferVideo);
+                    return selectedCachedResult;
                 }
 
                 var cachedResult = await TryLoadFromDiskCacheAsync(server, preferVideo);
                 if (cachedResult != null)
                 {
-                    ScheduleBackgroundRefresh(server, preferVideo);
+                    if (!apiRequested) ScheduleBackgroundRefresh(server, preferVideo);
                     return cachedResult;
                 }
 
-                var freshResult = await FetchAndCacheAsync(server, preferVideo);
-                if (freshResult != null)
-                    return freshResult;
-
-                return GetFallbackBackground();
+                return await GetFallbackBackgroundAsync();
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"BackgroundRenderer: GetBackgroundAsync 异常 - {ex.Message}");
-                return GetFallbackBackground();
+                DebugLog.Info("BackgroundRenderer", $"BackgroundRenderer: GetBackgroundAsync failed - {ex.Message}");
+                return await GetFallbackBackgroundAsync();
             }
         }
 
@@ -176,11 +173,13 @@ namespace FufuLauncher.Services.Background
             try
             {
                 var cachedJson = await File.ReadAllTextAsync(apiCachePath);
-                var bgInfo = ParseTargetBackground(cachedJson, preferVideo);
-                if (bgInfo == null)
-                    return null;
+                foreach (var bgInfo in ParseBackgroundCandidates(cachedJson, preferVideo))
+                {
+                    var result = await LoadFromCacheOrNull(bgInfo.Url, bgInfo.IsVideo);
+                    if (result != null) return result;
+                }
 
-                return await LoadFromCacheOrNull(bgInfo.Url, bgInfo.IsVideo);
+                return null;
             }
             catch
             {
@@ -190,7 +189,7 @@ namespace FufuLauncher.Services.Background
 
         private async Task<BackgroundRenderResult> LoadFromCacheOrNull(string url, bool isVideo)
         {
-            if (!isVideo && url == _currentBackgroundUrl && _cachedBackground != null)
+            if (!isVideo && url == _currentBackgroundUrl && _cachedBackground is { IsVideo: false })
                 return _cachedBackground;
 
             if (isVideo)
@@ -200,12 +199,12 @@ namespace FufuLauncher.Services.Background
                     return cached;
             }
 
-            var cachedFilePath = FindCachedFilePath(url, isVideo ? GetVideoExtension(url) : ".img");
-            if (cachedFilePath == null || new FileInfo(cachedFilePath).Length <= 1024)
-                return null;
-
+            string cachedFilePath = null;
             try
             {
+                cachedFilePath = FindCachedFilePath(url, isVideo ? GetVideoExtension(url) : ".img");
+                if (cachedFilePath == null) return null;
+
                 BackgroundRenderResult result;
                 if (isVideo)
                 {
@@ -213,7 +212,7 @@ namespace FufuLauncher.Services.Background
                 }
                 else
                 {
-                    var bitmap = new BitmapImage(new Uri(cachedFilePath));
+                    var bitmap = await BackgroundImageLoader.LoadFileAsync(cachedFilePath);
                     result = new BackgroundRenderResult { ImageSource = bitmap, IsVideo = false };
                 }
 
@@ -223,7 +222,8 @@ namespace FufuLauncher.Services.Background
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"BackgroundRenderer: 缓存文件加载失败({cachedFilePath}): {ex.Message}");
+                DebugLog.Info("BackgroundRenderer",
+                    $"BackgroundRenderer: Failed to load cached file ({cachedFilePath}): {ex.Message}");
                 try
                 {
                     File.Delete(cachedFilePath);
@@ -256,7 +256,8 @@ namespace FufuLauncher.Services.Background
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"BackgroundRenderer: 内存视频缓存加载失败({url}): {ex.Message}");
+                DebugLog.Info("BackgroundRenderer",
+                    $"BackgroundRenderer: Failed to load in-memory video cache ({url}): {ex.Message}");
                 ReleaseVideoCache();
                 return null;
             }
@@ -280,7 +281,8 @@ namespace FufuLauncher.Services.Background
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"BackgroundRenderer: 视频载入内存失败({filePath}): {ex.Message}");
+                DebugLog.Info("BackgroundRenderer",
+                    $"BackgroundRenderer: Failed to load video into memory ({filePath}): {ex.Message}");
                 ReleaseVideoCache();
                 return null;
             }
@@ -297,7 +299,8 @@ namespace FufuLauncher.Services.Background
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"BackgroundRenderer: 从内存创建视频源失败: {ex.Message}");
+                DebugLog.Info("BackgroundRenderer",
+                    $"BackgroundRenderer: Failed to create video source from memory: {ex.Message}");
                 return null;
             }
         }
@@ -367,13 +370,27 @@ namespace FufuLauncher.Services.Background
             };
         }
 
-        private async Task<BackgroundRenderResult> FetchAndCacheAsync(ServerType server, bool preferVideo)
+        private async Task<string?> TryRequestBackgroundApiAsync(ServerType server)
         {
             try
             {
                 var apiUrl = await ResolveBackgroundApiUrlAsync(server);
+                return await _httpClient.GetStringAsync(apiUrl);
+            }
+            catch (Exception ex)
+            {
+                DebugLog.Info("BackgroundRenderer",
+                    $"BackgroundRenderer: Background API request failed - {ex.Message}");
+                return null;
+            }
+        }
 
-                var response = await _httpClient.GetStringAsync(apiUrl);
+        private async Task<BackgroundRenderResult?> LoadFromApiResponseAsync(ServerType server, string response,
+            bool preferVideo)
+        {
+            BackgroundRenderResult? result = null;
+            try
+            {
                 await SaveApiCacheAsync(server, response);
 
                 var localSettings = App.GetService<ILocalSettingsService>();
@@ -389,50 +406,85 @@ namespace FufuLauncher.Services.Background
 
                 await localSettings.SaveSettingAsync("BackgroundJsonHash", currentHash);
 
-                var specificUrlObj = await localSettings.ReadSettingAsync("SelectedOnlineBackgroundUrl");
-                string specificUrl = specificUrlObj?.ToString();
-                if (!string.IsNullOrEmpty(specificUrl))
-                {
-                    var isVideoObj = await localSettings.ReadSettingAsync("SelectedOnlineBackgroundIsVideo");
-                    bool isVideo = isVideoObj != null && Convert.ToBoolean(isVideoObj);
+                var selected = await GetSelectedOnlineBackgroundAsync();
+                if (selected != null)
+                    result = await GetSpecificOnlineBackgroundAsync(selected.Url, selected.IsVideo);
 
-                    if (isVideo && !AllowVideoBackground)
+                if (result == null)
+                {
+                    var candidates = ParseBackgroundCandidates(response, preferVideo);
+                    if (selected != null)
                     {
-                        Debug.WriteLine("BackgroundRenderer: 忽略已选中的视频背景");
+                        candidates = candidates
+                            .Where(c => !string.Equals(c.Url, selected.Url, StringComparison.Ordinal))
+                            .ToList();
                     }
-                    else
+
+                    foreach (var candidate in candidates)
                     {
-                        await DownloadToCache(specificUrl, isVideo ? GetVideoExtension(specificUrl) : ".img");
-                        return await LoadFromCacheOrNull(specificUrl, isVideo);
+                        result = await LoadFromCacheOrNull(candidate.Url, candidate.IsVideo);
+                        if (result != null) break;
+                    }
+
+                    if (result == null)
+                    {
+                        foreach (var candidate in candidates)
+                        {
+                            result = await GetSpecificOnlineBackgroundAsync(candidate.Url, candidate.IsVideo);
+                            if (result != null) break;
+                        }
                     }
                 }
-
-                var bgInfo = ParseTargetBackground(response, preferVideo);
-                if (bgInfo == null)
-                    return null;
-
-                await DownloadToCache(bgInfo.Url, bgInfo.IsVideo ? GetVideoExtension(bgInfo.Url) : ".img");
-                var result = await LoadFromCacheOrNull(bgInfo.Url, bgInfo.IsVideo);
-
-                _ = Task.Run(async () =>
-                {
-                    try
-                    {
-                        await PreloadAllFromResponse(response);
-                        CleanupStaleCacheFiles(response);
-                    }
-                    catch
-                    {
-                    }
-                });
-
-                return result;
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"BackgroundRenderer: FetchAndCacheAsync 异常 - {ex.Message}");
+                DebugLog.Info("BackgroundRenderer",
+                    $"BackgroundRenderer: Failed to process background API response - {ex.Message}");
+            }
+
+            QueueBackgroundPreload(response);
+            return result;
+        }
+
+        private async Task<BackgroundUrlInfo?> GetSelectedOnlineBackgroundAsync()
+        {
+            var localSettings = App.GetService<ILocalSettingsService>();
+            var specificUrlObj = await localSettings.ReadSettingAsync("SelectedOnlineBackgroundUrl");
+            var specificUrl = specificUrlObj?.ToString();
+            if (string.IsNullOrEmpty(specificUrl)) return null;
+
+            var isVideoObj = await localSettings.ReadSettingAsync("SelectedOnlineBackgroundIsVideo");
+            var isVideo = isVideoObj != null && Convert.ToBoolean(isVideoObj);
+            if (isVideo && !AllowVideoBackground)
+            {
+                DebugLog.Info("BackgroundRenderer",
+                    "BackgroundRenderer: Non-dev build, ignoring selected video background");
                 return null;
             }
+
+            return new BackgroundUrlInfo { Url = specificUrl, IsVideo = isVideo };
+        }
+
+        private async Task<BackgroundRenderResult?> TryLoadSelectedFromCacheAsync()
+        {
+            var selected = await GetSelectedOnlineBackgroundAsync();
+            if (selected == null) return null;
+            return await LoadFromCacheOrNull(selected.Url, selected.IsVideo);
+        }
+
+        private void QueueBackgroundPreload(string response)
+        {
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await PreloadAllFromResponse(response);
+                    CleanupStaleCacheFiles(response);
+                }
+                catch
+                {
+                }
+            });
         }
 
         private void ScheduleBackgroundRefresh(ServerType server, bool preferVideo)
@@ -494,12 +546,16 @@ namespace FufuLauncher.Services.Background
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"BackgroundRenderer: 后台刷新异常 - {ex.Message}");
+                    DebugLog.Info("BackgroundRenderer",
+                        $"BackgroundRenderer: Background refresh failed - {ex.Message}");
                 }
             });
         }
 
         private BackgroundUrlInfo ParseTargetBackground(string apiResponse, bool preferVideo)
+            => ParseBackgroundCandidates(apiResponse, preferVideo).FirstOrDefault();
+
+        private List<BackgroundUrlInfo> ParseBackgroundCandidates(string apiResponse, bool preferVideo)
         {
             try
             {
@@ -512,30 +568,29 @@ namespace FufuLauncher.Services.Background
                 };
                 var result = JsonSerializer.Deserialize<HoyoverseBackgroundResponse>(apiResponse, options);
                 if (result?.Retcode != 0 || result.Data?.GameInfoList == null || result.Data.GameInfoList.Length == 0)
-                    return null;
+                    return new();
 
                 var backgrounds = result.Data.GameInfoList[0].Backgrounds;
                 if (backgrounds == null || backgrounds.Length == 0)
-                    return null;
+                    return new();
 
+                var candidates = new List<BackgroundUrlInfo>();
                 if (preferVideo)
                 {
-                    var videoBg = backgrounds.FirstOrDefault(b =>
-                        b.Type == "BACKGROUND_TYPE_VIDEO" && !string.IsNullOrEmpty(b.Video?.Url));
-                    if (videoBg != null)
-                        return new BackgroundUrlInfo { Url = videoBg.Video.Url, IsVideo = true };
+                    candidates.AddRange(backgrounds
+                        .Where(b => b != null && b.Type == "BACKGROUND_TYPE_VIDEO" &&
+                                    !string.IsNullOrEmpty(b.Video?.Url))
+                        .Select(b => new BackgroundUrlInfo { Url = b.Video.Url, IsVideo = true }));
                 }
 
-                var staticBg = backgrounds.FirstOrDefault(b =>
-                    b.Type != "BACKGROUND_TYPE_VIDEO" && !string.IsNullOrEmpty(b.Background?.Url));
-                if (staticBg != null)
-                    return new BackgroundUrlInfo { Url = staticBg.Background.Url, IsVideo = false };
-
-                return null;
+                candidates.AddRange(backgrounds
+                    .Where(b => b != null && !string.IsNullOrEmpty(b.Background?.Url))
+                    .Select(b => new BackgroundUrlInfo { Url = b.Background.Url, IsVideo = false }));
+                return candidates.DistinctBy(b => b.Url).ToList();
             }
             catch
             {
-                return null;
+                return new();
             }
         }
 
@@ -585,7 +640,7 @@ namespace FufuLauncher.Services.Background
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"BackgroundRenderer: 预缓存失败({url}): {ex.Message}");
+                    DebugLog.Info("BackgroundRenderer", $"BackgroundRenderer: Precache failed ({url}): {ex.Message}");
                 }
             }
         }
@@ -599,6 +654,7 @@ namespace FufuLauncher.Services.Background
 
                 var validHashes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 var allUrls = ParseAllUrls(apiResponse, includeVideos: AllowVideoBackground);
+                if (allUrls.Count == 0) return;
                 foreach (var url in allUrls)
                 {
                     validHashes.Add(ComputeUrlHash(url));
@@ -611,14 +667,6 @@ namespace FufuLauncher.Services.Background
                         continue;
                     if (name.EndsWith(".tmp", StringComparison.OrdinalIgnoreCase))
                     {
-                        try
-                        {
-                            File.Delete(file);
-                        }
-                        catch
-                        {
-                        }
-
                         continue;
                     }
 
@@ -643,12 +691,16 @@ namespace FufuLauncher.Services.Background
         {
             if (isVideo && !AllowVideoBackground)
             {
-                Debug.WriteLine("BackgroundRenderer: 非开发版，拒绝加载指定视频背景");
+                DebugLog.Info("BackgroundRenderer",
+                    "BackgroundRenderer: Non-dev build, refusing to load specified video background");
                 return null;
             }
 
             try
             {
+                var cached = await LoadFromCacheOrNull(url, isVideo);
+                if (cached != null) return cached;
+
                 var ext = isVideo ? GetVideoExtension(url) : ".img";
                 await DownloadToCache(url, ext);
                 var result = await LoadFromCacheOrNull(url, isVideo);
@@ -656,7 +708,8 @@ namespace FufuLauncher.Services.Background
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"BackgroundRenderer: 指定背景加载失败 - {ex.Message}");
+                DebugLog.Info("BackgroundRenderer",
+                    $"BackgroundRenderer: Failed to load specified background - {ex.Message}");
                 return null;
             }
         }
@@ -676,7 +729,8 @@ namespace FufuLauncher.Services.Background
 
                 if (isVideo && !AllowVideoBackground)
                 {
-                    Debug.WriteLine($"BackgroundRenderer: 非开发版，禁止使用视频自定义背景: {filePath}");
+                    DebugLog.Info("BackgroundRenderer",
+                        $"BackgroundRenderer: Non-dev build, custom video background not allowed: {filePath}");
                     return null;
                 }
 
@@ -688,7 +742,7 @@ namespace FufuLauncher.Services.Background
                 }
                 else
                 {
-                    var bitmap = new BitmapImage(new Uri(filePath));
+                    var bitmap = await BackgroundImageLoader.LoadFileAsync(filePath);
                     result = new BackgroundRenderResult { ImageSource = bitmap, IsVideo = false };
                 }
 
@@ -698,7 +752,8 @@ namespace FufuLauncher.Services.Background
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"BackgroundRenderer: 自定义背景加载失败 - {ex.Message}");
+                DebugLog.Info("BackgroundRenderer",
+                    $"BackgroundRenderer: Custom background load failed - {ex.Message}");
                 return null;
             }
         }
@@ -713,7 +768,7 @@ namespace FufuLauncher.Services.Background
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"BackgroundRenderer: 预加载失败({url}): {ex.Message}");
+                    DebugLog.Info("BackgroundRenderer", $"BackgroundRenderer: Preload failed ({url}): {ex.Message}");
                 }
             }
         }
@@ -732,7 +787,8 @@ namespace FufuLauncher.Services.Background
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"BackgroundRenderer: CacheAllBackgroundsAsync 异常 - {ex.Message}");
+                DebugLog.Info("BackgroundRenderer",
+                    $"BackgroundRenderer: CacheAllBackgroundsAsync failed - {ex.Message}");
             }
         }
 
@@ -762,26 +818,51 @@ namespace FufuLauncher.Services.Background
             ReleaseVideoCache();
         }
 
+        public void ClearImageCaches()
+        {
+            _cachedBackground = null;
+            _currentBackgroundUrl = null;
+            _cachedCustomBackground = null;
+            _customBackgroundPath = null;
+            _cachedFallbackBackground = null;
+        }
+
         private async Task DownloadToCache(string url, string defaultExtension)
+        {
+            await _downloadLock.WaitAsync();
+            try
+            {
+                await DownloadToCacheCoreAsync(url, defaultExtension);
+            }
+            finally
+            {
+                _downloadLock.Release();
+            }
+        }
+
+        private async Task DownloadToCacheCoreAsync(string url, string defaultExtension)
         {
             var urlExt = GetUrlPathExtension(url);
             var isVideoDownload = (urlExt != null && VideoExtensions.Contains(urlExt)) ||
                                   (urlExt == null && VideoExtensions.Contains(defaultExtension));
             if (isVideoDownload && !AllowVideoBackground)
             {
-                Debug.WriteLine($"BackgroundRenderer: 非开发版，跳过视频背景下载: {url}");
+                DebugLog.Info("BackgroundRenderer",
+                    $"BackgroundRenderer: Non-dev build, skipping video background download: {url}");
                 return;
             }
 
             var fileName = GetCacheFileName(url, defaultExtension);
             var cachedFilePath = Path.Combine(_cacheFolderPath, fileName);
 
-            if (File.Exists(cachedFilePath) && new FileInfo(cachedFilePath).Length > 1024)
+            if (File.Exists(cachedFilePath) && new FileInfo(cachedFilePath).Length > 0)
                 return;
 
             Directory.CreateDirectory(_cacheFolderPath);
 
-            using var response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+            using var response =
+                await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, timeout.Token);
             response.EnsureSuccessStatusCode();
 
             if (GetUrlPathExtension(url) == null)
@@ -792,19 +873,35 @@ namespace FufuLauncher.Services.Background
                 {
                     fileName = GetCacheFileName(url, detected);
                     cachedFilePath = Path.Combine(_cacheFolderPath, fileName);
-                    if (File.Exists(cachedFilePath) && new FileInfo(cachedFilePath).Length > 1024)
+                    if (File.Exists(cachedFilePath) && new FileInfo(cachedFilePath).Length > 0)
                         return;
                 }
             }
 
-            await using var contentStream = await response.Content.ReadAsStreamAsync();
-            var tempFile = Path.Combine(_cacheFolderPath, $"{fileName}.tmp");
-            await using (var fileStream = new FileStream(tempFile, FileMode.Create, FileAccess.Write))
+            var tempFile = Path.Combine(_cacheFolderPath, $"{fileName}.{Guid.NewGuid():N}.tmp");
+            try
             {
-                await contentStream.CopyToAsync(fileStream);
-            }
+                await using var contentStream = await response.Content.ReadAsStreamAsync(timeout.Token);
+                await using (var fileStream = new FileStream(tempFile, FileMode.CreateNew, FileAccess.Write))
+                {
+                    await contentStream.CopyToAsync(fileStream, timeout.Token);
+                    if (fileStream.Length == 0) throw new InvalidDataException("背景下载内容为空");
+                }
 
-            File.Move(tempFile, cachedFilePath, true);
+                File.Move(tempFile, cachedFilePath, true);
+            }
+            finally
+            {
+                try
+                {
+                    File.Delete(tempFile);
+                }
+                catch (Exception ex)
+                {
+                    DebugLog.Info("BackgroundRenderer",
+                        $"BackgroundRenderer: Failed to clean temporary cache: {ex.Message}");
+                }
+            }
         }
 
         private static string GetExtensionFromContentType(string? mediaType, string defaultExtension)
@@ -829,8 +926,16 @@ namespace FufuLauncher.Services.Background
 
         private async Task SaveApiCacheAsync(ServerType server, string json)
         {
-            Directory.CreateDirectory(_cacheFolderPath);
-            await File.WriteAllTextAsync(GetApiCachePath(server), json);
+            try
+            {
+                Directory.CreateDirectory(_cacheFolderPath);
+                await File.WriteAllTextAsync(GetApiCachePath(server), json);
+            }
+            catch (Exception ex)
+            {
+                DebugLog.Info("BackgroundRenderer",
+                    $"BackgroundRenderer: Failed to write background API cache: {ex.Message}");
+            }
         }
 
         private static readonly string[] VideoExtensions = { ".webm", ".mp4", ".mkv", ".avi", ".mov" };
@@ -874,19 +979,18 @@ namespace FufuLauncher.Services.Background
             return Convert.ToHexString(hash).ToLower();
         }
 
-        private BackgroundRenderResult GetFallbackBackground()
+        public async Task<BackgroundRenderResult> GetFallbackBackgroundAsync()
         {
+            if (_cachedFallbackBackground != null) return _cachedFallbackBackground;
             try
             {
-                var bgPath = Path.Combine(AppContext.BaseDirectory, "Assets", "bg.png");
-                if (!File.Exists(bgPath))
-                    return null;
-
-                var bitmap = new BitmapImage(new Uri(bgPath));
-                return new BackgroundRenderResult { ImageSource = bitmap, IsVideo = false };
+                var bitmap = await BackgroundImageLoader.LoadFallbackAsync();
+                return _cachedFallbackBackground = new BackgroundRenderResult
+                    { ImageSource = bitmap, IsVideo = false, IsFallback = true };
             }
-            catch
+            catch (Exception ex)
             {
+                DebugLog.Info("BackgroundRenderer", $"BackgroundRenderer: Default background load failed - {ex}");
                 return null;
             }
         }
