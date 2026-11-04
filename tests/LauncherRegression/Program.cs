@@ -65,6 +65,16 @@ Check(LauncherService.IsAllowedPluginDllPath(resolvedPath), args.Length != 0 && 
     : "Elevated launch accepts the packaged plugin and manifest");
 Check(!LauncherService.IsAllowedPluginDllPath(""), "Empty plugin paths remain rejected");
 
+bool missingHashRejected = false;
+try { PluginVerifier.VerifyFileHash(pluginPath, "", "Plugin without a build pin"); }
+catch (HashMismatchException) { missingHashRejected = true; }
+Check(missingHashRejected && File.Exists(pluginPath), "Missing plugin build pins fail closed without deleting installed files");
+
+missingHashRejected = false;
+try { PluginVerifier.VerifyLuaHash("return true", ""); }
+catch (HashMismatchException) { missingHashRejected = true; }
+Check(missingHashRejected, "Lua scripts without a hash remain rejected");
+
 string outsidePath = Path.Combine(AppContext.BaseDirectory, "outside.dll");
 byte[] originalPlugin = File.ReadAllBytes(pluginPath);
 byte[] originalManifest = File.ReadAllBytes(manifestPath);

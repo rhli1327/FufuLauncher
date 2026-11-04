@@ -55,10 +55,10 @@ namespace FufuLauncher.Constants
         public const string MihoyoBbsCheckinRewardsUrl = MihoyoBbsWebApi + "/event/luna/home";
         public const string MihoyoBbsIsSignUrl = MihoyoBbsWebApi + "/event/luna/info";
         public const string MihoyoBbsSignUrl = MihoyoBbsWebApi + "/event/luna/sign";
-        // Reviewed plugin bundle published with this hardened launcher release.
-        public const string PluginRawUrl = "https://github.com/rhli1327/FufuLauncher/releases/download/v1.7.1.0/FuFuPlugin.zip";
-        public const string PluginSha256 = "271c4ce26e546ee0edfb419025a116fc3e61fefe92e86503c44808d120ee6a90";
-        public const string PluginDllSha256 = "e0c69d1d601e39f433ea620b5e4bbf13be91532cc2633573fd92b1490d4de89e";
+        // Packaging binds the application to its exact source-built plugin bundle.
+        public const string PluginRawUrl = PluginBuildPins.BundleUrl;
+        public const string PluginSha256 = PluginBuildPins.BundleSha256;
+        public const string PluginDllSha256 = PluginBuildPins.DllSha256;
         public const string LitePluginUrl = "https://github.com/FufuLauncher/YuanShen-UnlockerLite/releases/download/v7.2.3/YuanShen-UnlockerLite.zip";
         public const string LitePluginSha256 = "a1a7150c42b401a659a4a569a386989c3cee251c895ca86670d6a547afb526d9";
         public const string LitePluginDllSha256 = "265dabd754fd5a64e55a811cfbc4ccbc9a1a7f78b23c642978a120f5bf88d05b";

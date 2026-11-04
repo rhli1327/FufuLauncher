@@ -7,7 +7,6 @@ using System.Text;
 using FufuLauncher.Constants;
 using FufuLauncher.Helpers;
 using FufuLauncher.Contracts.Services;
-using FufuLauncher.Helpers;
 
 namespace FufuLauncher.Services
 {

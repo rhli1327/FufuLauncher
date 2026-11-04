@@ -81,6 +81,18 @@ jobs:
             exit 1
         }
 
+    - name: Verify pinned Genshin 7.2 Lite plugin
+      shell: pwsh
+      run: |
+        New-Item -ItemType Directory -Force -Path LiteStaging | Out-Null
+        Invoke-WebRequest "https://github.com/FufuLauncher/YuanShen-UnlockerLite/releases/download/v7.2.3/YuanShen-UnlockerLite.zip" -OutFile "LiteStaging\YuanShen-UnlockerLite.zip"
+        $zipHash = (Get-FileHash "LiteStaging\YuanShen-UnlockerLite.zip" -Algorithm SHA256).Hash.ToLowerInvariant()
+        if ($zipHash -ne "a1a7150c42b401a659a4a569a386989c3cee251c895ca86670d6a547afb526d9") { throw "Lite bundle SHA-256 mismatch" }
+        $liteDir = "LiteStaging\Extracted"
+        Expand-Archive "LiteStaging\YuanShen-UnlockerLite.zip" -DestinationPath $liteDir -Force
+        $dllHash = (Get-FileHash "$liteDir\YuanShen-UnlockerLite.dll" -Algorithm SHA256).Hash.ToLowerInvariant()
+        if ($dllHash -ne "265dabd754fd5a64e55a811cfbc4ccbc9a1a7f78b23c642978a120f5bf88d05b") { throw "Lite DLL SHA-256 mismatch" }
+
     - name: Checkout FufuLauncher.CaptureApp
       uses: actions/checkout@v4
       with:
@@ -138,6 +150,29 @@ jobs:
                 upx --best "$file"
             }
         }
+
+    - name: Bind application to the final source-built plugin
+      shell: pwsh
+      run: |
+        $baseOutputDir = "${{ env.OUTPUT_DIR }}"
+        $pluginDir = Join-Path $baseOutputDir "Plugins\FuFuPlugin"
+        New-Item -ItemType Directory -Force -Path PluginStaging | Out-Null
+        Compress-Archive -Path "$pluginDir\*" -DestinationPath "PluginStaging\FuFuPlugin.zip" -Force
+        ./scripts/Write-PluginBuildPins.ps1 -PluginZip "PluginStaging\FuFuPlugin.zip" -PluginDll "$pluginDir\FufuLauncher.UnlockerIsland.dll" -SourceCommit "2de496af1825ae45869218870f37f40f7023fe2e" -ReleaseTag "v1.7.2.2"
+        dotnet build FufuLauncher\FufuLauncher.csproj -c ${{ matrix.configuration }} /p:Platform="x64" --no-restore
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        dotnet run --project tests/LauncherRegression/LauncherRegression.csproj -c Release -- --downloaded "PluginStaging\FuFuPlugin.zip"
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        dotnet run --project tests/LauncherRegression/LauncherRegression.csproj -c Release -- --downloaded-lite "LiteStaging\YuanShen-UnlockerLite.zip"
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+    - name: Upload plugin build pins
+      uses: actions/upload-artifact@v4
+      with:
+        name: Plugin-Build-Pins
+        path: |
+          PluginStaging/plugin-build.json
+          FufuLauncher/Constants/PluginBuildPins.cs
 
     - name: Regenerate integrity manifest
       shell: pwsh
@@ -220,7 +255,7 @@ jobs:
         New-Item -ItemType Directory -Force -Path $stagingDir | Out-Null
         
         if (Test-Path "$pluginDir\*") {
-            Compress-Archive -Path "$pluginDir\*" -DestinationPath "$stagingDir\FuFuPlugin.zip" -Force
+            if (!(Test-Path "$stagingDir\FuFuPlugin.zip")) { throw "Missing verified plugin bundle" }
             Copy-Item -Path "$stagingDir\FuFuPlugin.zip" -Destination "$stagingDir\FuFuPlugin-old.zip" -Force
             Copy-Item -Path "$stagingDir\FuFuPlugin.zip" -Destination "$stagingDir\FuFuPlugin.vmp.zip" -Force
             Copy-Item -Path "$stagingDir\FuFuPlugin.zip" -Destination "$stagingDir\FuFuPlugin.vmp2.zip" -Force

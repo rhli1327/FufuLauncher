@@ -1,30 +1,27 @@
-/*
-Copyright (c) FufuLauncher Dev Team. All rights reserved.
-Licensed under the MIT License.
-*/
-
+/* Copyright (c) FufuLauncher Dev Team. Licensed under the MIT License. */
+using System.Diagnostics;
+using System.IO;
+using System.Net.Http;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
+using System.Text;
 using System.Windows;
 using System.Windows.Interop;
+using System.Windows.Threading;
+using Downloader;
+using FufuLauncher.Updates;
 
 namespace Updater;
-
 public partial class MainWindow
 {
-    #region Window Management
-
     [DllImport("dwmapi.dll")]
     private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
-
     [DllImport("user32.dll")]
     private static extern int SetWindowCompositionAttribute(IntPtr hwnd, ref WindowCompositionAttributeData data);
-
     private const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
     private const int DWMWA_SYSTEMBACKDROP_TYPE = 38;
     private const int DWMWA_MICA_EFFECT = 1029;
-
     private const int DWMSBT_MAINWINDOW = 2;
-
     [StructLayout(LayoutKind.Sequential)]
     private struct WindowCompositionAttributeData
     {
@@ -45,10 +42,8 @@ public partial class MainWindow
     private void Window_SourceInitialized(object sender, EventArgs e)
     {
         IntPtr windowHandle = new WindowInteropHelper(this).EnsureHandle();
-
         int useImmersiveDarkMode = 1;
         DwmSetWindowAttribute(windowHandle, DWMWA_USE_IMMERSIVE_DARK_MODE, ref useImmersiveDarkMode, Marshal.SizeOf(typeof(int)));
-
         var osVersion = Environment.OSVersion.Version;
         if (osVersion.Major == 10 && osVersion.Minor == 0 && osVersion.Build >= 22000)
         {
@@ -67,23 +62,20 @@ public partial class MainWindow
         {
             AccentPolicy accent = new AccentPolicy
             {
-                AccentState = 4, 
-                GradientColor = 0x7F202020 
+                AccentState = 4,
+                GradientColor = 0x7F202020
             };
-
             int accentSize = Marshal.SizeOf(accent);
             IntPtr accentPtr = Marshal.AllocHGlobal(accentSize);
             try
             {
                 Marshal.StructureToPtr(accent, accentPtr, false);
-
                 WindowCompositionAttributeData data = new WindowCompositionAttributeData
                 {
-                    Attribute = 19, 
+                    Attribute = 19,
                     Data = accentPtr,
                     SizeOfData = accentSize
                 };
-
                 SetWindowCompositionAttribute(windowHandle, ref data);
             }
             finally
@@ -97,6 +89,4 @@ public partial class MainWindow
     {
         Environment.Exit(0);
     }
-
-    #endregion
 }
